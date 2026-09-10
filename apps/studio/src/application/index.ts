@@ -1,0 +1,18 @@
+export { StudioApplication } from './StudioApplication.js';
+export { StudioBootstrap } from './bootstrap.js';
+export { StudioCompositionRoot } from './composition-root.js';
+export type { StudioCompositionRootOptions } from './composition-root.js';
+export type { ApplicationConfiguration } from './configuration.js';
+export { DEFAULT_APPLICATION_CONFIGURATION } from './configuration.js';
+export type { ApplicationSettings } from './settings.js';
+export { ApplicationSettingsStore, DEFAULT_APPLICATION_SETTINGS } from './settings.js';
+export { ThemeManager } from './theme.js';
+export { LayoutPersistence, DEFAULT_LAYOUT } from './layout-persistence.js';
+export { WindowStateManager } from './window-state.js';
+export { ApplicationDiagnostics, PLATFORM_PACKAGES } from './diagnostics.js';
+export { ApplicationMetrics } from './metrics.js';
+export { NotificationHost } from './notifications.js';
+export { ModalHost, DialogHost } from './overlays.js';
+export { CommandRegistry } from './commands.js';
+export { HotkeyRegistration } from './hotkeys.js';
+export { CrashRecoveryHooks } from './crash-recovery.js';

@@ -1,0 +1,11 @@
+/ARCHITECTURE.md @cad-studio/architecture
+/docs/adr/ @cad-studio/architecture
+/apps/ @cad-studio/desktop
+/packages/app-domain/ @cad-studio/platform
+/packages/viewport/ @cad-studio/rendering
+/packages/scene/ @cad-studio/rendering
+/crates/ @cad-studio/native
+/kernel/ @cad-studio/geometry
+/plugins/ @cad-studio/platform
+/.github/ @cad-studio/platform
+/tooling/ @cad-studio/platform

@@ -1,0 +1,39 @@
+{
+  "name": "cad-studio",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "dev": "corepack pnpm --filter @cad-studio/studio dev",
+    "build": "turbo run build",
+    "check": "corepack pnpm format:check && corepack pnpm lint && corepack pnpm typecheck && corepack pnpm test && corepack pnpm deps:check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
+    "bench": "turbo run bench",
+    "deps:check": "dependency-cruiser --no-config --validate tooling/dependency-rules.cjs packages apps",
+    "docs:check": "markdownlint-cli2",
+    "audit": "pnpm audit --prod",
+    "licenses:check": "license-checker-rseidelsohn --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;MPL-2.0' --production"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "dependency-cruiser": "^16.0.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-import-x": "^4.0.0",
+    "license-checker-rseidelsohn": "^4.4.0",
+    "markdownlint-cli2": "^0.17.0",
+    "prettier": "^3.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^3.0.0"
+  }
+}

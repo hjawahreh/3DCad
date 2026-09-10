@@ -1,0 +1,3 @@
+team = "desktop"
+reviewers = ["@cad-studio/desktop"]
+escalation = "@cad-studio/architecture"

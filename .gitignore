@@ -1,0 +1,16 @@
+node_modules/
+.turbo/
+dist/
+coverage/
+artifacts/
+benchmarks/
+target/
+build/
+out/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+*.cadstudio
+*.cadstudio-journal

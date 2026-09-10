@@ -1,0 +1,48 @@
+{
+  "name": "@cad-studio/studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node ./scripts/dev.mjs",
+    "dev:web": "vite --port 1420 --strictPort",
+    "dev:tauri": "tauri dev",
+    "build": "tsc -b && vite build",
+    "build:app": "tauri build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "lint": "eslint src test",
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@cad-studio/camera-runtime": "workspace:*",
+    "@cad-studio/geometry-services": "workspace:*",
+    "@cad-studio/import-runtime": "workspace:*",
+    "@cad-studio/interaction-runtime": "workspace:*",
+    "@cad-studio/kernel-bridge": "workspace:*",
+    "@cad-studio/platform-runtime": "workspace:*",
+    "@cad-studio/project-runtime": "workspace:*",
+    "@cad-studio/scene": "workspace:*",
+    "@cad-studio/selection-runtime": "workspace:*",
+    "@cad-studio/tool-runtime": "workspace:*",
+    "@cad-studio/viewport": "workspace:*",
+    "@cad-studio/viewport-runtime": "workspace:*",
+    "@tauri-apps/api": "^2.5.0",
+    "@tauri-apps/plugin-dialog": "^2.2.0",
+    "@tauri-apps/plugin-store": "^2.2.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.5.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.4.0",
+    "jsdom": "^26.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^6.3.0",
+    "vitest": "^3.0.0"
+  }
+}

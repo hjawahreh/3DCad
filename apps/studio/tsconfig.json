@@ -1,0 +1,29 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "dist-types",
+    "rootDir": ".",
+    "jsx": "react-jsx",
+    "types": ["vite/client", "vitest/globals", "node"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "noEmit": false
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", "test/**/*.tsx", "vite.config.ts", "vitest.config.ts"],
+  "references": [
+    { "path": "../../packages/platform-runtime" },
+    { "path": "../../packages/project-runtime" },
+    { "path": "../../packages/import-runtime" },
+    { "path": "../../packages/scene" },
+    { "path": "../../packages/viewport" },
+    { "path": "../../packages/viewport-runtime" },
+    { "path": "../../packages/interaction-runtime" },
+    { "path": "../../packages/camera-runtime" },
+    { "path": "../../packages/selection-runtime" },
+    { "path": "../../packages/tool-runtime" },
+    { "path": "../../packages/kernel-bridge" },
+    { "path": "../../packages/geometry-services" }
+  ]
+}

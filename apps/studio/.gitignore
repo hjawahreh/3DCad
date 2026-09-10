@@ -1,0 +1,7 @@
+node_modules
+dist
+dist-types
+src-tauri/target
+.vite
+*.local
+.DS_Store

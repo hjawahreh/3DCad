@@ -1,0 +1,68 @@
+:root {
+  color-scheme: dark;
+  --studio-bg: #0b0f14;
+  --studio-surface: #121821;
+  --studio-surface-2: #182130;
+  --studio-border: #243044;
+  --studio-text: #e8eef7;
+  --studio-muted: #8b9bb0;
+  --studio-accent: #3d8bfd;
+  --studio-accent-2: #2f6fed;
+  --studio-danger: #e35d6a;
+  --studio-warning: #d6a24a;
+  --studio-success: #3cba8b;
+  --studio-font: "IBM Plex Sans", "Segoe UI", "Helvetica Neue", sans-serif;
+  --studio-mono: "IBM Plex Mono", "SF Mono", ui-monospace, monospace;
+  --studio-header-h: 40px;
+  --studio-status-h: 28px;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --studio-bg: #f3f5f8;
+  --studio-surface: #ffffff;
+  --studio-surface-2: #e9eef5;
+  --studio-border: #c9d3e0;
+  --studio-text: #152033;
+  --studio-muted: #5d6b7e;
+  --studio-accent: #1f6feb;
+  --studio-accent-2: #1958c2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--studio-bg);
+  color: var(--studio-text);
+  font-family: var(--studio-font);
+  font-size: 13px;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.muted {
+  color: var(--studio-muted);
+}
+
+.primary {
+  background: var(--studio-accent);
+  border-color: var(--studio-accent-2);
+  color: #fff;
+}
