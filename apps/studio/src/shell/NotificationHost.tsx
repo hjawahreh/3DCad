@@ -12,6 +12,10 @@ export const NotificationHostView = ({
     () => root.notifications.list()
   );
 
+  if (items.length === 0) {
+    return <div className="notification-host" aria-live="polite" />;
+  }
+
   return (
     <div className="notification-host" aria-live="polite">
       {items.map((item) => (
@@ -23,7 +27,11 @@ export const NotificationHostView = ({
               <div style={{ width: `${String(Math.round(item.progress * 100))}%` }} />
             </div>
           ) : null}
-          <button type="button" className="notification__dismiss" onClick={() => root.notifications.dismiss(item.id)}>
+          <button
+            type="button"
+            className="notification__dismiss"
+            onClick={() => root.notifications.dismiss(item.id)}
+          >
             Dismiss
           </button>
         </div>

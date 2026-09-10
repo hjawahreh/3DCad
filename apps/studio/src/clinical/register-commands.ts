@@ -35,7 +35,13 @@ export const registerClinicalCommands = (
       const result = session.newCase();
       if (!result.ok) {
         host.notifications.push('error', 'Case', result.error.message);
+        return;
       }
+      workspace.importCoordinator.objects.clear();
+      workspace.importCoordinator.sceneBuilder.publishEmpty(host, host.runtimes.scene);
+      host.runtimes.kernel.registry.clear();
+      host.sessions.selectionSession?.clear();
+      host.sessions.cameraSession?.resetView();
     })
   });
 
@@ -67,6 +73,9 @@ export const registerClinicalCommands = (
       }
       workspace.importCoordinator.objects.clear();
       workspace.importCoordinator.sceneBuilder.publishEmpty(host, host.runtimes.scene);
+      host.runtimes.kernel.registry.clear();
+      host.sessions.selectionSession?.clear();
+      host.sessions.cameraSession?.resetView();
     })
   });
 
@@ -82,7 +91,7 @@ export const registerClinicalCommands = (
         host.notifications.push('warning', 'Save', cleared.error.message);
         return;
       }
-      host.notifications.push('success', 'Save', 'Case marked clean (persistence host-owned)');
+      host.notifications.push('success', 'Save', 'Case saved.');
     })
   });
 
@@ -295,6 +304,10 @@ export const registerClinicalCommands = (
         return;
       }
       workspace.preparation.notifyOrientationComplete();
+      const prep = workspace.preparation.start();
+      if (!prep.ok) {
+        host.notifications.push('info', 'Prepare', prep.error.message);
+      }
     })
   });
 
@@ -857,6 +870,245 @@ export const registerClinicalCommands = (
     })
   });
 
+  commands.register({
+    id: 'clinical.tool.segmentation',
+    title: 'Segmentation Tool',
+    category: 'application',
+    shortcut: 'Mod+G',
+    enabled: true,
+    run: wrap(() => {
+      const result = workspace.segmentation.enter();
+      if (!result.ok) {
+        host.notifications.push('warning', 'Segmentation', result.error.message);
+      }
+    })
+  });
+
+  commands.register({
+    id: 'clinical.segmentation.run',
+    title: 'Run Segmentation',
+    category: 'application',
+    enabled: true,
+    run: wrap(async () => {
+      if (!workspace.segmentation.isActive()) return;
+      const result = await workspace.segmentation.runInference();
+      if (!result.ok) {
+        host.notifications.push('warning', 'Segmentation', result.error.message);
+      }
+    })
+  });
+
+  commands.register({
+    id: 'clinical.segmentation.accept',
+    title: 'Accept Segmentation',
+    category: 'application',
+    enabled: true,
+    run: wrap(async () => {
+      if (!workspace.segmentation.isActive()) return;
+      const result = await workspace.segmentation.accept();
+      if (!result.ok) {
+        host.notifications.push('warning', 'Segmentation', result.error.message);
+      }
+    })
+  });
+
+  commands.register({
+    id: 'clinical.segmentation.reject',
+    title: 'Reject Segmentation',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      workspace.segmentation.reject();
+    })
+  });
+
+  commands.register({
+    id: 'clinical.segmentation.cancel',
+    title: 'Cancel Segmentation',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      workspace.segmentation.cancel();
+    })
+  });
+
+  commands.register({
+    id: 'clinical.segmentation.undo',
+    title: 'Undo Segmentation',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      const result = workspace.segmentation.undo();
+      if (!result.ok) {
+        host.notifications.push('info', 'Undo', result.error.message);
+      }
+    })
+  });
+
+  commands.register({
+    id: 'clinical.segmentation.redo',
+    title: 'Redo Segmentation',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      const result = workspace.segmentation.redo();
+      if (!result.ok) {
+        host.notifications.push('info', 'Redo', result.error.message);
+      }
+    })
+  });
+
+  commands.register({
+    id: 'clinical.tool.analysis',
+    title: 'Analysis Tool',
+    category: 'application',
+    shortcut: 'Mod+A',
+    enabled: true,
+    run: wrap(() => {
+      const result = workspace.analysis.enter();
+      if (!result.ok) {
+        host.notifications.push('warning', 'Analysis', result.error.message);
+      }
+    })
+  });
+
+  commands.register({
+    id: 'clinical.analysis.measure',
+    title: 'Measure Distance',
+    category: 'application',
+    shortcut: 'M',
+    enabled: true,
+    run: wrap(() => {
+      if (!workspace.analysis.isActive()) {
+        const entered = workspace.analysis.enter();
+        if (!entered.ok) {
+          host.notifications.push('warning', 'Analysis', entered.error.message);
+          return;
+        }
+      }
+      workspace.analysis.setMode('distance');
+    })
+  });
+
+  commands.register({
+    id: 'clinical.analysis.angle',
+    title: 'Measure Angle',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      if (!workspace.analysis.isActive()) {
+        const entered = workspace.analysis.enter();
+        if (!entered.ok) {
+          host.notifications.push('warning', 'Analysis', entered.error.message);
+          return;
+        }
+      }
+      workspace.analysis.setMode('angle');
+    })
+  });
+
+  commands.register({
+    id: 'clinical.analysis.tooth',
+    title: 'Tooth Analysis',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      if (!workspace.analysis.isActive()) {
+        const entered = workspace.analysis.enter();
+        if (!entered.ok) {
+          host.notifications.push('warning', 'Analysis', entered.error.message);
+          return;
+        }
+      }
+      const result = workspace.analysis.analyzeTooth();
+      if (!result.ok) {
+        host.notifications.push('warning', 'Analysis', result.error.message);
+      }
+    })
+  });
+
+  commands.register({
+    id: 'clinical.analysis.arch',
+    title: 'Arch Analysis',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      if (!workspace.analysis.isActive()) return;
+      const result = workspace.analysis.analyzeArch();
+      if (!result.ok) {
+        host.notifications.push('warning', 'Analysis', result.error.message);
+      }
+    })
+  });
+
+  commands.register({
+    id: 'clinical.analysis.spacing',
+    title: 'Spacing Analysis',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      if (!workspace.analysis.isActive()) return;
+      workspace.analysis.analyzeSpacing();
+    })
+  });
+
+  commands.register({
+    id: 'clinical.analysis.crowding',
+    title: 'Crowding Analysis',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      if (!workspace.analysis.isActive()) return;
+      workspace.analysis.analyzeCrowding();
+    })
+  });
+
+  commands.register({
+    id: 'clinical.analysis.occlusion',
+    title: 'Occlusion Analysis',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      if (!workspace.analysis.isActive()) return;
+      workspace.analysis.analyzeOcclusion();
+    })
+  });
+
+  commands.register({
+    id: 'clinical.analysis.clear',
+    title: 'Clear Measurement',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      workspace.analysis.clearMeasurement();
+    })
+  });
+
+  commands.register({
+    id: 'clinical.analysis.save',
+    title: 'Save Analysis Result',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      const result = workspace.analysis.saveResult();
+      if (!result.ok) {
+        host.notifications.push('info', 'Analysis', result.error.message);
+      } else {
+        host.notifications.push('success', 'Analysis', 'Result saved (geometry unchanged).');
+      }
+    })
+  });
+
+  commands.register({
+    id: 'clinical.analysis.cancel',
+    title: 'Cancel Analysis',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      workspace.analysis.cancel();
+    })
+  });
+
   host.hotkeys.register('Mod+Shift+N', 'clinical.case.new');
   host.hotkeys.register('Mod+S', 'clinical.case.save');
   host.hotkeys.register('Mod+F', 'clinical.viewport.fitAll');
@@ -865,6 +1117,9 @@ export const registerClinicalCommands = (
   host.hotkeys.register('Mod+O', 'clinical.tool.orient');
   host.hotkeys.register('Mod+T', 'clinical.tool.trim');
   host.hotkeys.register('Mod+B', 'clinical.tool.closeBase');
+  host.hotkeys.register('Mod+G', 'clinical.tool.segmentation');
+  host.hotkeys.register('Mod+A', 'clinical.tool.analysis');
+  host.hotkeys.register('M', 'clinical.analysis.measure');
   host.hotkeys.register('Mod+Shift+P', 'clinical.preparation.start');
   host.hotkeys.register('Escape', 'clinical.orientation.cancel');
   host.hotkeys.register('Mod+Z', 'clinical.orientation.undo');

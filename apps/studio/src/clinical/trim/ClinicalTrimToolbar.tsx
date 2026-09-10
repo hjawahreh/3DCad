@@ -81,14 +81,31 @@ export const ClinicalTrimToolbar = ({
         <button
           type="button"
           className="clinical-trim-btn clinical-trim-btn--accept"
+          disabled={
+            state.points.length < 3 ||
+            !state.closed ||
+            (state.validationReport !== undefined && !state.validationReport.passed)
+          }
+          title={
+            state.points.length < 3
+              ? 'Add at least 3 points.'
+              : !state.closed
+                ? 'Close the trim boundary around the area you want to keep.'
+                : state.validationReport !== undefined && !state.validationReport.passed
+                  ? state.validationReport.checks.find((c) => !c.passed)?.message ??
+                    'Validate the boundary first.'
+                  : 'Accept Trim'
+          }
           onClick={() => runAsync(async () => {
             const result = await trim.accept();
             if (!result.ok) {
               session.getHost().notifications.push('warning', 'Trim', result.error.message);
+            } else {
+              session.getHost().notifications.push('success', 'Trim', 'Trim accepted');
             }
           })}
         >
-          Accept
+          Accept Trim
         </button>
         <button
           type="button"
@@ -97,7 +114,15 @@ export const ClinicalTrimToolbar = ({
         >
           Cancel
         </button>
-        <button type="button" className="clinical-trim-btn" onClick={() => run(() => trim.cancel())}>
+        <button
+          type="button"
+          className="clinical-trim-btn"
+          onClick={() =>
+            run(() => {
+              trim.clearBoundary();
+            })
+          }
+        >
           Reset
         </button>
       </div>
@@ -105,6 +130,9 @@ export const ClinicalTrimToolbar = ({
       {state.validationReport !== undefined ? (
         <div className="clinical-trim-toolbar__stats" data-testid="clinical-trim-stats">
           Points: {String(state.points.length)} · Closed: {state.closed ? 'yes' : 'no'}
+          {!state.validationReport.passed
+            ? ` · ${state.validationReport.checks.find((c) => !c.passed)?.message ?? 'Invalid'}`
+            : ' · Valid'}
         </div>
       ) : (
         <div className="clinical-trim-toolbar__stats" data-testid="clinical-trim-stats">

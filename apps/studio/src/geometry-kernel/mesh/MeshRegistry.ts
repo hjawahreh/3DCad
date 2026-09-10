@@ -274,4 +274,14 @@ export class MeshRegistry {
     }
     this.byObject.delete(objectId);
   }
+
+  /** Clears all registered meshes (case reset / close). */
+  public clear(): void {
+    this.byHandle.clear();
+    this.byObject.clear();
+  }
+
+  public listObjectIds(): readonly string[] {
+    return Object.freeze([...this.byObject.keys()]);
+  }
 }

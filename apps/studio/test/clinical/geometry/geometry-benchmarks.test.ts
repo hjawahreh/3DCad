@@ -59,7 +59,8 @@ describe('clinical geometry benchmarks (smoke)', () => {
             { x: 160, y: 140 },
             { x: 480, y: 140 },
             { x: 320, y: 340 }
-          ]
+          ],
+          viewport: { width: 640, height: 480 }
         });
       });
       const close = bench(`${size.name}.closeBase`, () => {
@@ -103,7 +104,8 @@ describe('clinical geometry benchmarks (smoke)', () => {
             [100, 100],
             [500, 100],
             [300, 400]
-          ]
+          ],
+          viewport: { width: 640, height: 480 }
         }
       },
       signal,

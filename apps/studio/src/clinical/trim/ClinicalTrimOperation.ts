@@ -28,6 +28,7 @@ export class ClinicalTrimOperation {
     readonly targetObjectId: string;
     readonly points: readonly TrimBoundaryPoint[];
     readonly drawMode: string;
+    readonly viewport?: { readonly width: number; readonly height: number };
   }): ClinicalResult<OperationSession> {
     if (this.session !== undefined) {
       return clinicalFailure('conflict', 'Trim operation already active');
@@ -40,7 +41,8 @@ export class ClinicalTrimOperation {
       params: Object.freeze({
         targetObjectId: input.targetObjectId,
         stroke,
-        drawMode: input.drawMode
+        drawMode: input.drawMode,
+        ...(input.viewport === undefined ? {} : { viewport: input.viewport })
       })
     });
     if (!started.ok) {

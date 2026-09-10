@@ -46,7 +46,7 @@ export const DEFAULT_CLINICAL_DISPLAY_PREFERENCES: ClinicalDisplayPreferences = 
   lighting: 'studio',
   showOrientationIndicator: true,
   showScaleIndicator: true,
-  showFrameStats: true,
+  showFrameStats: false,
   showHud: true,
   showOverlays: true
 });

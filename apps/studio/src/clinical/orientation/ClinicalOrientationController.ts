@@ -188,7 +188,7 @@ export class ClinicalOrientationController {
     this.clinicalSession.getHost().notifications.push(
       'success',
       'Orientation',
-      'Transform committed'
+      'Orientation saved'
     );
     return clinicalSuccess(undefined);
   }

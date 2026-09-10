@@ -91,7 +91,9 @@ export class ClinicalTrimValidation {
       id: 'preparation-stage',
       label: 'Active preparation stage',
       passed,
-      message: passed ? `Stage ${stage} allows trim` : 'Advance preparation to Ready For Trim'
+      message: passed
+        ? `Stage ${stage} allows trim`
+        : "Preparation can't continue yet. Complete orientation and preparation first."
     });
   }
 
@@ -105,7 +107,7 @@ export class ClinicalTrimValidation {
       passed,
       message: passed
         ? `${String(input.points.length)} points`
-        : `At least ${String(MIN_BOUNDARY_POINTS)} points required`
+        : `Add at least ${String(MIN_BOUNDARY_POINTS)} points.`
     });
   }
 
@@ -118,7 +120,9 @@ export class ClinicalTrimValidation {
       id: 'closed-boundary',
       label: 'Closed boundary',
       passed,
-      message: passed ? 'Boundary is closed' : 'Close the boundary before commit'
+      message: passed
+        ? 'Boundary is closed'
+        : 'Close the trim boundary around the area you want to keep.'
     });
   }
 
@@ -130,7 +134,7 @@ export class ClinicalTrimValidation {
       id: 'self-intersection',
       label: 'Boundary self-intersection',
       passed,
-      message: passed ? 'No self-intersection' : 'Boundary self-intersects'
+      message: passed ? 'No self-intersection' : 'Boundary intersects itself.'
     });
   }
 

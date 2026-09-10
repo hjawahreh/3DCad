@@ -19,9 +19,8 @@ export const ClinicalViewportOverlay = ({
     () => workspace.viewport.display.getRenderState(),
     () => workspace.viewport.display.getRenderState()
   );
-  const host = session.getHost();
   const doc = session.getPublicState().activeCase;
-  const selection = host.sessions.selectionSession?.getSnapshot();
+  const hasModels = doc !== undefined && doc.objects.length > 0;
   const importProgress = workspace.importCoordinator.notifications.getProgress();
 
   if (!prefs.showOverlays) {
@@ -54,30 +53,20 @@ export const ClinicalViewportOverlay = ({
         </div>
       ) : null}
 
-      {prefs.showBoundingBox && doc !== undefined && doc.objects.length > 0 ? (
+      {prefs.showBoundingBox && hasModels ? (
         <div className="clinical-bounds-hint" aria-hidden="true" />
       ) : null}
 
-      <div className="clinical-overlay-regions">
-        <div className="clinical-overlay-region" data-region="tools" />
-        <div className="clinical-overlay-region" data-region="measure">
-          <span className="muted">Measure — reserved</span>
+      {hasModels ? (
+        <div className="clinical-viewport-badge" data-testid="clinical-viewport-badge">
+          {doc.caseMeta.name}
+          {' · '}
+          {String(doc.objects.filter((o) => o.visible).length)}/{String(doc.objects.length)} visible
+          {importProgress.phase === 'importing' || importProgress.phase === 'building-document'
+            ? ' · importing…'
+            : ''}
         </div>
-      </div>
-
-      <div className="clinical-viewport-badge">
-        {doc === undefined
-          ? 'Empty workspace — create a case or import a model'
-          : doc.objects.length === 0
-            ? `${doc.caseMeta.name} · no models — Import STL/OBJ/PLY`
-            : `${doc.caseMeta.name} · ${String(doc.objects.filter((o) => o.visible).length)}/${String(doc.objects.length)} visible · ${render.displayMode}`}
-        {selection !== undefined && selection.ids.length > 0
-          ? ` · sel ${String(selection.ids.length)}`
-          : ''}
-        {importProgress.phase === 'importing' || importProgress.phase === 'building-document'
-          ? ` · importing…`
-          : ''}
-      </div>
+      ) : null}
     </div>
   );
 };

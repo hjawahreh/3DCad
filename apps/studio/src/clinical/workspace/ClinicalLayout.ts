@@ -34,26 +34,26 @@ export type ClinicalRightTab =
 export type ClinicalBottomTab = 'notifications' | 'logs' | 'diagnostics' | 'import' | 'jobs';
 
 export const DEFAULT_CLINICAL_LAYOUT: ClinicalLayoutState = Object.freeze({
-  leftWidth: 280,
+  leftWidth: 300,
   rightWidth: 300,
-  bottomHeight: 200,
+  bottomHeight: 180,
   leftCollapsed: false,
   rightCollapsed: false,
-  bottomCollapsed: false,
+  bottomCollapsed: true,
   leftSection: 'case',
   rightTab: 'inspector',
-  bottomTab: 'logs'
+  bottomTab: 'diagnostics'
 });
 
 export class ClinicalLayout {
-  private readonly storageKey = 'cad-studio.clinical.layout.v1';
+  private readonly storageKey = 'cad-studio.clinical.layout.v2';
   private state: ClinicalLayoutState;
   private readonly listeners = new Set<() => void>();
 
   public constructor(initial?: Partial<ClinicalLayoutState>) {
     this.state = Object.freeze({
       ...DEFAULT_CLINICAL_LAYOUT,
-      ...this.load(),
+      ...this.sanitize(this.load()),
       ...(initial ?? {})
     });
   }
@@ -63,7 +63,7 @@ export class ClinicalLayout {
   }
 
   public update(partial: Partial<ClinicalLayoutState>): ClinicalLayoutState {
-    this.state = Object.freeze({ ...this.state, ...partial });
+    this.state = Object.freeze({ ...this.state, ...this.sanitize(partial) });
     this.persist();
     for (const listener of this.listeners) {
       listener();
@@ -76,6 +76,27 @@ export class ClinicalLayout {
     return () => {
       this.listeners.delete(listener);
     };
+  }
+
+  private sanitize(partial: Partial<ClinicalLayoutState> | undefined): Partial<ClinicalLayoutState> {
+    if (partial === undefined) {
+      return {};
+    }
+    const next: {
+      leftWidth?: number;
+      rightWidth?: number;
+      bottomHeight?: number;
+    } & Partial<ClinicalLayoutState> = { ...partial };
+    if (typeof next.leftWidth === 'number') {
+      next.leftWidth = Math.min(480, Math.max(220, Math.round(next.leftWidth)));
+    }
+    if (typeof next.rightWidth === 'number') {
+      next.rightWidth = Math.min(480, Math.max(220, Math.round(next.rightWidth)));
+    }
+    if (typeof next.bottomHeight === 'number') {
+      next.bottomHeight = Math.min(420, Math.max(120, Math.round(next.bottomHeight)));
+    }
+    return next;
   }
 
   private load(): Partial<ClinicalLayoutState> | undefined {

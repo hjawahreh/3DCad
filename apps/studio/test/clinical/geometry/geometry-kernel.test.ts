@@ -60,8 +60,9 @@ describe('trim', () => {
       { x: 440, y: 150 },
       { x: 320, y: 330 }
     ];
-    const a = trimMesh(m, { boundary, role: 'working', revision: 1 });
-    const b = trimMesh(m, { boundary, role: 'working', revision: 1 });
+    const viewport = { width: 640, height: 480 };
+    const a = trimMesh(m, { boundary, role: 'working', revision: 1, viewport });
+    const b = trimMesh(m, { boundary, role: 'working', revision: 1, viewport });
     expect(a.mesh.fingerprint).toBe(b.mesh.fingerprint);
     expect(a.retainedTriangles).toBeLessThan(Math.floor(m.indices.length / 3));
     expect(a.removedTriangles).toBeGreaterThan(0);

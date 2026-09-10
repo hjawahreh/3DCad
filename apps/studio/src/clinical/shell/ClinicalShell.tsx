@@ -10,6 +10,7 @@ import { ClinicalLeftPanel } from './ClinicalLeftPanel.js';
 import { ClinicalRightPanel } from './ClinicalRightPanel.js';
 import { ClinicalStatusBar } from './ClinicalStatusBar.js';
 import { ClinicalToolbar } from './ClinicalToolbar.js';
+import { ClinicalWorkflowBar } from './ClinicalWorkflowBar.js';
 import { useClinicalLayout } from './useClinicalLayout.js';
 
 export interface ClinicalShellProps {
@@ -42,6 +43,7 @@ export const ClinicalShell = ({ workspace }: ClinicalShellProps): React.JSX.Elem
   return (
     <div className="clinical-shell" data-testid="clinical-shell">
       <ClinicalHeader workspace={workspace} onTogglePalette={togglePalette} />
+      <ClinicalWorkflowBar workspace={workspace} />
       <ClinicalToolbar workspace={workspace} />
       <div className="clinical-body">
         {!layout.leftCollapsed ? (
@@ -77,7 +79,7 @@ export const ClinicalShell = ({ workspace }: ClinicalShellProps): React.JSX.Elem
               <button
                 type="button"
                 className="panel-collapse panel-collapse-bottom"
-                aria-label="Collapse bottom panel"
+                aria-label="Collapse diagnostics panel"
                 onClick={() => workspace.layout.update({ bottomCollapsed: true })}
               >
                 ˅
@@ -87,7 +89,7 @@ export const ClinicalShell = ({ workspace }: ClinicalShellProps): React.JSX.Elem
             <button
               type="button"
               className="panel-expand panel-expand-bottom"
-              aria-label="Expand bottom panel"
+              aria-label="Expand diagnostics panel"
               onClick={() => workspace.layout.update({ bottomCollapsed: false })}
             >
               ˄
@@ -101,7 +103,7 @@ export const ClinicalShell = ({ workspace }: ClinicalShellProps): React.JSX.Elem
             <button
               type="button"
               className="panel-collapse panel-collapse-right"
-              aria-label="Collapse right panel"
+              aria-label="Collapse inspector"
               onClick={() => workspace.layout.update({ rightCollapsed: true })}
             >
               ›
@@ -111,7 +113,7 @@ export const ClinicalShell = ({ workspace }: ClinicalShellProps): React.JSX.Elem
           <button
             type="button"
             className="panel-expand panel-expand-right"
-            aria-label="Expand right panel"
+            aria-label="Expand inspector"
             onClick={() => workspace.layout.update({ rightCollapsed: false })}
           >
             ‹

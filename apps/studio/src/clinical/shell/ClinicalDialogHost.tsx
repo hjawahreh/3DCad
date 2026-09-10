@@ -44,7 +44,8 @@ export const ClinicalDialogHost = ({
               {dialog.kind === 'diagnostics' ? <DiagnosticsBody workspace={workspace} /> : null}
               {dialog.kind === 'about' ? (
                 <p>
-                  CAD Studio Clinical — CLN-002 mesh import workflow. Platform packages unchanged.
+                  CAD Studio — Clinical Orthodontic CAD. Guided workflow from import through
+                  segmentation. Use Diagnostics for technical details.
                 </p>
               ) : null}
               {dialog.kind === 'open-project' ? (

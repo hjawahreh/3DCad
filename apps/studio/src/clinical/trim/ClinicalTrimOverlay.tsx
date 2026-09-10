@@ -1,10 +1,23 @@
-import { useSyncExternalStore } from 'react';
+/**
+ * ClinicalTrimOverlay — live drawing feedback in overlay-local CSS pixels.
+ * Uses the same coordinate space as the clinical document host / mesh viewport.
+ */
+
+import { useRef, useSyncExternalStore } from 'react';
 import { useClinicalUiRevision } from '../shell/useClinicalUi.js';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
 
-/**
- * Trim boundary overlay — live drawing feedback (non-destructive).
- */
+const localPoint = (
+  event: React.PointerEvent,
+  el: HTMLElement
+): { readonly x: number; readonly y: number } => {
+  const rect = el.getBoundingClientRect();
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top
+  };
+};
+
 export const ClinicalTrimOverlay = ({
   workspace
 }: {
@@ -13,6 +26,7 @@ export const ClinicalTrimOverlay = ({
   const session = workspace.session;
   useClinicalUiRevision(session);
   const trim = workspace.trim;
+  const overlayRef = useRef<HTMLDivElement | null>(null);
   const state = useSyncExternalStore(
     (cb) => trim.session.subscribe(cb),
     () => trim.session.getState(),
@@ -23,35 +37,41 @@ export const ClinicalTrimOverlay = ({
     return null;
   }
 
+  const resolve = (event: React.PointerEvent): { readonly x: number; readonly y: number } => {
+    const el = overlayRef.current ?? (event.currentTarget as HTMLElement);
+    return localPoint(event, el);
+  };
+
   const onPointerDown = (event: React.PointerEvent): void => {
-    if (state.drawMode !== 'polyline') {
-      trim.controller.beginDraw(event.pointerId);
-      trim.controller.addPoint({ x: event.clientX, y: event.clientY });
-      return;
-    }
     event.preventDefault();
+    event.stopPropagation();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    const point = resolve(event);
     trim.controller.beginDraw(event.pointerId);
-    trim.controller.addPoint({ x: event.clientX, y: event.clientY });
+    trim.controller.addPoint(point);
   };
 
   const onPointerMove = (event: React.PointerEvent): void => {
-    if (state.drawMode === 'freehand') {
-      trim.controller.addPoint({ x: event.clientX, y: event.clientY });
+    if (state.drawMode !== 'freehand') {
+      return;
     }
+    if (trim.controller.isDrawing() === false) {
+      return;
+    }
+    trim.controller.addPoint(resolve(event));
   };
 
   const onPointerUp = (event: React.PointerEvent): void => {
+    // Polyline: points are added on pointer down only. Freehand ends the stroke here.
     trim.controller.endDraw();
-    if (state.drawMode === 'polyline') {
-      trim.controller.addPoint({ x: event.clientX, y: event.clientY });
-    }
+    void event;
   };
 
   const pointsAttr = state.points.map((p) => `${String(p.x)},${String(p.y)}`).join(' ');
 
   return (
     <div
+      ref={overlayRef}
       className={`clinical-trim-overlay${state.previewActive ? ' clinical-trim-overlay--preview' : ''}`}
       data-testid="clinical-trim-overlay"
       onPointerDown={onPointerDown}

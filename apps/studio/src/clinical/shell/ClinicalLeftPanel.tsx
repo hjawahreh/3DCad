@@ -1,20 +1,11 @@
-import type { ClinicalLeftSection } from '../workspace/ClinicalLayout.js';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
 import { ClinicalPreparationPanel } from './ClinicalPreparationPanel.js';
-import { useClinicalLayout } from './useClinicalLayout.js';
+import { ClinicalWorkflowGuide } from './ClinicalWorkflowGuide.js';
 import { useClinicalUiRevision } from './useClinicalUi.js';
 
-const SECTIONS: readonly { readonly id: ClinicalLeftSection; readonly label: string; readonly enabled: boolean }[] =
-  Object.freeze([
-    Object.freeze({ id: 'case', label: 'Case', enabled: true }),
-    Object.freeze({ id: 'scene', label: 'Scene', enabled: false }),
-    Object.freeze({ id: 'objects', label: 'Objects', enabled: false }),
-    Object.freeze({ id: 'preparation', label: 'Preparation', enabled: true }),
-    Object.freeze({ id: 'segmentation', label: 'Segmentation', enabled: false }),
-    Object.freeze({ id: 'treatment', label: 'Treatment', enabled: false }),
-    Object.freeze({ id: 'manufacturing', label: 'Manufacturing', enabled: false })
-  ]);
-
+/**
+ * Left workflow panel — guided current step; case objects; advanced preparation collapsed.
+ */
 export const ClinicalLeftPanel = ({
   workspace
 }: {
@@ -22,73 +13,81 @@ export const ClinicalLeftPanel = ({
 }): React.JSX.Element => {
   const session = workspace.session;
   useClinicalUiRevision(session);
-  const layout = useClinicalLayout(workspace.layout);
   const doc = session.getPublicState().activeCase;
   const recent = session.getRecentCases().list();
-  const section = layout.leftSection;
+  const host = session.getHost();
+  const selected = new Set<string>(
+    (host.sessions.selectionSession?.getSnapshot().ids ?? []).map((id) => id as string)
+  );
 
   return (
-    <div className="clinical-left">
-      <div className="clinical-left__nav">
-        {SECTIONS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={
-              section === item.id
-                ? 'clinical-left__nav-item clinical-left__nav-item--active'
-                : 'clinical-left__nav-item'
-            }
-            disabled={!item.enabled}
-            title={item.enabled ? item.label : `${item.label} — reserved`}
-            onClick={() => workspace.layout.update({ leftSection: item.id })}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+    <div className="clinical-left" data-testid="clinical-left-panel">
       <div className="clinical-left__body">
-        {section === 'preparation' ? (
-          <ClinicalPreparationPanel workspace={workspace} />
-        ) : (
-          <>
-            <h2>Case</h2>
+        <ClinicalWorkflowGuide workspace={workspace} />
+
+        <section className="clinical-left__section" aria-label="Case objects">
+          <h3>Case</h3>
+          <ul className="clinical-list clinical-object-tree" data-testid="clinical-object-tree">
             {doc === undefined ? (
-              <p className="muted">No active case. Use Case → New Case to begin.</p>
+              <li className="muted">No case loaded</li>
+            ) : doc.objects.length === 0 ? (
+              <li className="muted">No models — import a scan</li>
             ) : (
-              <dl className="kv">
-                <dt>Name</dt>
-                <dd>{doc.caseMeta.name}</dd>
-                <dt>Patient</dt>
-                <dd>{doc.patient.displayName}</dd>
-                <dt>Revision</dt>
-                <dd>{String(doc.revision)}</dd>
-                <dt>Units</dt>
-                <dd>{doc.units}</dd>
-                <dt>Coordinates</dt>
-                <dd>{doc.coordinateSystem}</dd>
-              </dl>
+              <>
+                <li className="clinical-object-tree__root">
+                  <strong>{doc.caseMeta.name}</strong>
+                </li>
+                {doc.objects.map((obj) => {
+                  const isActive = selected.has(obj.id as string);
+                  return (
+                    <li
+                      key={obj.id}
+                      className={
+                        isActive
+                          ? 'clinical-object-tree__item clinical-object-tree__item--active'
+                          : 'clinical-object-tree__item'
+                      }
+                    >
+                      <button
+                        type="button"
+                        className="clinical-object-tree__eye"
+                        title={obj.visible ? 'Hide' : 'Show'}
+                        aria-label={obj.visible ? `Hide ${obj.displayName}` : `Show ${obj.displayName}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (obj.visible) workspace.viewport.hide(obj.id);
+                          else workspace.viewport.show(obj.id);
+                          session.notifyUi();
+                        }}
+                      >
+                        {obj.visible ? '◉' : '○'}
+                      </button>
+                      <button
+                        type="button"
+                        className="clinical-object-tree__select"
+                        onClick={() => {
+                          host.sessions.selectionSession?.select('replace', [obj.id as string]);
+                          session.notifyUi();
+                        }}
+                      >
+                        <strong>{obj.displayName}</strong>
+                        <span className="muted">
+                          {' '}
+                          · {isActive ? '● Active' : obj.visible ? 'Visible' : 'Hidden'}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </>
             )}
-            <h3>Objects</h3>
-            <ul className="clinical-list">
-              {doc === undefined || doc.objects.length === 0 ? (
-                <li className="muted">No models loaded — use Import</li>
-              ) : (
-                doc.objects.map((obj) => (
-                  <li key={obj.id}>
-                    <strong>{obj.displayName}</strong>
-                    <span className="muted">
-                      {' '}
-                      · {obj.format.toUpperCase()}
-                      {obj.visible ? '' : ' · hidden'}
-                    </span>
-                  </li>
-                ))
-              )}
-            </ul>
+          </ul>
+        </section>
+
+        {recent.length > 0 ? (
+          <section className="clinical-left__section" aria-label="Recent cases">
             <h3>Recent</h3>
             <ul className="clinical-list">
-              {recent.length === 0 ? <li className="muted">No recent cases</li> : null}
               {recent.map((entry) => (
                 <li key={String(entry.caseId)}>
                   <strong>{entry.name}</strong>
@@ -96,8 +95,13 @@ export const ClinicalLeftPanel = ({
                 </li>
               ))}
             </ul>
-          </>
-        )}
+          </section>
+        ) : null}
+
+        <details className="clinical-advanced" data-testid="clinical-advanced-preparation">
+          <summary>Advanced preparation</summary>
+          <ClinicalPreparationPanel workspace={workspace} />
+        </details>
       </div>
     </div>
   );

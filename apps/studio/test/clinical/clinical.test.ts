@@ -72,10 +72,13 @@ describe('tool registry', () => {
     const tools = boot.session.getTools().list();
     expect(tools.length).toBe(CLINICAL_TOOL_DEFINITIONS.length);
     expect(tools.filter((t) => t.enabled).map((t) => t.title)).toEqual([
-      'Import',
-      'Orientation',
+      'Import Scan',
+      'Orient',
       'Trim',
-      'Close Base'
+      'Close Base',
+      'Segment Teeth',
+      'Measure',
+      'Analysis'
     ]);
     expect(boot.session.activateTool(asClinicalToolId('import')).ok).toBe(true);
     expect(boot.session.activateTool(asClinicalToolId('orient')).ok).toBe(true);
@@ -105,7 +108,7 @@ describe('diagnostics', () => {
     const boot = new ClinicalBootstrap().bootstrap(h);
     const snap = boot.session.getDiagnostics().snapshot();
     expect(snap.toolCount).toBeGreaterThan(0);
-    expect(snap.enabledToolCount).toBe(4);
+    expect(snap.enabledToolCount).toBe(7);
     expect(snap.logs.length).toBeGreaterThan(0);
     boot.runtime.dispose();
     h.dispose();

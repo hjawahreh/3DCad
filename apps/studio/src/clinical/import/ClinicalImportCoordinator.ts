@@ -13,13 +13,43 @@ import {
 import { ClinicalObjectRegistry } from './ClinicalObjectRegistry.js';
 import { ClinicalSceneBuilder } from './ClinicalSceneBuilder.js';
 import { CLINICAL_IMPORT_FORMATS, inferMeshFormat } from './ClinicalMeshDescriptor.js';
+import type { ClinicalArchRole } from './ClinicalMeshDescriptor.js';
 import { clinicalFailure, clinicalSuccess, type ClinicalResult } from '../runtime/types.js';
 import type { ClinicalDocumentSnapshot } from '../document/ClinicalDocument.js';
+import {
+  parseClinicalMeshBytes
+} from './ClinicalMeshParsers.js';
+import { registerParsedClinicalMesh } from './ClinicalMeshRegistration.js';
+import type { ParsedClinicalMesh } from './ClinicalMeshParsers.js';
+
+const importSuccessMessage = (
+  archRole: ClinicalArchRole | undefined,
+  document: ClinicalDocumentSnapshot
+): string => {
+  const hasUpper = document.objects.some((o) => o.archRole === 'upper');
+  const hasLower = document.objects.some((o) => o.archRole === 'lower');
+  if (hasUpper && hasLower) {
+    return 'Upper and lower scans imported successfully.';
+  }
+  if (archRole === 'upper' || (hasUpper && !hasLower)) {
+    return 'Upper scan imported.';
+  }
+  if (archRole === 'lower' || (hasLower && !hasUpper)) {
+    return 'Lower scan imported.';
+  }
+  return 'Scan imported successfully.';
+};
 
 export interface ClinicalImportFileSelection {
   readonly source: string;
   readonly fileName: string;
   readonly extension?: string;
+  /** Raw file bytes — required for real mesh display. */
+  readonly bytes?: ArrayBuffer;
+  readonly archRole?: ClinicalArchRole;
+  readonly replaceArch?: boolean;
+  /** Suppress host success toast (caller aggregates). */
+  readonly quiet?: boolean;
 }
 
 export class ClinicalImportCoordinator {
@@ -120,9 +150,33 @@ export class ClinicalImportCoordinator {
         : {}),
       metadata: {
         clinicalCaseId: document.caseId as string,
-        clinicalSessionId: this.session.sessionId as string
+        clinicalSessionId: this.session.sessionId as string,
+        ...(selection.archRole === undefined ? {} : { clinicalArch: selection.archRole })
       }
     });
+
+    let parsed: ParsedClinicalMesh | undefined;
+    if (selection.bytes !== undefined) {
+      try {
+        parsed = parseClinicalMeshBytes(selection.bytes, extension);
+        this.notifications.setProgress({
+          phase: 'validating',
+          ratio: 0.2,
+          message: `Validated ${selection.fileName} · ${String(parsed.faceCount)} triangles`,
+          updatedAt: Date.now()
+        });
+        for (const warning of parsed.warnings) {
+          if (warning.includes('Units could not be determined') && selection.quiet !== true) {
+            // Keep units notice out of the toast stack by default — surface once in progress.
+            this.diagnostics.record('info', warning);
+          }
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Mesh parse failed';
+        this.fail(started, message, 'validation');
+        return clinicalFailure('validation', message);
+      }
+    }
 
     this.notifications.setProgress({
       phase: 'validating',
@@ -211,12 +265,54 @@ export class ClinicalImportCoordinator {
       document,
       request,
       imported: outcome.document,
-      now: Date.now()
+      now: Date.now(),
+      ...(selection.archRole === undefined ? {} : { archRole: selection.archRole }),
+      ...(selection.replaceArch === true ? { replaceArch: true } : {}),
+      ...(parsed === undefined
+        ? {}
+        : {
+            meshStats: {
+              bounds: Object.freeze({
+                min: Object.freeze({
+                  x: parsed.bounds.min[0]!,
+                  y: parsed.bounds.min[1]!,
+                  z: parsed.bounds.min[2]!
+                }),
+                max: Object.freeze({
+                  x: parsed.bounds.max[0]!,
+                  y: parsed.bounds.max[1]!,
+                  z: parsed.bounds.max[2]!
+                })
+              }),
+              vertexCount: parsed.vertexCount,
+              faceCount: parsed.faceCount
+            }
+          })
     });
     if (!built.ok) {
       this.diagnostics.recordDocumentFailure(built.error.message);
       this.fail(started, built.error.message, 'document');
       return built;
+    }
+
+    if (parsed !== undefined) {
+      const registry = host.runtimes.kernel.registry;
+      const newlyAdded = built.value.objects.filter(
+        (obj) => !document.objects.some((prev) => prev.id === obj.id)
+      );
+      // On replace, document may keep same stable id — always rebind latest descriptors from this import.
+      const targets =
+        newlyAdded.length > 0
+          ? newlyAdded
+          : built.value.objects.filter((obj) =>
+              selection.archRole !== undefined
+                ? obj.archRole === selection.archRole
+                : obj.sourceFile === selection.fileName
+            );
+      for (const obj of targets) {
+        registry.releaseObject(obj.id as string);
+        registerParsedClinicalMesh(registry, obj.id as string, parsed);
+      }
     }
 
     const applied = this.session.applyDocument(built.value, true);
@@ -258,10 +354,11 @@ export class ClinicalImportCoordinator {
     this.metrics.setActiveDocumentCount(1);
 
     clinicalImport.workflow.advance('completed');
+    const successMessage = importSuccessMessage(selection.archRole, built.value);
     this.notifications.setProgress({
       phase: 'completed',
       ratio: 1,
-      message: `Imported ${selection.fileName}`,
+      message: successMessage,
       updatedAt: Date.now()
     });
     this.notifications.addRecent({
@@ -275,11 +372,9 @@ export class ClinicalImportCoordinator {
       'info',
       `Import completed via ${importerId} in ${String(Math.round(durationMs))}ms`
     );
-    host.notifications.push(
-      'success',
-      'Import complete',
-      `${selection.fileName} · ${String(built.value.objects.length)} object(s)`
-    );
+    if (selection.quiet !== true) {
+      host.notifications.push('success', 'Import', successMessage);
+    }
     this.session.notifyUi();
     return clinicalSuccess(built.value);
   }

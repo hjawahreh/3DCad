@@ -11,6 +11,14 @@ const TABS: readonly ClinicalBottomTab[] = Object.freeze([
   'jobs'
 ]);
 
+const TAB_LABELS: Readonly<Record<ClinicalBottomTab, string>> = Object.freeze({
+  notifications: 'Notifications',
+  logs: 'Logs',
+  diagnostics: 'Diagnostics',
+  import: 'Import',
+  jobs: 'Jobs'
+});
+
 export const ClinicalBottomPanel = ({
   workspace
 }: {
@@ -35,7 +43,7 @@ export const ClinicalBottomPanel = ({
   const orientDiag = workspace.orientation.diagnostics.snapshot();
   const orientMetrics = workspace.orientation.metrics.snapshot();
   return (
-    <div className="clinical-bottom">
+    <div className="clinical-bottom" data-testid="clinical-diagnostics-panel">
       <div className="clinical-tabs">
         {TABS.map((tab) => (
           <button
@@ -43,10 +51,10 @@ export const ClinicalBottomPanel = ({
             type="button"
             className={layout.bottomTab === tab ? 'clinical-tab clinical-tab--active' : 'clinical-tab'}
             disabled={tab === 'jobs'}
-            title={tab === 'jobs' ? 'Background jobs — reserved' : tab}
+            title={tab === 'jobs' ? 'Background jobs — reserved' : TAB_LABELS[tab]}
             onClick={() => workspace.layout.update({ bottomTab: tab })}
           >
-            {tab}
+            {TAB_LABELS[tab]}
           </button>
         ))}
       </div>

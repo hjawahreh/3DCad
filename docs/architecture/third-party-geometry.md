@@ -38,3 +38,11 @@ Clinical Tool
 ```
 
 Open3D, Eigen, meshoptimizer, and nanoflann types must never appear in React, clinical workflow contracts, or Geometry Services public APIs.
+
+## CLN-010 Clinical Analysis
+
+No new third-party geometry libraries were added. Analysis reuses:
+
+- `@cad-studio/camera-runtime` vector math (existing)
+- CLN-008 `SpatialIndex` / mesh registry
+- First-party PCA / least-squares / Dijkstra implementations in `apps/studio/src/clinical/analysis/`

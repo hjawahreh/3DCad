@@ -146,3 +146,35 @@ export type {
   CloseBaseValidationReport,
   CloseBaseWorkflowPhase
 } from './close-base/index.js';
+export {
+  ClinicalSegmentationRuntime,
+  ClinicalSegmentationController,
+  createClinicalSegmentationOperationHandler,
+  CLINICAL_SEGMENTATION_COMMANDS,
+  createDefaultSegmentationRegistry,
+  ALL_FDI_NUMBERS,
+  isFdiNumber
+} from './segmentation/index.js';
+export type {
+  SegmentationPrediction,
+  SemanticLabel,
+  FdiNumber,
+  SegmentationProvider
+} from './segmentation/index.js';
+export {
+  ClinicalAnalysisRuntime,
+  ClinicalMeasurementEngine,
+  CLINICAL_ANALYSIS_COMMANDS,
+  ANALYSIS_ALGORITHM_VERSIONS,
+  CANONICAL_LENGTH_UNIT,
+  CANONICAL_ANGLE_UNIT,
+  formatLengthMm,
+  formatAngleDeg,
+  ANALYSIS_TOLERANCE
+} from './analysis/index.js';
+export type {
+  ClinicalAnalysisResult,
+  ClinicalMeasurementResult,
+  AnalysisTypeId,
+  AnalysisValidationState
+} from './analysis/index.js';

@@ -1,7 +1,11 @@
 import { useSyncExternalStore } from 'react';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
+import { buildClinicalWorkflowPresentation } from './ClinicalWorkflowPresentation.js';
 import { useClinicalUiRevision } from './useClinicalUi.js';
 
+/**
+ * Production-facing viewport HUD. Developer FPS/tris stay behind Diagnostics / frame-stats pref.
+ */
 export const ClinicalViewportHUD = ({
   workspace
 }: {
@@ -24,27 +28,49 @@ export const ClinicalViewportHUD = ({
     return null;
   }
 
-  const host = session.getHost();
+  const presentation = buildClinicalWorkflowPresentation(workspace);
   const doc = session.getPublicState().activeCase;
+  const selectionIds = session.getHost().sessions.selectionSession?.getSnapshot().ids ?? [];
+  const selectionCount = selectionIds.length;
+  const host = session.getHost();
   const viewport = host.sessions.viewportSession;
-  const selectionCount = host.sessions.selectionSession?.getSnapshot().ids.length ?? 0;
-  const frames = viewport?.getMetrics().snapshot().frameCount ?? 0;
   const avgFrame = viewport?.getMetrics().snapshot().averageFrameTimeMs ?? 0;
-  const fps = avgFrame > 0 ? Math.min(120, Math.round(1000 / avgFrame)) : prefs.showFrameStats ? '—' : '—';
-  const triCount = doc?.objects.reduce((n, o) => n + (o.faceCount ?? 0), 0) ?? 0;
-  const importPhase = workspace.importCoordinator.notifications.getProgress().phase;
+  const fps = avgFrame > 0 ? Math.min(120, Math.round(1000 / avgFrame)) : '—';
+  const archSummaries =
+    doc?.objects
+      .filter((o) => o.visible)
+      .map((o) => {
+        const tris =
+          o.faceCount !== undefined
+            ? o.faceCount >= 1_000_000
+              ? `${(o.faceCount / 1_000_000).toFixed(1)}M`
+              : o.faceCount >= 1000
+                ? `${(o.faceCount / 1000).toFixed(1)}k`
+                : String(o.faceCount)
+            : '—';
+        return `${o.displayName} · ${tris} triangles`;
+      }) ?? [];
 
   return (
-    <div className="clinical-viewport-hud" aria-label="Viewport HUD">
-      {prefs.showFrameStats ? <span>FPS {String(fps)}</span> : null}
-      <span>Δ {avgFrame > 0 ? avgFrame.toFixed(1) : '—'} ms</span>
-      <span>Frames {String(frames)}</span>
-      <span>Tris {String(triCount)}</span>
-      <span>Objs {String(doc?.objects.length ?? 0)}</span>
-      <span>Sel {String(selectionCount)}</span>
-      <span>Cam {render.cameraMode}{render.lastPreset ? `/${render.lastPreset}` : ''}</span>
-      <span>Disp {render.displayMode}</span>
-      <span>Imp {importPhase}</span>
+    <div className="clinical-viewport-hud" aria-label="Viewport info" data-testid="clinical-viewport-hud">
+      <span>{presentation.caseName ?? 'No case'}</span>
+      {archSummaries.slice(0, 2).map((label) => (
+        <span key={label}>{label}</span>
+      ))}
+      {presentation.activeToolLabel !== undefined ? (
+        <span>Tool {presentation.activeToolLabel}</span>
+      ) : null}
+      <span>{doc?.units ?? 'mm'}</span>
+      <span>{render.displayMode}</span>
+      {selectionCount > 0 ? <span>Selected {String(selectionCount)}</span> : null}
+      {prefs.showFrameStats ? (
+        <>
+          <span className="clinical-viewport-hud__dev">FPS {String(fps)}</span>
+          <span className="clinical-viewport-hud__dev">
+            Tris {String(doc?.objects.reduce((n, o) => n + (o.faceCount ?? 0), 0) ?? 0)}
+          </span>
+        </>
+      ) : null}
     </div>
   );
 };

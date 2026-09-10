@@ -10,6 +10,8 @@ import { ClinicalOrientationRuntime } from '../orientation/ClinicalOrientationRu
 import { ClinicalPreparationRuntime } from '../preparation/ClinicalPreparationRuntime.js';
 import { ClinicalTrimRuntime } from '../trim/ClinicalTrimRuntime.js';
 import { ClinicalCloseBaseRuntime } from '../close-base/ClinicalCloseBaseRuntime.js';
+import { ClinicalSegmentationRuntime } from '../segmentation/ClinicalSegmentationRuntime.js';
+import { ClinicalAnalysisRuntime } from '../analysis/ClinicalAnalysisRuntime.js';
 import { ClinicalLayout } from './ClinicalLayout.js';
 
 export class ClinicalWorkspace {
@@ -21,6 +23,8 @@ export class ClinicalWorkspace {
   public readonly preparation: ClinicalPreparationRuntime;
   public readonly trim: ClinicalTrimRuntime;
   public readonly closeBase: ClinicalCloseBaseRuntime;
+  public readonly segmentation: ClinicalSegmentationRuntime;
+  public readonly analysis: ClinicalAnalysisRuntime;
 
   public constructor(
     public readonly session: ClinicalSession,
@@ -51,6 +55,16 @@ export class ClinicalWorkspace {
       session,
       this.preparation,
       this.importCoordinator.sceneBuilder
+    );
+    this.segmentation = new ClinicalSegmentationRuntime(
+      session,
+      this.preparation,
+      this.importCoordinator.sceneBuilder
+    );
+    this.analysis = new ClinicalAnalysisRuntime(
+      session,
+      this.preparation,
+      this.segmentation
     );
   }
 

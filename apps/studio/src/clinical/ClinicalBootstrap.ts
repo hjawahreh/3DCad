@@ -9,6 +9,7 @@ import { ClinicalWorkspace } from './workspace/ClinicalWorkspace.js';
 import { registerClinicalCommands } from './register-commands.js';
 import { createClinicalTrimOperationHandler } from './trim/ClinicalTrimHandler.js';
 import { createClinicalCloseBaseOperationHandler } from './close-base/ClinicalCloseBaseHandler.js';
+import { createClinicalSegmentationOperationHandler } from './segmentation/ClinicalSegmentationHandler.js';
 
 export interface ClinicalBootstrapResult {
   readonly runtime: ClinicalRuntime;
@@ -37,6 +38,11 @@ export class ClinicalBootstrap {
     const registeredCloseBase = host.runtimes.tools.registerHandler(closeBaseHandler);
     if (!registeredCloseBase.ok) {
       throw new Error(registeredCloseBase.error.message);
+    }
+    const segmentationHandler = createClinicalSegmentationOperationHandler();
+    const registeredSegmentation = host.runtimes.tools.registerHandler(segmentationHandler);
+    if (!registeredSegmentation.ok) {
+      throw new Error(registeredSegmentation.error.message);
     }
     registerClinicalCommands(session, workspace);
     const durationMs =

@@ -6,6 +6,8 @@ import { IDENTITY_MAT4, type Mat4 } from '@cad-studio/scene';
 
 export type ClinicalMeshFormat = 'stl' | 'obj' | 'ply' | 'unknown';
 
+export type ClinicalArchRole = 'upper' | 'lower';
+
 export interface ClinicalBounds {
   readonly min: { readonly x: number; readonly y: number; readonly z: number };
   readonly max: { readonly x: number; readonly y: number; readonly z: number };
@@ -37,6 +39,8 @@ export interface ClinicalMeshDescriptor {
   readonly importerId: string;
   readonly sourceEntityId: string;
   readonly displayState: 'default' | 'selected' | 'hidden';
+  /** Clinical arch assignment for multi-scan cases. */
+  readonly archRole?: ClinicalArchRole | undefined;
   /** Column-major 4×4; defaults to identity at import. */
   readonly transform: ClinicalTransform;
   /** Working-mesh revision after a committed geometry operation (metadata only). */
@@ -45,6 +49,17 @@ export interface ClinicalMeshDescriptor {
   readonly geometryFingerprint?: string;
   /** Geometry backend id that produced the current working revision. */
   readonly geometryBackend?: string;
+  /** Compact accepted segmentation metadata (no mesh / tensor payloads). */
+  readonly segmentationMeta?: {
+    readonly predictionId: string;
+    readonly providerId: string;
+    readonly modelId: string;
+    readonly modelVersion: string;
+    readonly instanceCount: number;
+    readonly caseBand: string;
+    readonly geometryFingerprint: string;
+    readonly sourceRevision: number;
+  };
 }
 
 export const DEFAULT_MESH_BOUNDS: ClinicalBounds = Object.freeze({

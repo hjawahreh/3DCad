@@ -29,8 +29,33 @@ import {
   type TrimBoundaryPoint
 } from './ClinicalTrimBoundaryMath.js';
 import type { TrimDrawMode } from './ClinicalTrimState.js';
+import type { StudioCompositionRoot } from '../../application/composition-root.js';
 
 const TRIM_POINTER_OWNER = asInteractionTargetId('clinical-trim-draw');
+
+const resolveLiveViewportSize = (
+  host: StudioCompositionRoot
+): { readonly width: number; readonly height: number } | undefined => {
+  const cam = host.sessions.cameraSession?.getSnapshot();
+  if (
+    cam !== undefined &&
+    cam.viewportSize.width > 1 &&
+    cam.viewportSize.height > 1
+  ) {
+    return {
+      width: cam.viewportSize.width,
+      height: cam.viewportSize.height
+    };
+  }
+  const el = document.querySelector('.clinical-document-host');
+  if (el instanceof HTMLElement) {
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 1 && rect.height > 1) {
+      return { width: rect.width, height: rect.height };
+    }
+  }
+  return undefined;
+};
 
 export class ClinicalTrimController {
   public readonly session: ClinicalTrimSession;
@@ -155,9 +180,11 @@ export class ClinicalTrimController {
     });
     this.session.setValidationReport(report);
     if (!report.passed) {
-      this.diagnostics.recordValidationFailure('Trim validation failed');
+      const firstFail = report.checks.find((c) => !c.passed);
+      const message = firstFail?.message ?? 'Trim validation failed';
+      this.diagnostics.recordValidationFailure(message);
       this.clinicalSession.notifyUi();
-      return clinicalFailure('validation', 'Trim validation failed');
+      return clinicalFailure('validation', message);
     }
     this.clinicalSession.notifyUi();
     return clinicalSuccess(undefined);
@@ -175,12 +202,14 @@ export class ClinicalTrimController {
     }
     this.session.markSubmitting();
     const host = this.clinicalSession.getHost();
+    const viewport = resolveLiveViewportSize(host);
     const started = this.operation.start({
       tools: host.runtimes.tools,
       document: doc,
       targetObjectId: state.targetObjectId as string,
       points: state.points,
-      drawMode: state.drawMode
+      drawMode: state.drawMode,
+      ...(viewport === undefined ? {} : { viewport })
     });
     if (!started.ok) {
       this.diagnostics.recordValidationFailure(started.error.message);
@@ -377,7 +406,9 @@ export class ClinicalTrimController {
         return;
       }
       if (event.phase === 'move' && this.session.getState().drawMode === 'freehand') {
-        this.addPoint({ x: event.position.x, y: event.position.y });
+        // Overlay owns freehand sampling in overlay-local CSS pixels.
+        // Ignore Interaction Runtime positions (canvas offset space) to avoid dual coordinate systems.
+        return;
       }
       if (event.phase === 'up' || event.phase === 'cancel') {
         this.endDraw();

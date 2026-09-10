@@ -34,6 +34,15 @@ const LIGHTING: readonly ClinicalLightingPreset[] = Object.freeze([
   'flat'
 ]);
 
+const TAB_LABELS: Readonly<Record<ClinicalRightTab, string>> = Object.freeze({
+  inspector: 'Inspector',
+  properties: 'Properties',
+  selection: 'Selection',
+  camera: 'Camera',
+  display: 'Display',
+  tool: 'Tool'
+});
+
 export const ClinicalRightPanel = ({
   workspace
 }: {
@@ -53,9 +62,10 @@ export const ClinicalRightPanel = ({
   const camera = host.sessions.cameraSession?.getSnapshot();
   const activeTool = session.getTools().getActive();
   const presets = workspace.viewport.listPresets();
+  const prep = workspace.preparation.session.getState();
 
   return (
-    <aside className="clinical-right">
+    <aside className="clinical-right" data-testid="clinical-right-panel">
       <div className="clinical-tabs">
         {TABS.map((tab) => (
           <button
@@ -64,25 +74,35 @@ export const ClinicalRightPanel = ({
             className={layout.rightTab === tab ? 'clinical-tab clinical-tab--active' : 'clinical-tab'}
             onClick={() => workspace.layout.update({ rightTab: tab })}
           >
-            {tab}
+            {TAB_LABELS[tab]}
           </button>
         ))}
       </div>
       <div className="clinical-right__body">
         {layout.rightTab === 'inspector' || layout.rightTab === 'properties' ? (
           doc === undefined ? (
-            <p className="muted">No case loaded.</p>
+            <div className="clinical-workspace-card">
+              <h3>Workspace</h3>
+              <p className="muted">No case loaded. Import a scan to begin.</p>
+            </div>
           ) : (
             <>
-              <dl className="kv">
-                <dt>Case</dt>
-                <dd>{doc.caseMeta.name}</dd>
-                <dt>Dirty</dt>
-                <dd>{doc.dirty ? 'Yes' : 'No'}</dd>
-                <dt>Objects</dt>
-                <dd>{String(doc.objects.length)}</dd>
-              </dl>
-              <h3>Hierarchy</h3>
+              <div className="clinical-workspace-card">
+                <h3>Workspace</h3>
+                <dl className="kv">
+                  <dt>Case</dt>
+                  <dd>{doc.caseMeta.name}</dd>
+                  <dt>Save</dt>
+                  <dd>{doc.dirty ? 'Unsaved changes' : 'Saved'}</dd>
+                  <dt>Step</dt>
+                  <dd>{prep.currentStage.replace(/-/g, ' ')}</dd>
+                  <dt>Units</dt>
+                  <dd>{doc.units}</dd>
+                  <dt>Models</dt>
+                  <dd>{String(doc.objects.length)}</dd>
+                </dl>
+              </div>
+              <h3>Objects</h3>
               <ul className="clinical-list">
                 {doc.objects.length === 0 ? <li className="muted">No objects</li> : null}
                 {doc.objects.map((obj) => (
@@ -111,15 +131,57 @@ export const ClinicalRightPanel = ({
                     >
                       Isolate
                     </button>{' '}
+                    <button
+                      type="button"
+                      className="clinical-link"
+                      onClick={() => {
+                        host.sessions.selectionSession?.select('replace', [obj.id as string]);
+                        session.notifyUi();
+                      }}
+                    >
+                      Select
+                    </button>{' '}
                     <strong>{obj.displayName}</strong>
-                    <span className="muted"> · {obj.format.toUpperCase()}</span>
+                    <span className="muted">
+                      {' '}
+                      · {obj.visible ? '● Visible' : '○ Hidden'}
+                    </span>
                   </li>
                 ))}
               </ul>
+              {(() => {
+                const selectedId = selection?.ids[0];
+                const selectedObj =
+                  selectedId === undefined
+                    ? undefined
+                    : doc.objects.find((o) => (o.id as string) === selectedId);
+                if (selectedObj === undefined) {
+                  return <p className="muted">Select an arch to inspect.</p>;
+                }
+                return (
+                  <div className="clinical-workspace-card" data-testid="clinical-object-inspector">
+                    <h3>{selectedObj.displayName}</h3>
+                    <dl className="kv">
+                      <dt>Format</dt>
+                      <dd>{selectedObj.format.toUpperCase()}</dd>
+                      <dt>Vertices</dt>
+                      <dd>{selectedObj.vertexCount ?? '—'}</dd>
+                      <dt>Triangles</dt>
+                      <dd>{selectedObj.faceCount ?? '—'}</dd>
+                      <dt>Units</dt>
+                      <dd>{selectedObj.units}</dd>
+                      <dt>Status</dt>
+                      <dd>Valid</dd>
+                      <dt>Source</dt>
+                      <dd>{selectedObj.sourceFile}</dd>
+                    </dl>
+                  </div>
+                );
+              })()}
               {doc.objects.length > 0 ? (
                 <button
                   type="button"
-                  className="primary"
+                  className="clinical-btn clinical-btn--secondary"
                   onClick={() => {
                     workspace.viewport.showAll();
                     session.notifyUi();
@@ -135,8 +197,10 @@ export const ClinicalRightPanel = ({
         {layout.rightTab === 'selection' ? (
           <p className="muted">
             {selection === undefined
-              ? 'Selection runtime not attached'
-              : `${String(selection.ids.length)} selected · rev ${String(selection.revision)}`}
+              ? 'Nothing selected'
+              : selection.ids.length === 0
+                ? 'No selection'
+                : `${String(selection.ids.length)} selected`}
           </p>
         ) : null}
 

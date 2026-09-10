@@ -31,18 +31,18 @@ export interface ClinicalToolDefinition {
 export const CLINICAL_TOOL_DEFINITIONS: readonly Omit<ClinicalToolDefinition, 'id'>[] =
   Object.freeze([
     Object.freeze({
-      title: 'Import',
+      title: 'Import Scan',
       group: 'case' as const,
       shortcut: 'Mod+I',
-      tooltip: 'Import scan or model (host + Import Runtime)',
+      tooltip: 'Import a dental scan (STL, OBJ, or PLY)',
       enabled: true,
       icon: 'import'
     }),
     Object.freeze({
-      title: 'Orientation',
+      title: 'Orient',
       group: 'preparation' as const,
       shortcut: 'Mod+O',
-      tooltip: 'Orient model into treatment coordinate system',
+      tooltip: 'Align the dental arch with the workspace axes',
       enabled: true,
       icon: 'orient'
     }),
@@ -50,7 +50,7 @@ export const CLINICAL_TOOL_DEFINITIONS: readonly Omit<ClinicalToolDefinition, 'i
       title: 'Trim',
       group: 'preparation' as const,
       shortcut: 'Mod+T',
-      tooltip: 'Trim mesh with interactive boundary (CLN-006)',
+      tooltip: 'Remove unwanted scan regions',
       enabled: true,
       icon: 'trim'
     }),
@@ -58,41 +58,41 @@ export const CLINICAL_TOOL_DEFINITIONS: readonly Omit<ClinicalToolDefinition, 'i
       title: 'Close Base',
       group: 'preparation' as const,
       shortcut: 'Mod+B',
-      tooltip: 'Close base beneath the model (CLN-007)',
+      tooltip: 'Create a stable model base',
       enabled: true,
       icon: 'close-base'
     }),
     Object.freeze({
-      title: 'Segmentation',
+      title: 'Segment Teeth',
       group: 'segmentation' as const,
-      shortcut: undefined,
-      tooltip: 'Segmentation — available in a later clinical milestone',
-      enabled: false,
+      shortcut: 'Mod+G',
+      tooltip: 'Identify individual teeth',
+      enabled: true,
       icon: 'segment'
     }),
     Object.freeze({
-      title: 'Movement',
-      group: 'treatment' as const,
-      shortcut: undefined,
-      tooltip: 'Tooth movement — available in a later clinical milestone',
-      enabled: false,
-      icon: 'move'
-    }),
-    Object.freeze({
-      title: 'Measurement',
+      title: 'Measure',
       group: 'analysis' as const,
-      shortcut: undefined,
-      tooltip: 'Measurement — available in a later clinical milestone',
-      enabled: false,
+      shortcut: 'M',
+      tooltip: 'Measure distances and angles in 3D',
+      enabled: true,
       icon: 'measure'
     }),
     Object.freeze({
       title: 'Analysis',
       group: 'analysis' as const,
-      shortcut: undefined,
-      tooltip: 'Analysis — available in a later clinical milestone',
-      enabled: false,
+      shortcut: 'Mod+A',
+      tooltip: 'Tooth, arch, spacing, and crowding analysis',
+      enabled: true,
       icon: 'analyze'
+    }),
+    Object.freeze({
+      title: 'Movement',
+      group: 'treatment' as const,
+      shortcut: undefined,
+      tooltip: 'Available after segmentation',
+      enabled: false,
+      icon: 'move'
     })
   ]);
 

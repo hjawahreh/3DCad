@@ -146,7 +146,7 @@ export const ClinicalCloseBaseToolbar = ({
             })
           }
         >
-          Accept
+          Accept Base
         </button>
         <button
           type="button"

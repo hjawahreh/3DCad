@@ -136,7 +136,20 @@ export const ClinicalOrientationToolbar = ({
         <button
           type="button"
           className="clinical-orient-btn clinical-orient-btn--accept"
-          onClick={() => run(() => workspace.orientation.accept())}
+          onClick={() => {
+            const result = workspace.orientation.accept();
+            if (!result.ok) {
+              session.getHost().notifications.push('warning', 'Orientation', result.error.message);
+              session.notifyUi();
+              return;
+            }
+            workspace.preparation.notifyOrientationComplete();
+            const prep = workspace.preparation.start();
+            if (!prep.ok) {
+              session.getHost().notifications.push('info', 'Prepare', prep.error.message);
+            }
+            session.notifyUi();
+          }}
         >
           Accept
         </button>

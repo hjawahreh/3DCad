@@ -63,6 +63,27 @@ const parseBoundary = (payload: Readonly<Record<string, unknown>>): TrimPoint2D[
   return points;
 };
 
+const parseViewport = (
+  payload: Readonly<Record<string, unknown>>
+): { readonly width: number; readonly height: number } | undefined => {
+  const raw = payload.viewport;
+  if (raw === null || typeof raw !== 'object') {
+    return undefined;
+  }
+  const o = raw as Record<string, unknown>;
+  if (
+    typeof o.width === 'number' &&
+    Number.isFinite(o.width) &&
+    o.width > 0 &&
+    typeof o.height === 'number' &&
+    Number.isFinite(o.height) &&
+    o.height > 0
+  ) {
+    return { width: o.width, height: o.height };
+  }
+  return undefined;
+};
+
 const parseOrientation = (value: unknown): CloseBaseOrientation =>
   value === 'xz' || value === 'yz' ? value : 'xy';
 
@@ -238,11 +259,13 @@ export class ClinicalGeometryKernelBridge implements KernelBridge {
         if (boundary.length < 3) {
           return kernelFailure('validation', 'Trim requires a boundary with ≥ 3 points');
         }
+        const viewport = parseViewport(request.payload);
         const trimmed = this.backend.trim(inputMesh, {
           boundary,
           role: preview ? 'preview' : 'working',
           revision: request.inputRevision + 1,
-          id: this.registry.allocateHandle() as number
+          id: this.registry.allocateHandle() as number,
+          ...(viewport === undefined ? {} : { viewport })
         });
         resultMesh = trimmed.mesh;
         warnings.push(...trimmed.warnings);

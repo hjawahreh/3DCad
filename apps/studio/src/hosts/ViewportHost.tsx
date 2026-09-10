@@ -7,7 +7,7 @@ export interface ViewportHostProps {
   readonly showGrid: boolean;
 }
 
-export const ViewportHost = ({ root, showGrid }: ViewportHostProps): React.JSX.Element => {
+export const ViewportHost = ({ root, showGrid: _showGrid }: ViewportHostProps): React.JSX.Element => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
@@ -38,9 +38,7 @@ export const ViewportHost = ({ root, showGrid }: ViewportHostProps): React.JSX.E
     width: '100%',
     height: '100%',
     display: 'block',
-    background: showGrid
-      ? 'radial-gradient(circle at 1px 1px, rgba(148,163,184,0.22) 1px, transparent 0) 0 0 / 24px 24px, #0b0f14'
-      : '#0b0f14'
+    background: 'transparent'
   };
 
   return (

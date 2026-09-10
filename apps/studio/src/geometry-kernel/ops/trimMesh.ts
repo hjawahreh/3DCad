@@ -2,9 +2,10 @@
  * Clinical trim — remove interior of a 2D boundary polygon from a TriangleMesh.
  *
  * Projection model:
- * - Boundary points in mesh XY (or normalized 0..1) map through the mesh AABB.
- * - If any |coord| > 50, points are treated as screen-space against a virtual
- *   viewport of 640×480, then mapped into the mesh AABB XY extents.
+ * - Boundary points in mesh XY map through the mesh AABB.
+ * - Normalized 0..1 points map into AABB XY.
+ * - Screen-space points (|coord| > 50) map through the *live* viewport size
+ *   (width/height from options; never a hard-coded 640×480).
  *
  * Straddling triangles: kept when centroid is outside (CLN-008 limitation;
  * exact edge clipping is deferred to the native backend).
@@ -31,11 +32,18 @@ export interface TrimPoint2D {
 /** Alias for clinical stroke payloads. */
 export type TrimBoundaryPoint = TrimPoint2D;
 
+export interface TrimViewportSize {
+  readonly width: number;
+  readonly height: number;
+}
+
 export interface TrimMeshOptions {
   readonly boundary: readonly TrimPoint2D[];
   readonly role?: MeshRole;
   readonly revision?: number;
   readonly id?: number;
+  /** Live canvas CSS pixel size for screen-space boundary projection. */
+  readonly viewport?: TrimViewportSize;
 }
 
 export interface TrimMeshResult {
@@ -47,15 +55,13 @@ export interface TrimMeshResult {
   readonly warnings: readonly string[];
 }
 
-const VIRTUAL_VIEWPORT_W = 640;
-const VIRTUAL_VIEWPORT_H = 480;
-
 const looksLikeScreenSpace = (points: readonly TrimPoint2D[]): boolean =>
   points.some((p) => Math.abs(p.x) > 50 || Math.abs(p.y) > 50);
 
 export const projectBoundaryToMeshXY = (
   points: readonly TrimPoint2D[],
-  mesh: TriangleMesh
+  mesh: TriangleMesh,
+  viewport?: TrimViewportSize
 ): TrimPoint2D[] => {
   const aabb = computeAABB(mesh.positions);
   const minX = aabb.min[0];
@@ -64,9 +70,11 @@ export const projectBoundaryToMeshXY = (
   const spanY = Math.max(1e-9, aabb.max[1] - aabb.min[1]);
 
   if (looksLikeScreenSpace(points)) {
+    const vw = Math.max(1, viewport?.width ?? 1);
+    const vh = Math.max(1, viewport?.height ?? 1);
     return points.map((p) => {
-      const nx = p.x / VIRTUAL_VIEWPORT_W;
-      const ny = 1 - p.y / VIRTUAL_VIEWPORT_H;
+      const nx = p.x / vw;
+      const ny = 1 - p.y / vh;
       return { x: minX + nx * spanX, y: minY + ny * spanY };
     });
   }
@@ -102,7 +110,7 @@ export const trimMesh = (mesh: TriangleMesh, options: TrimMeshOptions): TrimMesh
     throw new GeometryKernelError('BOUNDARY_INVALID', 'Trim boundary requires ≥ 3 points');
   }
 
-  const poly = projectBoundaryToMeshXY(options.boundary, mesh);
+  const poly = projectBoundaryToMeshXY(options.boundary, mesh, options.viewport);
   const triangleCount = Math.floor(mesh.indices.length / 3);
   const keepFlags = new Uint8Array(triangleCount);
   let keptTriangles = 0;

@@ -40,7 +40,8 @@ export const createClinicalTrimOperationHandler = (): OperationHandler => ({
         targetObjectId,
         boundary: stroke,
         boundaryPointCount: stroke.length,
-        drawMode: session.params.drawMode ?? 'polyline'
+        drawMode: session.params.drawMode ?? 'polyline',
+        ...(session.params.viewport !== undefined ? { viewport: session.params.viewport } : {})
       })
     });
   },

@@ -71,7 +71,7 @@ export class ClinicalSceneBuilder {
             min: { x: bounds.min.x, y: bounds.min.y, z: bounds.min.z },
             max: { x: bounds.max.x, y: bounds.max.y, z: bounds.max.z }
           },
-          0.1
+          1.2
         );
       }
     }
