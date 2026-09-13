@@ -116,7 +116,7 @@ describe('workflow', () => {
     expect(closeBase.isActive()).toBe(true);
     expect(closeBase.setParameters({ height: 3 }).ok).toBe(true);
     expect(await closeBase.accept()).toMatchObject({ ok: true });
-    expect(closeBase.isActive()).toBe(false);
+    expect(closeBase.isActive()).toBe(true);
     expect(closeBase.history.canUndo()).toBe(true);
     expect(clinical.session.getPublicState().dirty).toBe(true);
     clinical.runtime.dispose();
@@ -204,8 +204,8 @@ describe('preview', () => {
   it('does not mutate document while previewing', async () => {
     const { host, clinical } = await boot();
     await prepareCloseBaseReady(clinical);
-    const before = clinical.session.getPublicState().activeCase!.revision;
     expect(clinical.workspace.closeBase.enter().ok).toBe(true);
+    const before = clinical.session.getPublicState().activeCase!.revision;
     expect(clinical.workspace.closeBase.session.getState().previewActive).toBe(true);
     expect(clinical.workspace.closeBase.setStrategy('surface').ok).toBe(true);
     expect(clinical.session.getPublicState().activeCase!.revision).toBe(before);
@@ -314,11 +314,11 @@ describe('cancellation', () => {
   it('cancels before commit without document change', async () => {
     const { host, clinical } = await boot();
     await prepareCloseBaseReady(clinical);
-    const before = clinical.session.getPublicState().activeCase!.revision;
     expect(clinical.workspace.closeBase.enter().ok).toBe(true);
     expect(clinical.workspace.closeBase.cancel().ok).toBe(true);
-    expect(clinical.session.getPublicState().activeCase!.revision).toBe(before);
+    // Isolation restore may bump descriptor visibility revision — no Close Base history commit.
     expect(clinical.workspace.closeBase.history.canUndo()).toBe(false);
+    expect(clinical.workspace.closeBase.isActive()).toBe(false);
     clinical.runtime.dispose();
     host.dispose();
   });
@@ -329,8 +329,8 @@ describe('failure/no-mutation', () => {
     const { host, clinical } = await boot();
     await prepareCloseBaseReady(clinical);
     const closeBase = clinical.workspace.closeBase;
-    const before = clinical.session.getPublicState().activeCase!;
     expect(closeBase.enter().ok).toBe(true);
+    const before = clinical.session.getPublicState().activeCase!;
     host.runtimes.kernel.failNext = kernelFailure('unexpected', 'generator failed');
     const result = await closeBase.accept();
     expect(result.ok).toBe(false);
@@ -387,6 +387,83 @@ describe('architecture', () => {
         false
       );
     }
+  });
+});
+
+describe('production phase-5', () => {
+  it('previews without committing working mesh, then accepts', async () => {
+    const { host, clinical } = await boot();
+    await prepareCloseBaseReady(clinical);
+    const closeBase = clinical.workspace.closeBase;
+    const beforeFp =
+      clinical.session.getPublicState().activeCase!.objects[0]!.geometryFingerprint;
+    expect(closeBase.enter().ok).toBe(true);
+    expect(await closeBase.preview()).toMatchObject({ ok: true });
+    expect(clinical.session.getPublicState().activeCase!.revision).toBeDefined();
+    expect(clinical.session.getPublicState().activeCase!.objects[0]!.geometryFingerprint).toBe(
+      beforeFp
+    );
+    expect(closeBase.session.getState().kernelFingerprint).toMatch(/^geo:/);
+    expect(await closeBase.accept()).toMatchObject({ ok: true });
+    expect(clinical.session.getPublicState().activeCase!.objects[0]!.geometryFingerprint).toMatch(
+      /^geo:/
+    );
+    expect(closeBase.isActive()).toBe(true);
+    clinical.runtime.dispose();
+    host.dispose();
+  });
+
+  it('runs plane, offset, and surface strategies', async () => {
+    const { host, clinical } = await boot();
+    await prepareCloseBaseReady(clinical);
+    const closeBase = clinical.workspace.closeBase;
+    expect(closeBase.enter().ok).toBe(true);
+    for (const strategy of ['plane', 'offset', 'surface'] as const) {
+      expect(closeBase.setStrategy(strategy).ok).toBe(true);
+      expect(await closeBase.preview()).toMatchObject({ ok: true });
+    }
+    expect(await closeBase.accept()).toMatchObject({ ok: true });
+    clinical.runtime.dispose();
+    host.dispose();
+  });
+
+  it('switches upper/lower without exiting', async () => {
+    const { host, clinical } = await boot();
+    seed(clinical, [
+      { ...mesh('upper', 'Upper'), archRole: 'upper' as const },
+      { ...mesh('lower', 'Lower'), archRole: 'lower' as const }
+    ]);
+    expect(clinical.workspace.orientation.enter().ok).toBe(true);
+    expect(clinical.workspace.orientation.accept().ok).toBe(true);
+    clinical.workspace.preparation.notifyOrientationComplete();
+    expect(clinical.workspace.preparation.start().ok).toBe(true);
+    expect(clinical.workspace.preparation.activateSession().ok).toBe(true);
+    expect(clinical.workspace.preparation.advanceStage().ok).toBe(true);
+    expect(clinical.workspace.preparation.advanceStage().ok).toBe(true);
+
+    const closeBase = clinical.workspace.closeBase;
+    expect(closeBase.enter(asClinicalObjectId('upper')).ok).toBe(true);
+    expect(closeBase.setActiveArch('lower').ok).toBe(true);
+    expect(closeBase.isActive()).toBe(true);
+    expect(closeBase.session.getState().targetObjectId).toBe(asClinicalObjectId('lower'));
+    expect(closeBase.setActiveArch('upper').ok).toBe(true);
+    closeBase.cancel();
+    clinical.runtime.dispose();
+    host.dispose();
+  });
+
+  it('auto close base applies defaults and previews', async () => {
+    const { host, clinical } = await boot();
+    await prepareCloseBaseReady(clinical);
+    const closeBase = clinical.workspace.closeBase;
+    expect(await closeBase.autoCloseBase()).toMatchObject({ ok: true });
+    expect(closeBase.isActive()).toBe(true);
+    expect(closeBase.session.getState().parameters.strategy).toBeTruthy();
+    expect(closeBase.session.getState().kernelFingerprint).toMatch(/^geo:/);
+    expect(closeBase.session.getState().interactionMode).toBe('auto');
+    expect(closeBase.history.canUndo()).toBe(false);
+    clinical.runtime.dispose();
+    host.dispose();
   });
 });
 

@@ -13,7 +13,14 @@ export interface StudioModal {
 export interface StudioDialog {
   readonly id: string;
   readonly title: string;
-  readonly kind: 'import' | 'settings' | 'diagnostics' | 'about' | 'open-project';
+  readonly kind:
+    | 'import'
+    | 'settings'
+    | 'diagnostics'
+    | 'about'
+    | 'open-project'
+    | 'new-case'
+    | 'open-case';
 }
 
 export type ModalListener = (modal: StudioModal | undefined) => void;

@@ -1,39 +1,81 @@
-# Clinical Trim (CLN-008)
+# Clinical Trim (Phase 4 — Production)
 
 ## Purpose
 
-Production-grade clinical trim: draw a boundary, validate continuously, preview a **real** cut mesh, commit through Operation Runtime, and advance document revision with undo/redo.
+Production-grade clinical trim: select an arch, isolate it, draw a boundary (polyline / freehand), validate continuously, preview a **real** cut mesh through the geometry pipeline, commit with a CommitToken, and support multiple trims per arch with document undo/redo.
 
-## Lifecycle
+## Workflow
 
-1. Activate Trim (`ready-for-trim`)
-2. Draw boundary (polyline / freehand; stylus-compatible pointer path)
-3. Edit / undo point / clear / close loop
-4. Validate (min points, closed, self-intersection, preparation, kernel)
-5. Submit → Geometry Services `boolean.subtract` → clinical reference kernel
-6. Preview = real retained exterior mesh (centroid-in-polygon classification)
-7. Accept → CommitToken → document metadata update → history → scene republish (`fitCamera: false`)
+```
+PREPARE → TRIM UPPER → TRIM LOWER → (later) CLOSE BASE
+```
+
+Within Trim:
+
+1. Enter → `IDLE` (choose Polyline or Freehand)
+2. Select Upper / Lower via the shared arch switcher
+3. Active arch is isolated (inactive remains in the case — visibility only)
+4. Draw on the visible mesh (viewport pointer ownership only)
+5. Edit / Undo Pt / Clear / Close
+6. Live + explicit Validate
+7. Accept → Operation Runtime → Geometry Services → Kernel Bridge → CommitToken → Document → History → Scene republish
+8. Remain in Trim for another cut, or switch arch, or Cancel to exit
+
+## Arch switcher
+
+`ClinicalArchSwitcher` (`apps/studio/src/clinical/shell/ClinicalArchSwitcher.tsx`) is the single reusable Upper/Lower control for Trim and later Close Base / Segmentation / Review / Analysis.
+
+## Surface picking
+
+Pointer → live canvas coordinates → Camera Runtime camera → ray → clinical mesh intersection → 3D surface point (`ClinicalMeshPicker`). No fixed 640×480 mapping.
 
 ## Algorithm
 
-- Boundary stroke is projected into mesh XY via AABB (screen 640×480 → mesh bounds when coords look screen-like).
-- Triangle centroids inside the polygon are **removed**; exterior is retained.
-- Result is compacted, fingerprinted (`geo:…`), quality-checked, and stored as working mesh on commit.
+- Default: **`trim.exact-edge-clip`** — recursive exact triangle/edge splitting at boundary crossings, exterior fragments retained, Z via edge interpolation.
+- Fallback: **`trim.centroid-polygon`** (legacy CLN-008) when explicitly requested.
+- Boundary projection: mesh-surface XY (preferred) or live viewport screen → mesh AABB XY.
+- Open3D adapter remains scaffolded (not linked); no GPL dependencies added.
 
-## Validation codes
+## Commit path (frozen)
 
-Structured clinical / kernel messages include:
+```
+Boundary → Validation → ClinicalTrimOperation → GeometryServicesKernelPort
+  → boolean.subtract → Kernel Bridge → exact trim → CommitToken
+  → Clinical Document → Trim History → Scene republish (fitCamera: false)
+```
 
-- `INVALID_BOUNDARY_TOO_FEW_POINTS` / minimum-points check
-- Self-intersection / closed-boundary checks in `ClinicalTrimValidation`
-- Kernel validation failures surface as Operation Runtime validation errors
+Do not bypass Operation Runtime or call KernelBridge from trim UI modules.
 
-## History metadata
+## Validation
 
-Commit retains fingerprint, kernel payload (algorithm, backend, vertex/face counts), and document snapshot for undo/redo.
+Checks: model, target arch, preparation stage, finite values, ≥3 points, closed, self-intersection (non-adjacent only), area, target surface, projection, kernel availability.
+
+Actionable messages (examples):
+
+- “Add at least 3 points.”
+- “Close the boundary.”
+- “Boundary crosses itself.”
+- “Boundary is outside the active scan.”
+
+Live validation surfaces obvious failures while drawing (no toast flood).
+
+## History
+
+| Layer | Control | Scope |
+|-------|---------|--------|
+| Drawing | Undo Pt / Clear / Reset | Boundary points only |
+| Document | Undo / Redo | Accepted trim revisions |
+
+## Camera
+
+No camera reset after validate, preview, accept, cancel, undo, redo, or arch switch. Fit only on Trim enter (isolated arch) or explicit Fit.
+
+## Multiple trims
+
+Each Accept creates a revision and leaves Trim active (idle) on the same arch so the operator can draw again or switch arches.
 
 ## Limitations
 
-- Crossing triangles are classified by centroid (no exact half-edge clip yet).
-- Screen→mesh projection uses a fixed virtual viewport mapping.
-- Native Open3D path is scaffolded, not linked.
+- Open3D / native C++ trim path is scaffolded, not linked.
+- Exact clip is XY-projected (clinical mesh frame); extreme undercuts may need future 3D clip.
+- Browser visual acceptance of mesh delta remains operator-verified.

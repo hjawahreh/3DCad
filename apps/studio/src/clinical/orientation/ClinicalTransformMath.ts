@@ -142,3 +142,175 @@ export const snapToWorldAxes = (m: Mat4): ClinicalTransform => {
 };
 
 export const cloneTransform = (m: Mat4): ClinicalTransform => freezeMat4([...m.elements]);
+
+/**
+ * Invert a column-major 4×4 (affine clinical transforms).
+ * Returns undefined when the matrix is singular / non-invertible.
+ */
+export const invertMat4 = (m: Mat4): ClinicalTransform | undefined => {
+  const e = m.elements;
+  const out = new Array<number>(16);
+
+  out[0] =
+    e[5]! * e[10]! * e[15]! -
+    e[5]! * e[11]! * e[14]! -
+    e[9]! * e[6]! * e[15]! +
+    e[9]! * e[7]! * e[14]! +
+    e[13]! * e[6]! * e[11]! -
+    e[13]! * e[7]! * e[10]!;
+  out[4] =
+    -e[4]! * e[10]! * e[15]! +
+    e[4]! * e[11]! * e[14]! +
+    e[8]! * e[6]! * e[15]! -
+    e[8]! * e[7]! * e[14]! -
+    e[12]! * e[6]! * e[11]! +
+    e[12]! * e[7]! * e[10]!;
+  out[8] =
+    e[4]! * e[9]! * e[15]! -
+    e[4]! * e[11]! * e[13]! -
+    e[8]! * e[5]! * e[15]! +
+    e[8]! * e[7]! * e[13]! +
+    e[12]! * e[5]! * e[11]! -
+    e[12]! * e[7]! * e[9]!;
+  out[12] =
+    -e[4]! * e[9]! * e[14]! +
+    e[4]! * e[10]! * e[13]! +
+    e[8]! * e[5]! * e[14]! -
+    e[8]! * e[6]! * e[13]! -
+    e[12]! * e[5]! * e[10]! +
+    e[12]! * e[6]! * e[9]!;
+  out[1] =
+    -e[1]! * e[10]! * e[15]! +
+    e[1]! * e[11]! * e[14]! +
+    e[9]! * e[2]! * e[15]! -
+    e[9]! * e[3]! * e[14]! -
+    e[13]! * e[2]! * e[11]! +
+    e[13]! * e[3]! * e[10]!;
+  out[5] =
+    e[0]! * e[10]! * e[15]! -
+    e[0]! * e[11]! * e[14]! -
+    e[8]! * e[2]! * e[15]! +
+    e[8]! * e[3]! * e[14]! +
+    e[12]! * e[2]! * e[11]! -
+    e[12]! * e[3]! * e[10]!;
+  out[9] =
+    -e[0]! * e[9]! * e[15]! +
+    e[0]! * e[11]! * e[13]! +
+    e[8]! * e[1]! * e[15]! -
+    e[8]! * e[3]! * e[13]! -
+    e[12]! * e[1]! * e[11]! +
+    e[12]! * e[3]! * e[9]!;
+  out[13] =
+    e[0]! * e[9]! * e[14]! -
+    e[0]! * e[10]! * e[13]! -
+    e[8]! * e[1]! * e[14]! +
+    e[8]! * e[2]! * e[13]! +
+    e[12]! * e[1]! * e[10]! -
+    e[12]! * e[2]! * e[9]!;
+  out[2] =
+    e[1]! * e[6]! * e[15]! -
+    e[1]! * e[7]! * e[14]! -
+    e[5]! * e[2]! * e[15]! +
+    e[5]! * e[3]! * e[14]! +
+    e[13]! * e[2]! * e[7]! -
+    e[13]! * e[3]! * e[6]!;
+  out[6] =
+    -e[0]! * e[6]! * e[15]! +
+    e[0]! * e[7]! * e[14]! +
+    e[4]! * e[2]! * e[15]! -
+    e[4]! * e[3]! * e[14]! -
+    e[12]! * e[2]! * e[7]! +
+    e[12]! * e[3]! * e[6]!;
+  out[10] =
+    e[0]! * e[5]! * e[15]! -
+    e[0]! * e[7]! * e[13]! -
+    e[4]! * e[1]! * e[15]! +
+    e[4]! * e[3]! * e[13]! +
+    e[12]! * e[1]! * e[7]! -
+    e[12]! * e[3]! * e[5]!;
+  out[14] =
+    -e[0]! * e[5]! * e[14]! +
+    e[0]! * e[6]! * e[13]! +
+    e[4]! * e[1]! * e[14]! -
+    e[4]! * e[2]! * e[13]! -
+    e[12]! * e[1]! * e[6]! +
+    e[12]! * e[2]! * e[5]!;
+  out[3] =
+    -e[1]! * e[6]! * e[11]! +
+    e[1]! * e[7]! * e[10]! +
+    e[5]! * e[2]! * e[11]! -
+    e[5]! * e[3]! * e[10]! -
+    e[9]! * e[2]! * e[7]! +
+    e[9]! * e[3]! * e[6]!;
+  out[7] =
+    e[0]! * e[6]! * e[11]! -
+    e[0]! * e[7]! * e[10]! -
+    e[4]! * e[2]! * e[11]! +
+    e[4]! * e[3]! * e[10]! +
+    e[8]! * e[2]! * e[7]! -
+    e[8]! * e[3]! * e[6]!;
+  out[11] =
+    -e[0]! * e[5]! * e[11]! +
+    e[0]! * e[7]! * e[9]! +
+    e[4]! * e[1]! * e[11]! -
+    e[4]! * e[3]! * e[9]! -
+    e[8]! * e[1]! * e[7]! +
+    e[8]! * e[3]! * e[5]!;
+  out[15] =
+    e[0]! * e[5]! * e[10]! -
+    e[0]! * e[6]! * e[9]! -
+    e[4]! * e[1]! * e[10]! +
+    e[4]! * e[2]! * e[9]! +
+    e[8]! * e[1]! * e[6]! -
+    e[8]! * e[2]! * e[5]!;
+
+  const det = e[0]! * out[0]! + e[1]! * out[4]! + e[2]! * out[8]! + e[3]! * out[12]!;
+  if (!Number.isFinite(det) || Math.abs(det) < 1e-12) {
+    return undefined;
+  }
+  const invDet = 1 / det;
+  for (let i = 0; i < 16; i += 1) {
+    out[i] = out[i]! * invDet;
+  }
+  return freezeMat4(out);
+};
+
+/** Column-major translation matrix. */
+export const translateMat4 = (
+  tx: number,
+  ty: number,
+  tz: number
+): ClinicalTransform =>
+  freezeMat4([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, tx, ty, tz, 1]);
+
+/** Uniform scale about origin (affine tests; clinical orient path stays rigid). */
+export const uniformScaleMat4 = (s: number): ClinicalTransform =>
+  freezeMat4([s, 0, 0, 0, 0, s, 0, 0, 0, 0, s, 0, 0, 0, 0, 1]);
+
+/** Transform a point by column-major Mat4 (p' = M * p). */
+export const transformPoint3 = (
+  m: Mat4,
+  point: readonly [number, number, number]
+): readonly [number, number, number] => {
+  const e = m.elements;
+  const x = point[0];
+  const y = point[1];
+  const z = point[2];
+  const w = e[3]! * x + e[7]! * y + e[11]! * z + e[15]!;
+  const invW = Math.abs(w) > 1e-12 ? 1 / w : 1;
+  return Object.freeze([
+    (e[0]! * x + e[4]! * y + e[8]! * z + e[12]!) * invW,
+    (e[1]! * x + e[5]! * y + e[9]! * z + e[13]!) * invW,
+    (e[2]! * x + e[6]! * y + e[10]! * z + e[14]!) * invW
+  ] as const);
+};
+
+/** World → local using inverse of object transform. */
+export const worldToLocalPoint3 = (
+  worldFromLocal: Mat4,
+  worldPoint: readonly [number, number, number]
+): readonly [number, number, number] | undefined => {
+  const inv = invertMat4(worldFromLocal);
+  if (inv === undefined) return undefined;
+  return transformPoint3(inv, worldPoint);
+};

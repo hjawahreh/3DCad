@@ -4,6 +4,7 @@
 
 import {
   DEFAULT_PREPARATION_STATE,
+  type ClinicalPreparationFailure,
   type ClinicalPreparationState
 } from './ClinicalPreparationState.js';
 import { ClinicalPreparationLifecycle } from './ClinicalPreparationLifecycle.js';
@@ -13,6 +14,14 @@ import type { PreparationOrchestrationToolId } from './ClinicalPreparationPipeli
 import type { ClinicalValidationReport } from './ClinicalPreparationValidator.js';
 import type { PreparationWorkflowPhase } from './ClinicalPreparationWorkflow.js';
 import type { PreparationSessionLifecycle } from './ClinicalPreparationLifecycle.js';
+
+export interface PreparationSessionBinding {
+  readonly sessionId: string;
+  readonly caseId: string;
+  readonly geometryRevision: number;
+  readonly geometryFingerprint: string;
+  readonly archMode: 'upper' | 'lower' | 'both';
+}
 
 export class ClinicalPreparationSession {
   private readonly workflow = new ClinicalPreparationWorkflow();
@@ -39,11 +48,80 @@ export class ClinicalPreparationSession {
     };
   }
 
-  public createSession(now: number): boolean {
-    if (this.lifecycle.hasSession()) {
+  /**
+   * Ensure a usable preparation lifecycle session.
+   * Reuses created/active/suspended; resets completed/cancelled so retry works.
+   */
+  public ensureSession(now: number, binding: PreparationSessionBinding): boolean {
+    const phase = this.lifecycle.getPhase();
+    if (phase === 'created' || phase === 'active' || phase === 'suspended') {
+      this.patch({
+        sessionLifecycle: phase,
+        sessionStartedAt: this.state.sessionStartedAt ?? now,
+        sessionId: binding.sessionId,
+        caseId: binding.caseId,
+        geometryRevision: binding.geometryRevision,
+        geometryFingerprint: binding.geometryFingerprint,
+        archMode: binding.archMode,
+        lastFailure: undefined,
+        statusMessage: 'Preparation session ready',
+        nextStep: phase === 'created' ? 'Activate preparation session' : 'Continue preparation'
+      });
+      return true;
+    }
+    if (phase === 'completed' || phase === 'cancelled') {
+      if (this.lifecycle.getPhase() !== 'none') {
+        this.lifecycle.transition('none');
+      }
+      if (this.lifecycle.getPhase() !== 'none') {
+        this.lifecycle.reset();
+      }
+      this.workflow.reset();
+    }
+    if (this.lifecycle.getPhase() === 'disposed') {
       return false;
     }
-    this.lifecycle.transition('created');
+    if (!this.lifecycle.transition('created')) {
+      return false;
+    }
+    this.patch({
+      sessionLifecycle: 'created',
+      sessionStartedAt: now,
+      sessionCompletedAt: undefined,
+      sessionId: binding.sessionId,
+      caseId: binding.caseId,
+      geometryRevision: binding.geometryRevision,
+      geometryFingerprint: binding.geometryFingerprint,
+      archMode: binding.archMode,
+      lastFailure: undefined,
+      statusMessage: 'Preparation session created',
+      nextStep: 'Activate preparation session'
+    });
+    return true;
+  }
+
+  /** Direct create — reuses live sessions; resets terminal sessions for retry. */
+  public createSession(now: number): boolean {
+    const phase = this.lifecycle.getPhase();
+    if (phase === 'created' || phase === 'active' || phase === 'suspended') {
+      this.patch({
+        sessionLifecycle: phase,
+        sessionStartedAt: this.state.sessionStartedAt ?? now,
+        statusMessage: 'Preparation session ready',
+        nextStep: phase === 'created' ? 'Activate preparation session' : 'Continue preparation'
+      });
+      return true;
+    }
+    if (phase === 'completed' || phase === 'cancelled') {
+      this.lifecycle.transition('none');
+      if (this.lifecycle.getPhase() !== 'none') {
+        this.lifecycle.reset();
+      }
+      this.workflow.reset();
+    }
+    if (!this.lifecycle.transition('created')) {
+      return false;
+    }
     this.patch({
       sessionLifecycle: 'created',
       sessionStartedAt: now,
@@ -109,15 +187,15 @@ export class ClinicalPreparationSession {
     if (!this.lifecycle.transition('completed')) {
       return false;
     }
-    const wf = this.workflow;
     const path = ['validation', 'complete', 'ready-for-geometry'] as const;
     for (const target of path) {
-      if (wf.getPhase() === 'ready-for-geometry') {
+      if (this.workflow.getPhase() === 'ready-for-geometry') {
         break;
       }
-      if (wf.canTransition(target)) {
-        wf.transition(target);
-      }
+      this.workflow.transition(target);
+    }
+    if (this.workflow.getPhase() !== 'ready-for-geometry') {
+      this.workflow.forcePhase('ready-for-geometry');
     }
     this.patch({
       workflowPhase: 'ready-for-geometry',
@@ -128,8 +206,9 @@ export class ClinicalPreparationSession {
         ...this.state.completedStages.filter((s) => s !== 'preparation-complete'),
         'preparation-complete'
       ]),
+      lastFailure: undefined,
       statusMessage: 'Preparation complete — ready for geometry tools',
-      nextStep: 'Launch geometry tools in CLN-006+'
+      nextStep: 'Continue to Trim'
     });
     return true;
   }
@@ -140,6 +219,13 @@ export class ClinicalPreparationSession {
   }
 
   public setWorkflowPhase(phase: PreparationWorkflowPhase, statusMessage?: string): boolean {
+    if (this.workflow.getPhase() === phase) {
+      this.patch({
+        workflowPhase: phase,
+        ...(statusMessage === undefined ? {} : { statusMessage })
+      });
+      return true;
+    }
     if (!this.workflow.transition(phase)) {
       return false;
     }
@@ -148,6 +234,14 @@ export class ClinicalPreparationSession {
       ...(statusMessage === undefined ? {} : { statusMessage })
     });
     return true;
+  }
+
+  public forceWorkflowPhase(phase: PreparationWorkflowPhase, statusMessage?: string): void {
+    this.workflow.forcePhase(phase);
+    this.patch({
+      workflowPhase: phase,
+      ...(statusMessage === undefined ? {} : { statusMessage })
+    });
   }
 
   public setStage(stage: ClinicalPreparationStage): void {
@@ -171,6 +265,30 @@ export class ClinicalPreparationSession {
       orientationValidated: validated,
       ...(validated ? { statusMessage: 'Orientation validated' } : {})
     });
+  }
+
+  public setAutoPreparation(partial: {
+    readonly autoUiState?: ClinicalPreparationState['autoUiState'];
+    readonly autoSteps?: ClinicalPreparationState['autoSteps'];
+    readonly autoReport?: ClinicalPreparationState['autoReport'];
+    readonly statusMessage?: string;
+    readonly nextStep?: string;
+  }): void {
+    this.patch(partial);
+  }
+
+  public setFailure(failure: ClinicalPreparationFailure, userMessage: string): void {
+    this.patch({
+      lastFailure: Object.freeze(failure),
+      autoUiState: 'failed',
+      statusMessage: userMessage,
+      nextStep: 'Fix the case and retry preparation'
+    });
+  }
+
+  public clearFailure(): void {
+    if (this.state.lastFailure === undefined) return;
+    this.patch({ lastFailure: undefined });
   }
 
   public selectTool(tool: PreparationOrchestrationToolId | undefined): void {

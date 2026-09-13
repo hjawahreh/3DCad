@@ -2,9 +2,10 @@
  * ClinicalCloseBaseRuntime — clinical façade for production Close Base tool.
  */
 
-import type { ClinicalObjectId } from '../import/ClinicalMeshDescriptor.js';
+import type { ClinicalArchRole, ClinicalObjectId } from '../import/ClinicalMeshDescriptor.js';
 import type { ClinicalSceneBuilder } from '../import/ClinicalSceneBuilder.js';
 import type { ClinicalPreparationRuntime } from '../preparation/ClinicalPreparationRuntime.js';
+import type { ClinicalViewportRuntime } from '../display/ClinicalViewportRuntime.js';
 import type { ClinicalResult } from '../runtime/types.js';
 import type { ClinicalSession } from '../runtime/session.js';
 import { ClinicalCloseBaseController } from './ClinicalCloseBaseController.js';
@@ -17,9 +18,15 @@ export class ClinicalCloseBaseRuntime {
   public constructor(
     session: ClinicalSession,
     preparation: ClinicalPreparationRuntime,
-    sceneBuilder: ClinicalSceneBuilder
+    sceneBuilder: ClinicalSceneBuilder,
+    viewport?: ClinicalViewportRuntime
   ) {
-    this.controller = new ClinicalCloseBaseController(session, preparation, sceneBuilder);
+    this.controller = new ClinicalCloseBaseController(
+      session,
+      preparation,
+      sceneBuilder,
+      viewport
+    );
   }
 
   public get session() {
@@ -46,11 +53,17 @@ export class ClinicalCloseBaseRuntime {
     return this.controller.enter(preferredId);
   }
 
+  public setActiveArch(arch: ClinicalArchRole): ClinicalResult<void> {
+    return this.controller.setActiveArch(arch);
+  }
+
   public setStrategy(strategy: CloseBaseStrategyId): ClinicalResult<void> {
     return this.controller.setStrategy(strategy);
   }
 
-  public setParameters(partial: Partial<ClinicalCloseBaseParameters>): ClinicalResult<void> {
+  public setParameters(
+    partial: Partial<ClinicalCloseBaseParameters> & { readonly offset?: number }
+  ): ClinicalResult<void> {
     return this.controller.setParameters(partial);
   }
 
@@ -64,6 +77,10 @@ export class ClinicalCloseBaseRuntime {
 
   public bumpMargin(delta: number): ClinicalResult<void> {
     return this.controller.bumpMargin(delta);
+  }
+
+  public bumpOffset(delta: number): ClinicalResult<void> {
+    return this.controller.bumpOffset(delta);
   }
 
   public cycleOrientation(): ClinicalResult<void> {
@@ -80,6 +97,18 @@ export class ClinicalCloseBaseRuntime {
 
   public validate(): ClinicalResult<void> {
     return this.controller.validate(false);
+  }
+
+  public preview() {
+    return this.controller.preview();
+  }
+
+  public enterManualMode(): ClinicalResult<void> {
+    return this.controller.enterManualMode();
+  }
+
+  public autoCloseBase() {
+    return this.controller.autoCloseBase();
   }
 
   public submit() {

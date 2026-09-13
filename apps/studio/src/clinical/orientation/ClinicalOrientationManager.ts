@@ -5,7 +5,9 @@
 import type { ClinicalSession } from '../runtime/session.js';
 import {
   withClinicalObjects,
-  type ClinicalDocumentSnapshot
+  withOrientationMeta,
+  type ClinicalDocumentSnapshot,
+  type ClinicalOrientationMeta
 } from '../document/ClinicalDocument.js';
 import type {
   ClinicalObjectId,
@@ -37,6 +39,7 @@ export class ClinicalOrientationManager {
       (selectedId !== undefined
         ? doc.objects.find((o) => (o.id as string) === (selectedId as string))
         : undefined) ??
+      doc.objects.find((o) => o.archRole === 'upper' && o.visible) ??
       doc.objects.find((o) => o.visible) ??
       doc.objects[0];
     if (obj === undefined) {
@@ -78,6 +81,38 @@ export class ClinicalOrientationManager {
     return clinicalSuccess({ previous, next: applied.value });
   }
 
+  /** Apply one case-level transform to every object (preserves relative bite). */
+  public applyCaseTransform(
+    session: ClinicalSession,
+    transform: ClinicalTransform,
+    now: number,
+    orientationMeta?: ClinicalOrientationMeta
+  ): ClinicalResult<{
+    readonly previous: ClinicalDocumentSnapshot;
+    readonly next: ClinicalDocumentSnapshot;
+  }> {
+    const doc = session.getPublicState().activeCase;
+    if (doc === undefined) {
+      return clinicalFailure('not-found', 'No active case');
+    }
+    if (doc.objects.length === 0) {
+      return clinicalFailure('validation', 'No models to orient');
+    }
+    const previous = doc;
+    const objects = doc.objects.map((obj) =>
+      Object.freeze({ ...obj, transform: cloneTransform(transform) })
+    );
+    let next = withClinicalObjects(doc, objects, now);
+    if (orientationMeta !== undefined) {
+      next = withOrientationMeta(next, orientationMeta, now);
+    }
+    const applied = session.applyDocument(next, true);
+    if (!applied.ok) {
+      return applied;
+    }
+    return clinicalSuccess({ previous, next: applied.value });
+  }
+
   public previewDocument(
     doc: ClinicalDocumentSnapshot,
     objectId: ClinicalObjectId,
@@ -87,6 +122,19 @@ export class ClinicalOrientationManager {
       obj.id === objectId
         ? Object.freeze({ ...obj, transform: cloneTransform(transform) })
         : obj
+    );
+    return Object.freeze({
+      ...doc,
+      objects: Object.freeze(objects)
+    });
+  }
+
+  public previewCaseDocument(
+    doc: ClinicalDocumentSnapshot,
+    transform: ClinicalTransform
+  ): ClinicalDocumentSnapshot {
+    const objects = doc.objects.map((obj) =>
+      Object.freeze({ ...obj, transform: cloneTransform(transform) })
     );
     return Object.freeze({
       ...doc,

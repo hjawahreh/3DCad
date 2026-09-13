@@ -32,16 +32,7 @@ export const registerClinicalCommands = (
     shortcut: 'Mod+Shift+N',
     enabled: true,
     run: wrap(() => {
-      const result = session.newCase();
-      if (!result.ok) {
-        host.notifications.push('error', 'Case', result.error.message);
-        return;
-      }
-      workspace.importCoordinator.objects.clear();
-      workspace.importCoordinator.sceneBuilder.publishEmpty(host, host.runtimes.scene);
-      host.runtimes.kernel.registry.clear();
-      host.sessions.selectionSession?.clear();
-      host.sessions.cameraSession?.resetView();
+      host.dialogs.open('new-case', 'Create Case');
     })
   });
 
@@ -51,12 +42,7 @@ export const registerClinicalCommands = (
     category: 'application',
     enabled: true,
     run: wrap(() => {
-      host.dialogs.open('open-project', 'Open Case');
-      host.notifications.push(
-        'info',
-        'Case',
-        'Open Case is a persistence placeholder in CLN-001'
-      );
+      host.dialogs.open('open-case', 'Open Case');
     })
   });
 
@@ -85,10 +71,10 @@ export const registerClinicalCommands = (
     category: 'application',
     shortcut: 'Mod+S',
     enabled: true,
-    run: wrap(() => {
-      const cleared = session.clearDirty();
-      if (!cleared.ok) {
-        host.notifications.push('warning', 'Save', cleared.error.message);
+    run: wrap(async () => {
+      const saved = await workspace.cases.saveActiveCase(workspace);
+      if (!saved.ok) {
+        host.notifications.push('warning', 'Save', saved.error.message);
         return;
       }
       host.notifications.push('success', 'Save', 'Case saved.');
@@ -101,9 +87,7 @@ export const registerClinicalCommands = (
     category: 'application',
     enabled: true,
     run: wrap(() => {
-      const recent = session.getRecentCases().list();
-      const names = recent.map((e) => e.name).join(', ') || 'None';
-      host.notifications.push('info', 'Recent Cases', names);
+      host.dialogs.open('open-case', 'Open Case');
     })
   });
 
@@ -291,6 +275,26 @@ export const registerClinicalCommands = (
   });
 
   commands.register({
+    id: 'clinical.orientation.auto',
+    title: 'Auto Orient',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      if (!workspace.orientation.isActive()) {
+        const entered = workspace.orientation.enter();
+        if (!entered.ok) {
+          host.notifications.push('warning', 'Orientation', entered.error.message);
+          return;
+        }
+      }
+      const result = workspace.orientation.autoOrient({ force: true });
+      if (!result.ok) {
+        host.notifications.push('warning', 'Orientation', result.error.message);
+      }
+    })
+  });
+
+  commands.register({
     id: 'clinical.orientation.accept',
     title: 'Accept Orientation',
     category: 'application',
@@ -304,9 +308,9 @@ export const registerClinicalCommands = (
         return;
       }
       workspace.preparation.notifyOrientationComplete();
-      const prep = workspace.preparation.start();
+      const prep = workspace.preparation.autoPrepare();
       if (!prep.ok) {
-        host.notifications.push('info', 'Prepare', prep.error.message);
+        host.notifications.push('warning', 'Prepare', prep.error.message);
       }
     })
   });
@@ -462,13 +466,13 @@ export const registerClinicalCommands = (
 
   commands.register({
     id: 'clinical.preparation.start',
-    title: 'Start Preparation Workflow',
+    title: 'Prepare Case',
     category: 'application',
     shortcut: 'Mod+Shift+P',
     enabled: true,
     run: wrap(() => {
       workspace.layout.update({ leftSection: 'preparation', leftCollapsed: false });
-      const result = workspace.preparation.start();
+      const result = workspace.preparation.autoPrepare();
       if (!result.ok) {
         host.notifications.push('warning', 'Preparation', result.error.message);
       }
@@ -755,6 +759,52 @@ export const registerClinicalCommands = (
   });
 
   commands.register({
+    id: 'clinical.closeBase.preview',
+    title: 'Preview Close Base',
+    category: 'application',
+    enabled: true,
+    run: wrap(async () => {
+      if (!workspace.closeBase.isActive()) {
+        const entered = workspace.closeBase.enter();
+        if (!entered.ok) {
+          host.notifications.push('warning', 'Close Base', entered.error.message);
+          return;
+        }
+      }
+      const result = await workspace.closeBase.preview();
+      if (!result.ok) {
+        host.notifications.push('warning', 'Close Base', result.error.message);
+      }
+    })
+  });
+
+  commands.register({
+    id: 'clinical.closeBase.auto',
+    title: 'Auto Create Base',
+    category: 'application',
+    enabled: true,
+    run: wrap(async () => {
+      const result = await workspace.closeBase.autoCloseBase();
+      if (!result.ok) {
+        host.notifications.push('warning', 'Close Base', result.error.message);
+      }
+    })
+  });
+
+  commands.register({
+    id: 'clinical.closeBase.manual',
+    title: 'Adjust Close Base Manually',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      const result = workspace.closeBase.enterManualMode();
+      if (!result.ok) {
+        host.notifications.push('warning', 'Close Base', result.error.message);
+      }
+    })
+  });
+
+  commands.register({
     id: 'clinical.closeBase.cancel',
     title: 'Cancel Close Base',
     category: 'application',
@@ -876,8 +926,8 @@ export const registerClinicalCommands = (
     category: 'application',
     shortcut: 'Mod+G',
     enabled: true,
-    run: wrap(() => {
-      const result = workspace.segmentation.enter();
+    run: wrap(async () => {
+      const result = await workspace.segmentation.segmentTeeth();
       if (!result.ok) {
         host.notifications.push('warning', 'Segmentation', result.error.message);
       }
@@ -890,8 +940,7 @@ export const registerClinicalCommands = (
     category: 'application',
     enabled: true,
     run: wrap(async () => {
-      if (!workspace.segmentation.isActive()) return;
-      const result = await workspace.segmentation.runInference();
+      const result = await workspace.segmentation.segmentTeeth();
       if (!result.ok) {
         host.notifications.push('warning', 'Segmentation', result.error.message);
       }

@@ -1,0 +1,103 @@
+{
+  "at": "2026-09-13T11:48:28.876Z",
+  "milestone": "GEO-001B",
+  "steps": [
+    {
+      "id": "01-imported",
+      "status": "PASS",
+      "at": "2026-09-13T11:45:21.060Z"
+    },
+    {
+      "id": "02-topology-normalized",
+      "status": "PASS",
+      "at": "2026-09-13T11:45:36.104Z",
+      "detail": "srcV=783861 workV=131779 comps=1 boundaryPts=2273"
+    },
+    {
+      "id": "03-boundary-diagnostic",
+      "status": "PASS",
+      "at": "2026-09-13T11:45:36.105Z",
+      "primary": {
+        "pointCount": 2273,
+        "perimeter": 350.70929452304205,
+        "projectedArea": 1369.5064608498683
+      }
+    },
+    {
+      "id": "04-surface-path",
+      "status": "OBSERVE",
+      "at": "2026-09-13T11:46:42.282Z",
+      "pathCheck": {
+        "ok": false,
+        "error": "Surface path jump exceeds maximum spacing without reconstruction",
+        "components": 1,
+        "sampleCount": 6,
+        "meshComponents": 1,
+        "disconnectedFailure": false
+      },
+      "stats": "Points: 6 · Closed: yes · Boundary valid"
+    },
+    {
+      "id": "05-trim-preview",
+      "status": "FAIL",
+      "at": "2026-09-13T11:48:14.701Z",
+      "previewReady": false
+    },
+    {
+      "id": "fatal",
+      "status": "FAIL",
+      "at": "2026-09-13T11:48:27.435Z",
+      "detail": "Error: page.evaluate: Error: Trim boundary self-intersects.\n    at eval (eval at evaluate (:311:30), <anonymous>:4:26)\n    at async <anonymous>:337:30"
+    }
+  ],
+  "evidence": {
+    "afterImport": {
+      "objectId": "case-1789299892124:upper-arch",
+      "docVertexCount": 131779,
+      "docFaceCount": 261287,
+      "docFingerprint": "geo:c828c055",
+      "source": {
+        "fingerprint": "geo:052a19f9",
+        "role": "source",
+        "vertexCount": 783861,
+        "triangleCount": 261287,
+        "connectedComponents": 261287,
+        "boundaryEdgeCount": 783861,
+        "primaryBoundary": {
+          "pointCount": 3,
+          "perimeter": 1.833187543359244,
+          "projectedArea": 0.05218574887840077
+        }
+      },
+      "working": {
+        "fingerprint": "geo:c828c055",
+        "role": "working",
+        "vertexCount": 131779,
+        "triangleCount": 261287,
+        "connectedComponents": 1,
+        "boundaryEdgeCount": 2273,
+        "primaryBoundary": {
+          "pointCount": 2273,
+          "perimeter": 350.70929452304205,
+          "projectedArea": 1369.5064608498683
+        }
+      }
+    },
+    "surfacePath": {
+      "ok": false,
+      "error": "Surface path jump exceeds maximum spacing without reconstruction",
+      "components": 1,
+      "sampleCount": 6,
+      "meshComponents": 1,
+      "disconnectedFailure": false,
+      "drawn": {
+        "count": 5
+      }
+    }
+  },
+  "summary": {
+    "pass": 3,
+    "fail": 2,
+    "observe": 1
+  }
+}

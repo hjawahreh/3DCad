@@ -131,13 +131,29 @@ const parseObj = (bytes: ArrayBuffer): ParsedClinicalMesh => {
     const line = raw.trim();
     if (line.startsWith('v ')) {
       const parts = line.split(/\s+/);
-      positionsList.push(Number(parts[1]), Number(parts[2]), Number(parts[3]));
+      if (parts.length < 4) {
+        throw new Error('OBJ vertex line is incomplete (expected v x y z)');
+      }
+      const x = Number(parts[1]);
+      const y = Number(parts[2]);
+      const z = Number(parts[3]);
+      if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
+        throw new Error('OBJ vertex contains non-finite coordinates');
+      }
+      positionsList.push(x, y, z);
     } else if (line.startsWith('f ')) {
       const parts = line.split(/\s+/).slice(1);
+      if (parts.length < 3) {
+        throw new Error('OBJ face line needs at least 3 vertices');
+      }
+      const vertexCount = positionsList.length / 3;
       const idxs = parts.map((p) => {
         const a = p.split('/')[0]!;
         const n = Number(a);
-        return n < 0 ? positionsList.length / 3 + n : n - 1;
+        if (!Number.isFinite(n) || n === 0) {
+          throw new Error('OBJ face index is invalid');
+        }
+        return n < 0 ? vertexCount + n : n - 1;
       });
       for (let i = 1; i + 1 < idxs.length; i += 1) {
         faces.push(idxs[0]!, idxs[i]!, idxs[i + 1]!);
@@ -198,8 +214,15 @@ const finalize = (
   if (!isFiniteMesh(positions)) {
     throw new Error('Mesh contains non-finite coordinates');
   }
-  if (indices.length < 3) {
+  if (indices.length < 3 || indices.length % 3 !== 0) {
     throw new Error('Mesh contains no triangles');
+  }
+  const vertexCount = Math.floor(positions.length / 3);
+  for (let i = 0; i < indices.length; i += 1) {
+    const idx = indices[i]!;
+    if (!Number.isFinite(idx) || idx < 0 || idx >= vertexCount) {
+      throw new Error('Mesh contains out-of-range triangle indices');
+    }
   }
   const bounds = computeAABB(positions);
   const dx = bounds.max[0]! - bounds.min[0]!;
@@ -217,7 +240,7 @@ const finalize = (
     positions,
     indices,
     bounds,
-    vertexCount: Math.floor(positions.length / 3),
+    vertexCount,
     faceCount: Math.floor(indices.length / 3),
     unitsHint,
     warnings: Object.freeze(warn)

@@ -126,6 +126,22 @@ export const archOrderIndex = (fdi: FdiNumber): number => {
   return 7 + pos;
 };
 
+/** Arch order without wisdom teeth (14 slots) — shared by identification + missingSlots. */
+export const ARCH_ORDER_WITHOUT_WISDOM: Readonly<
+  Record<'upper' | 'lower', readonly FdiNumber[]>
+> = Object.freeze({
+  upper: Object.freeze([
+    17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27
+  ] as FdiNumber[]),
+  lower: Object.freeze([
+    47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37
+  ] as FdiNumber[])
+});
+
+/**
+ * Map an X-sorted instance slot onto the 14-tooth arch order (no wisdom).
+ * Rank-maps into the fixed list — does not invent FDI outside that table.
+ */
 export const expectedFdiForArchSlot = (
   arch: 'upper' | 'lower',
   slotIndex: number,
@@ -134,14 +150,16 @@ export const expectedFdiForArchSlot = (
   if (slotCount <= 0 || slotIndex < 0 || slotIndex >= slotCount) {
     return undefined;
   }
-  const order =
-    arch === 'upper'
-      ? ([18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28] as const)
-      : ([48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38] as const);
+  const order = ARCH_ORDER_WITHOUT_WISDOM[arch];
   if (slotCount === 1) {
     return arch === 'upper' ? 11 : 41;
   }
-  const t = slotIndex / (slotCount - 1);
-  const idx = Math.round(t * (order.length - 1));
+  if (slotCount >= order.length) {
+    return order[Math.min(slotIndex, order.length - 1)];
+  }
+  const idx = Math.round((slotIndex * (order.length - 1)) / (slotCount - 1));
   return order[idx];
 };
+
+export const isFdiInArchBank = (arch: 'upper' | 'lower', fdi: FdiNumber): boolean =>
+  ARCH_ORDER_WITHOUT_WISDOM[arch].includes(fdi);

@@ -10,6 +10,12 @@ import {
 } from '../display/ClinicalDisplayPreferences.js';
 import { useClinicalLayout } from './useClinicalLayout.js';
 import { useClinicalUiRevision } from './useClinicalUi.js';
+import { ClinicalSegmentationInspector } from '../segmentation/ClinicalSegmentationInspector.js';
+import {
+  evaluateSegmentationIntegrity,
+  movementReadinessUiLabel,
+  segmentationIntegrityUiLabel
+} from '../segmentation/ClinicalSegmentationIntegrity.js';
 
 const TABS: readonly ClinicalRightTab[] = Object.freeze([
   'inspector',
@@ -170,14 +176,28 @@ export const ClinicalRightPanel = ({
                       <dd>{selectedObj.faceCount ?? '—'}</dd>
                       <dt>Units</dt>
                       <dd>{selectedObj.units}</dd>
-                      <dt>Status</dt>
-                      <dd>Valid</dd>
+                      <dt>Import</dt>
+                      <dd>Imported</dd>
                       <dt>Source</dt>
                       <dd>{selectedObj.sourceFile}</dd>
+                      {selectedObj.segmentationMeta !== undefined ? (
+                        <>
+                          <dt>Segmentation</dt>
+                          <dd data-testid="clinical-seg-integrity-label">
+                            {(() => {
+                              const snap = evaluateSegmentationIntegrity(selectedObj);
+                              return `${segmentationIntegrityUiLabel(snap)} · ${String(selectedObj.segmentationMeta.instanceCount)} teeth · ${selectedObj.segmentationMeta.caseBand} · ${selectedObj.segmentationMeta.validationVerdict ?? '—'} · ${movementReadinessUiLabel(snap.isClinicallyReadyForMovement)}`;
+                            })()}
+                          </dd>
+                        </>
+                      ) : null}
                     </dl>
                   </div>
                 );
               })()}
+              {workspace.segmentation.isActive() ? (
+                <ClinicalSegmentationInspector workspace={workspace} />
+              ) : null}
               {doc.objects.length > 0 ? (
                 <button
                   type="button"
@@ -213,6 +233,15 @@ export const ClinicalRightPanel = ({
                 <dt>Eye</dt>
                 <dd>
                   {camera.eye.x.toFixed(2)}, {camera.eye.y.toFixed(2)}, {camera.eye.z.toFixed(2)}
+                </dd>
+                <dt>Up</dt>
+                <dd>
+                  {camera.up.x.toFixed(2)}, {camera.up.y.toFixed(2)}, {camera.up.z.toFixed(2)}
+                </dd>
+                <dt>Target</dt>
+                <dd>
+                  {camera.target.x.toFixed(2)}, {camera.target.y.toFixed(2)},{' '}
+                  {camera.target.z.toFixed(2)}
                 </dd>
                 <dt>Projection</dt>
                 <dd>{camera.projection}</dd>

@@ -7,7 +7,10 @@ import {
   withClinicalObjects,
   type ClinicalDocumentSnapshot
 } from '../document/ClinicalDocument.js';
-import type { ClinicalObjectId } from '../import/ClinicalMeshDescriptor.js';
+import type {
+  ClinicalArchRole,
+  ClinicalObjectId
+} from '../import/ClinicalMeshDescriptor.js';
 import type { ClinicalSceneBuilder } from '../import/ClinicalSceneBuilder.js';
 import type { ClinicalSession } from '../runtime/session.js';
 import { clinicalFailure, clinicalSuccess, type ClinicalResult } from '../runtime/types.js';
@@ -60,6 +63,24 @@ export class ClinicalCloseBaseManager {
     return clinicalSuccess({ objectId: obj.id });
   }
 
+  public resolveTargetByArch(
+    session: ClinicalSession,
+    arch: ClinicalArchRole
+  ): ClinicalResult<{ readonly objectId: ClinicalObjectId }> {
+    const doc = session.getPublicState().activeCase;
+    if (doc === undefined) {
+      return clinicalFailure('not-found', 'No active case');
+    }
+    const obj = doc.objects.find((o) => o.archRole === arch);
+    if (obj === undefined) {
+      return clinicalFailure(
+        'not-found',
+        arch === 'upper' ? 'Upper arch is not in the case' : 'Lower arch is not in the case'
+      );
+    }
+    return clinicalSuccess({ objectId: obj.id });
+  }
+
   public applyCloseBaseCommit(input: {
     readonly session: ClinicalSession;
     readonly objectId: ClinicalObjectId;
@@ -98,6 +119,8 @@ export class ClinicalCloseBaseManager {
         vertexCount: vertexCount ?? (obj.vertexCount ?? 0) + 8,
         faceCount: faceCount ?? (obj.faceCount ?? 0) + 12,
         backend
+      }, {
+        invalidateSegmentationReason: 'Segmentation Outdated — Geometry Changed (Close Base)'
       });
     });
     const next = withClinicalObjects(doc, objects, input.now);

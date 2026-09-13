@@ -8,7 +8,8 @@ import type { TrimValidationReport } from './ClinicalTrimValidation.js';
 import type { TrimWorkflowPhase } from './ClinicalTrimWorkflow.js';
 import type { TrimSessionLifecycle } from './ClinicalTrimLifecycle.js';
 
-export type TrimDrawMode = 'freehand' | 'polyline';
+/** idle = toolbar usable, no viewport stroke capture until Polyline/Freehand chosen. */
+export type TrimDrawMode = 'idle' | 'freehand' | 'polyline';
 
 export interface ClinicalTrimState {
   readonly phase: TrimWorkflowPhase;
@@ -19,8 +20,11 @@ export interface ClinicalTrimState {
   readonly closed: boolean;
   readonly hoveredPointIndex: number | undefined;
   readonly activePointIndex: number | undefined;
+  readonly previewCursor: TrimBoundaryPoint | undefined;
   readonly validationReport: TrimValidationReport | undefined;
   readonly previewActive: boolean;
+  readonly pointerCaptured: boolean;
+  readonly lastHitSummary: string | undefined;
   readonly kernelFingerprint: string | undefined;
   readonly operationId: string | undefined;
   readonly statusMessage: string;
@@ -31,14 +35,17 @@ export interface ClinicalTrimState {
 export const DEFAULT_TRIM_STATE: ClinicalTrimState = Object.freeze({
   phase: 'idle',
   lifecycle: 'none',
-  drawMode: 'polyline',
+  drawMode: 'idle',
   targetObjectId: undefined,
   points: Object.freeze([]),
   closed: false,
   hoveredPointIndex: undefined,
   activePointIndex: undefined,
+  previewCursor: undefined,
   validationReport: undefined,
   previewActive: false,
+  pointerCaptured: false,
+  lastHitSummary: undefined,
   kernelFingerprint: undefined,
   operationId: undefined,
   statusMessage: 'Trim idle',

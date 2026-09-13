@@ -1,0 +1,210 @@
+{
+  "gate": "PROD-002S",
+  "host": "http://localhost:1420/",
+  "at": "2026-09-12T11:43:26.195Z",
+  "steps": [
+    {
+      "id": "00-studio",
+      "step": "00-studio",
+      "status": "PASS",
+      "at": "2026-09-12T11:40:47.744Z",
+      "timestamp": "2026-09-12T11:40:47.744Z",
+      "host": "http://localhost:1420/"
+    },
+    {
+      "id": "01-create-case",
+      "step": "01-create-case",
+      "status": "PASS",
+      "at": "2026-09-12T11:40:48.111Z",
+      "timestamp": "2026-09-12T11:40:48.111Z",
+      "caseName": "Patient-2026-09-12-PROD-002S-Segmentation-Integrity"
+    },
+    {
+      "id": "02-import",
+      "step": "02-import",
+      "status": "PASS",
+      "at": "2026-09-12T11:41:05.497Z",
+      "timestamp": "2026-09-12T11:41:05.497Z"
+    },
+    {
+      "id": "03-orientation",
+      "step": "03-orientation",
+      "status": "PASS",
+      "at": "2026-09-12T11:41:11.308Z",
+      "timestamp": "2026-09-12T11:41:11.308Z"
+    },
+    {
+      "id": "04-preparation",
+      "step": "04-preparation",
+      "status": "PASS",
+      "at": "2026-09-12T11:41:12.086Z",
+      "timestamp": "2026-09-12T11:41:12.086Z"
+    },
+    {
+      "id": "05-segmentation-accept",
+      "step": "05-segmentation-accept",
+      "status": "PASS",
+      "at": "2026-09-12T11:42:26.165Z",
+      "timestamp": "2026-09-12T11:42:26.165Z",
+      "segResult": [
+        {
+          "arch": "upper",
+          "status": "CURRENT",
+          "faces": 198306,
+          "fingerprint": "mem:0137ba21",
+          "verdict": "WARNING",
+          "providerId": "reference-heuristic",
+          "geoFp": "geo:052a19f9"
+        },
+        {
+          "arch": "lower",
+          "status": "CURRENT",
+          "faces": 188166,
+          "fingerprint": "mem:fd97fe6c",
+          "verdict": "WARNING",
+          "providerId": "reference-heuristic",
+          "geoFp": "geo:4f0579c1"
+        }
+      ]
+    },
+    {
+      "id": "06-save",
+      "step": "06-save",
+      "status": "PASS",
+      "at": "2026-09-12T11:42:32.645Z",
+      "timestamp": "2026-09-12T11:42:32.645Z",
+      "caseId": "case-1789213248278"
+    },
+    {
+      "id": "07-reopen-membership",
+      "step": "07-reopen-membership",
+      "status": "PASS",
+      "at": "2026-09-12T11:42:44.638Z",
+      "timestamp": "2026-09-12T11:42:44.638Z",
+      "afterReopen": {
+        "caseId": "case-1789213248278",
+        "caseName": "Patient-2026-09-12-PROD-002S-Segmentation-Integrity",
+        "revision": 10,
+        "arches": [
+          {
+            "arch": "upper",
+            "id": "case-1789213248278:upper-arch",
+            "faceCount": 261287,
+            "geometryFingerprint": "geo:052a19f9",
+            "geometryRevision": 1,
+            "status": "CURRENT",
+            "validationVerdict": "WARNING",
+            "providerId": "reference-heuristic",
+            "membershipFingerprint": "mem:0137ba21",
+            "membershipFaces": 198306,
+            "instanceCount": 32
+          },
+          {
+            "arch": "lower",
+            "id": "case-1789213248278:lower-arch",
+            "faceCount": 233562,
+            "geometryFingerprint": "geo:4f0579c1",
+            "geometryRevision": 1,
+            "status": "CURRENT",
+            "validationVerdict": "WARNING",
+            "providerId": "reference-heuristic",
+            "membershipFingerprint": "mem:fd97fe6c",
+            "membershipFaces": 188166,
+            "instanceCount": 32
+          }
+        ],
+        "readyForMovement": false,
+        "handoffNotes": [
+          "Upper Arch: validation WARNING is not clinical PASS",
+          "Upper Arch: provider reference-heuristic is non-clinical (reference/heuristic)",
+          "Lower Arch: validation WARNING is not clinical PASS",
+          "Lower Arch: provider reference-heuristic is non-clinical (reference/heuristic)",
+          "Preparation metadata missing"
+        ],
+        "derivedBlocked": true
+      }
+    },
+    {
+      "id": "08-trim-invalidates-upper",
+      "step": "08-trim-invalidates-upper",
+      "status": "PASS",
+      "at": "2026-09-12T11:43:12.491Z",
+      "timestamp": "2026-09-12T11:43:12.491Z",
+      "trimOutcome": {
+        "preFp": "geo:052a19f9",
+        "preRev": 1,
+        "postFp": "geo:aa6e639c",
+        "postRev": 14,
+        "upperStatus": "STALE",
+        "upperReason": "Segmentation Outdated — Geometry Changed (Trim)",
+        "lowerStatus": "CURRENT",
+        "membershipKept": true
+      }
+    },
+    {
+      "id": "09-reopen-stale-readiness",
+      "step": "09-reopen-stale-readiness",
+      "status": "PASS",
+      "at": "2026-09-12T11:43:26.194Z",
+      "timestamp": "2026-09-12T11:43:26.194Z",
+      "finalState": {
+        "caseId": "case-1789213248278",
+        "caseName": "Patient-2026-09-12-PROD-002S-Segmentation-Integrity",
+        "revision": 15,
+        "arches": [
+          {
+            "arch": "upper",
+            "id": "case-1789213248278:upper-arch",
+            "faceCount": 170607,
+            "geometryFingerprint": "geo:aa6e639c",
+            "geometryRevision": 14,
+            "status": "STALE",
+            "staleReason": "Segmentation Outdated — Geometry Changed (Trim)",
+            "validationVerdict": "WARNING",
+            "providerId": "reference-heuristic",
+            "membershipFingerprint": "mem:0137ba21",
+            "membershipFaces": 198306,
+            "instanceCount": 32
+          },
+          {
+            "arch": "lower",
+            "id": "case-1789213248278:lower-arch",
+            "faceCount": 233562,
+            "geometryFingerprint": "geo:4f0579c1",
+            "geometryRevision": 1,
+            "status": "CURRENT",
+            "validationVerdict": "WARNING",
+            "providerId": "reference-heuristic",
+            "membershipFingerprint": "mem:fd97fe6c",
+            "membershipFaces": 188166,
+            "instanceCount": 32
+          }
+        ],
+        "readyForMovement": false,
+        "handoffNotes": [
+          "Upper Arch: segmentation STALE (Segmentation Outdated — Geometry Changed (Trim))",
+          "Upper Arch: validation WARNING is not clinical PASS",
+          "Upper Arch: provider reference-heuristic is non-clinical (reference/heuristic)",
+          "Lower Arch: validation WARNING is not clinical PASS",
+          "Lower Arch: provider reference-heuristic is non-clinical (reference/heuristic)",
+          "Preparation metadata missing"
+        ],
+        "derivedBlocked": true
+      }
+    },
+    {
+      "id": "10-no-movement",
+      "step": "10-no-movement",
+      "status": "PASS",
+      "at": "2026-09-12T11:43:26.195Z",
+      "timestamp": "2026-09-12T11:43:26.195Z",
+      "detail": "Movement not started (gate scope)"
+    }
+  ],
+  "vtkPosts": 1,
+  "summary": {
+    "total": 11,
+    "pass": 11,
+    "fail": 0
+  }
+}

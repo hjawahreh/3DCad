@@ -20,10 +20,22 @@ export const App = (): React.JSX.Element => {
         }
       });
       setWorkspace(started.workspace);
+      // Dev/certification hook for browser walkthroughs (Camera Runtime snapshot).
+      if (import.meta.env.DEV) {
+        (
+          globalThis as unknown as {
+            __clinicalWorkspace?: ClinicalWorkspace;
+          }
+        ).__clinicalWorkspace = started.workspace;
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Clinical bootstrap failed');
     }
     return () => {
+      if (import.meta.env.DEV) {
+        delete (globalThis as unknown as { __clinicalWorkspace?: ClinicalWorkspace })
+          .__clinicalWorkspace;
+      }
       void app.shutdown();
     };
   }, [app]);

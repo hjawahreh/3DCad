@@ -30,13 +30,19 @@ describe('trim live viewport projection', () => {
 });
 
 describe('notification host', () => {
-  it('deduplicates identical toasts and supports dismiss', () => {
+  it('keeps exactly one active notification and replaces on push', () => {
     const host = new NotificationHost();
-    const a = host.push('success', 'Import', 'Upper scan imported.');
-    const b = host.push('success', 'Import', 'Upper scan imported.');
-    expect(a.id).toBe(b.id);
+    const a = host.push('progress', 'Orientation', 'Analyzing scans…');
     expect(host.list()).toHaveLength(1);
-    host.dismiss(a.id);
+    const b = host.push('progress', 'Orientation', 'Finding dental axes…');
+    expect(host.list()).toHaveLength(1);
+    expect(b.id).toBe(a.id);
+    expect(host.list()[0]?.message).toBe('Finding dental axes…');
+    const c = host.push('info', 'Orientation', 'Done');
+    expect(host.list()).toHaveLength(1);
+    expect(c.id).not.toBe(a.id);
+    expect(host.list()[0]?.kind).toBe('info');
+    host.dismiss(c.id);
     expect(host.list()).toHaveLength(0);
   });
 

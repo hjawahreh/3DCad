@@ -26,9 +26,15 @@ import {
 } from '../../../src/clinical/segmentation/fdi/FdiNumbering.js';
 import { createDefaultSegmentationRegistry } from '../../../src/clinical/segmentation/provider/SegmentationProviderRegistry.js';
 import { ReferenceHeuristicProvider } from '../../../src/clinical/segmentation/provider/ReferenceHeuristicProvider.js';
+import { OnnxSegmentationProvider } from '../../../src/clinical/segmentation/provider/adapters/OnnxSegmentationProvider.js';
+import { detectInferenceRuntime } from '../../../src/clinical/segmentation/provider/adapters/InferenceCapabilityDetector.js';
 import { buildSyntheticDentalSurface } from '../../../src/geometry-kernel/mesh/MeshRegistry.js';
 import { mergeInstances, relabelInstanceFdi, splitInstance } from '../../../src/clinical/segmentation/review/ClinicalSegmentationReview.js';
-import { runSegmentationBenchmarkSmoke } from '../../../src/clinical/segmentation/benchmark/SegmentationBenchmark.js';
+import {
+  runSegmentationBenchmarkSmoke,
+  buildSegmentationModelComparison
+} from '../../../src/clinical/segmentation/benchmark/SegmentationBenchmark.js';
+import { planLargeMeshSampling } from '../../../src/clinical/segmentation/preprocess/LargeMeshSampling.js';
 import { ConfidenceCalibrationTracker } from '../../../src/clinical/segmentation/confidence/ConfidenceSystem.js';
 
 const segRoot = join(
@@ -115,8 +121,9 @@ describe('fdi', () => {
 describe('provider registry', () => {
   it('registers reference operational and research scaffolds unavailable', () => {
     const registry = createDefaultSegmentationRegistry();
-    expect(registry.list().length).toBeGreaterThanOrEqual(5);
+    expect(registry.list().length).toBeGreaterThanOrEqual(6);
     expect(registry.getDefault().info.id).toBe('reference-heuristic');
+    expect(registry.get('onnx-runtime').info.operational).toBe(false);
     expect(registry.get('tsegformer').info.operational).toBe(false);
     expect(registry.get('meshsegnet').info.operational).toBe(false);
     expect(registry.get('tgnet').info.operational).toBe(false);
@@ -176,6 +183,102 @@ describe('reference provider', () => {
       b.instances.map((i) => i.faceCount).reduce((s, n) => s + n, 0)
     );
     expect(a.warnings.some((w) => w.includes('decision support'))).toBe(true);
+    expect(provider.runtimeInformation().cpuFallback).toBe(true);
+    expect(provider.modelInformation().id).toBe('reference-heuristic');
+  });
+
+  it('reports Phase 7 progress stages and supports cancellation', async () => {
+    const provider = new ReferenceHeuristicProvider();
+    await provider.initialize();
+    const meshGeom = buildSyntheticDentalSurface('cancel', 1, { gridResolution: 20 });
+    const preprocess = await provider.preprocess(meshGeom, new AbortController().signal);
+    const stages: string[] = [];
+    const ac = new AbortController();
+    const inferPromise = provider.infer({
+      objectId: 'cancel',
+      sourceRevision: 0,
+      geometryFingerprint: meshGeom.fingerprint,
+      mesh: meshGeom,
+      preprocess,
+      identificationThreshold: 0.65,
+      signal: ac.signal,
+      report: (p) => {
+        stages.push(p.message);
+        if (stages.length >= 2) {
+          provider.cancel();
+          ac.abort();
+        }
+      }
+    });
+    await expect(inferPromise).rejects.toThrow(/cancel/i);
+    expect(stages.some((m) => m.includes('Preparing scan'))).toBe(true);
+  });
+
+  it('preserves large-mesh sample → source face mapping', async () => {
+    const provider = new ReferenceHeuristicProvider();
+    const meshGeom = buildSyntheticDentalSurface('large-map', 1, { gridResolution: 32 });
+    const preprocess = await provider.preprocess(meshGeom, new AbortController().signal);
+    const plan = planLargeMeshSampling(preprocess, { maxSampleFaces: 200, maxFacesPerChunk: 50 });
+    expect(plan.mappingPreserved).toBe(true);
+    expect(plan.sampledFaceIndices.length).toBeGreaterThan(0);
+    expect(plan.chunks.length).toBeGreaterThan(0);
+    expect(plan.chunks[0]!.sourceFaceIndices[0]).toBe(plan.sampledFaceIndices[0]);
+  });
+});
+
+describe('onnx provider scaffold', () => {
+  it('loads, reports runtime capability, and fails closed without weights', async () => {
+    const provider = new OnnxSegmentationProvider();
+    await provider.initialize();
+    expect(provider.info.operational).toBe(false);
+    expect(provider.runtimeInformation().cpuFallback).toBe(true);
+    expect(provider.capabilities()).toContain('gpu');
+    const meshGeom = buildSyntheticDentalSurface('onnx', 1, { gridResolution: 6 });
+    const valid = provider.validateInput(meshGeom);
+    expect(valid.ok).toBe(false);
+    const preprocess = await provider.preprocess(meshGeom, new AbortController().signal);
+    await expect(
+      provider.infer({
+        objectId: 'onnx',
+        sourceRevision: 0,
+        geometryFingerprint: meshGeom.fingerprint,
+        mesh: meshGeom,
+        preprocess,
+        identificationThreshold: 0.65,
+        signal: new AbortController().signal,
+        report: () => undefined
+      })
+    ).rejects.toThrow(/unavailable/i);
+  });
+
+  it('honours cancellation before failure', async () => {
+    const provider = new OnnxSegmentationProvider();
+    await provider.initialize();
+    provider.cancel();
+    const meshGeom = buildSyntheticDentalSurface('onnx-c', 1, { gridResolution: 4 });
+    const preprocess = await provider.preprocess(meshGeom, new AbortController().signal);
+    await expect(
+      provider.infer({
+        objectId: 'onnx-c',
+        sourceRevision: 0,
+        geometryFingerprint: meshGeom.fingerprint,
+        mesh: meshGeom,
+        preprocess,
+        identificationThreshold: 0.65,
+        signal: new AbortController().signal,
+        report: () => undefined
+      })
+    ).rejects.toThrow(/cancel/i);
+  });
+});
+
+describe('inference capability', () => {
+  it('detects CPU and does not silently invent ONNX availability', async () => {
+    const snap = await detectInferenceRuntime({ probeOnnx: true });
+    expect(snap.cpu).toBe(true);
+    expect(snap.available).toContain('cpu');
+    expect(snap.onnxRuntimeModuleAvailable).toBe(false);
+    expect(snap.message.length).toBeGreaterThan(0);
   });
 });
 
@@ -222,6 +325,9 @@ describe('workflow', () => {
     expect(seg.session.getState().phase).toBe('ready-for-review');
     expect(seg.session.getState().prediction?.instances.length).toBeGreaterThan(0);
     expect(clinical.session.getPublicState().activeCase!.revision).toBe(before);
+    if ((seg.session.getState().prediction?.confidence.needsReviewCount ?? 0) > 0) {
+      expect(seg.acknowledgeReview().ok).toBe(true);
+    }
     expect(await seg.accept()).toMatchObject({ ok: true });
     expect(clinical.session.getPublicState().activeCase!.revision).toBeGreaterThan(before);
     expect(clinical.session.getPublicState().activeCase!.objects[0]!.segmentationMeta?.providerId).toBe(
@@ -269,6 +375,15 @@ describe('benchmark smoke', () => {
     const rows = await runSegmentationBenchmarkSmoke();
     expect(rows).toHaveLength(3);
     expect(rows.every((r) => r.success)).toBe(true);
+    expect(rows.every((r) => r.model === 'clinical-reference-seg')).toBe(true);
+  });
+
+  it('builds model comparison table for decision evidence', async () => {
+    const table = await buildSegmentationModelComparison();
+    expect(table.some((r) => r.selectedDefault && r.model.includes('reference-heuristic'))).toBe(
+      true
+    );
+    expect(table.every((r) => typeof r.license === 'string' && r.license.length > 0)).toBe(true);
   });
 });
 
@@ -288,6 +403,7 @@ describe('architecture', () => {
       if (file.includes('ReferenceHeuristicProvider')) continue;
       if (file.includes('InstanceSeparation') || file.includes('BoundaryRefinement')) continue;
       if (file.includes('ToothIdentification') || file.includes('SegmentationPreprocess')) continue;
+      if (file.includes('LargeMeshSampling')) continue;
       if (file.includes('SegmentationBenchmark')) continue;
       const src = readFileSync(file, 'utf8');
       expect(src.includes('torch') || src.includes('onnxruntime') || src.includes('tensorflow')).toBe(

@@ -1,0 +1,213 @@
+{
+  "at": "2026-09-13T13:04:56.295Z",
+  "milestone": "GEO-001C",
+  "steps": [
+    {
+      "id": "00-create-import",
+      "status": "PASS",
+      "at": "2026-09-13T12:59:21.607Z"
+    },
+    {
+      "id": "00-auto-orientation",
+      "status": "PASS",
+      "at": "2026-09-13T12:59:35.263Z"
+    },
+    {
+      "id": "01-surface-hover",
+      "status": "OBSERVE",
+      "at": "2026-09-13T12:59:51.781Z",
+      "hover": {
+        "hasCursor": false,
+        "summary": null
+      }
+    },
+    {
+      "id": "02-polyline-surface-path",
+      "status": "PASS",
+      "at": "2026-09-13T13:00:01.115Z",
+      "detail": "anchors=6"
+    },
+    {
+      "id": "03-polyline-closed",
+      "status": "PASS",
+      "at": "2026-09-13T13:00:19.133Z",
+      "polyClose": {
+        "ok": true,
+        "message": null
+      },
+      "polyPath": {
+        "ok": true,
+        "error": null,
+        "code": null,
+        "components": 1,
+        "sampleCount": 549,
+        "pathLength": 129.6598613936005,
+        "meshComponents": 1,
+        "disconnectedFailure": false
+      }
+    },
+    {
+      "id": "04-polyline-preview",
+      "status": "PASS",
+      "at": "2026-09-13T13:01:54.878Z",
+      "polyPreviewOk": true,
+      "polyPreviewErr": null,
+      "evidence": {
+        "ok": true,
+        "message": null,
+        "elapsedMs": 94327,
+        "status": "Preview ready — review clipped mesh, then Accept Trim or Cancel Preview"
+      }
+    },
+    {
+      "id": "05-freehand-surface-path",
+      "status": "PASS",
+      "at": "2026-09-13T13:02:09.678Z",
+      "freehand": {
+        "count": 14
+      }
+    },
+    {
+      "id": "06-freehand-preview",
+      "status": "PASS",
+      "at": "2026-09-13T13:02:40.333Z",
+      "fhClose": {
+        "ok": true,
+        "message": null
+      },
+      "fhPath": {
+        "ok": true,
+        "error": null,
+        "code": null,
+        "components": 1,
+        "sampleCount": 102,
+        "pathLength": 26.118426594645666,
+        "meshComponents": 1,
+        "disconnectedFailure": false
+      },
+      "fhPreviewOk": true,
+      "fhPreviewErr": null,
+      "evidence": {
+        "ok": true,
+        "message": null,
+        "elapsedMs": 25551,
+        "status": "Preview ready — review clipped mesh, then Accept Trim or Cancel Preview"
+      }
+    },
+    {
+      "id": "07-accepted",
+      "status": "PASS",
+      "at": "2026-09-13T13:02:44.614Z",
+      "accepted": true
+    },
+    {
+      "id": "08-undo",
+      "status": "PASS",
+      "at": "2026-09-13T13:02:46.962Z",
+      "undoRes": {
+        "ok": true,
+        "message": null
+      },
+      "afterUndo": {
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287
+      },
+      "preAccept": {
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287
+      }
+    },
+    {
+      "id": "09-redo",
+      "status": "PASS",
+      "at": "2026-09-13T13:02:49.246Z",
+      "redoRes": {
+        "ok": true,
+        "message": null
+      }
+    },
+    {
+      "id": "10-lower",
+      "status": "PASS",
+      "at": "2026-09-13T13:04:54.709Z",
+      "lowerRun": {
+        "ok": true,
+        "previewRes": {
+          "ok": true,
+          "message": null,
+          "elapsedMs": 94753,
+          "ready": true
+        }
+      }
+    },
+    {
+      "id": "11-save-reopen",
+      "status": "OBSERVE",
+      "at": "2026-09-13T13:04:56.109Z",
+      "saveRes": {
+        "ok": true,
+        "via": "cases.saveActiveCase"
+      },
+      "reopenOk": false
+    }
+  ],
+  "evidence": {
+    "polylineAnchors": 6,
+    "polylinePath": {
+      "ok": true,
+      "error": null,
+      "code": null,
+      "components": 1,
+      "sampleCount": 549,
+      "pathLength": 129.6598613936005,
+      "meshComponents": 1,
+      "disconnectedFailure": false
+    },
+    "polyPreview": {
+      "ok": true,
+      "message": null,
+      "elapsedMs": 94327,
+      "status": "Preview ready — review clipped mesh, then Accept Trim or Cancel Preview"
+    },
+    "freehandPath": {
+      "ok": true,
+      "error": null,
+      "code": null,
+      "components": 1,
+      "sampleCount": 102,
+      "pathLength": 26.118426594645666,
+      "meshComponents": 1,
+      "disconnectedFailure": false
+    },
+    "freehandPreview": {
+      "ok": true,
+      "message": null,
+      "elapsedMs": 25551,
+      "status": "Preview ready — review clipped mesh, then Accept Trim or Cancel Preview"
+    },
+    "accept": {
+      "pre": {
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287
+      },
+      "post": {
+        "fingerprint": "geo:6869c492",
+        "faceCount": 259536
+      }
+    },
+    "lower": {
+      "ok": true,
+      "previewRes": {
+        "ok": true,
+        "message": null,
+        "elapsedMs": 94753,
+        "ready": true
+      }
+    }
+  },
+  "summary": {
+    "pass": 11,
+    "fail": 0,
+    "observe": 2
+  }
+}

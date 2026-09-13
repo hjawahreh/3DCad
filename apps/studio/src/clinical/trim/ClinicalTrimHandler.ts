@@ -1,5 +1,6 @@
 /**
  * ClinicalTrimHandler — Operation Runtime handler for kind 'trim'.
+ * PROD-001: reject accept when kernel reports no geometric change.
  */
 
 import {
@@ -13,6 +14,37 @@ import {
   type OperationResult
 } from '@cad-studio/tool-runtime';
 import { MIN_BOUNDARY_POINTS } from './ClinicalTrimBoundaryMath.js';
+
+const metricNumber = (
+  metrics: Readonly<Record<string, number>> | undefined,
+  key: string
+): number | undefined => {
+  if (metrics === undefined) return undefined;
+  const value = metrics[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+};
+
+const metaNumber = (diagnostics: unknown, key: string): number | undefined => {
+  if (!Array.isArray(diagnostics)) return undefined;
+  const prefix = `meta:${key}=`;
+  for (const row of diagnostics) {
+    if (typeof row !== 'string' || !row.startsWith(prefix)) continue;
+    const n = Number(row.slice(prefix.length));
+    if (Number.isFinite(n)) return n;
+  }
+  return undefined;
+};
+
+const metaString = (diagnostics: unknown, key: string): string | undefined => {
+  if (!Array.isArray(diagnostics)) return undefined;
+  const prefix = `meta:${key}=`;
+  for (const row of diagnostics) {
+    if (typeof row !== 'string' || !row.startsWith(prefix)) continue;
+    const v = row.slice(prefix.length);
+    if (v.length > 0) return v;
+  }
+  return undefined;
+};
 
 export const createClinicalTrimOperationHandler = (): OperationHandler => ({
   kind: 'trim',
@@ -41,7 +73,15 @@ export const createClinicalTrimOperationHandler = (): OperationHandler => ({
         boundary: stroke,
         boundaryPointCount: stroke.length,
         drawMode: session.params.drawMode ?? 'polyline',
-        ...(session.params.viewport !== undefined ? { viewport: session.params.viewport } : {})
+        // GEO-001E: preview must not commit working — Accept promotes the exact preview mesh.
+        preview: session.params.preview === true,
+        ...(session.params.viewport !== undefined ? { viewport: session.params.viewport } : {}),
+        ...(session.params.loop3d !== undefined ? { loop3d: session.params.loop3d } : {}),
+        ...(session.params.loopNormal !== undefined
+          ? { loopNormal: session.params.loopNormal }
+          : {}),
+        ...(session.params.keepMode !== undefined ? { keepMode: session.params.keepMode } : {}),
+        ...(session.params.algorithm !== undefined ? { algorithm: session.params.algorithm } : {})
       })
     });
   },
@@ -55,6 +95,36 @@ export const createClinicalTrimOperationHandler = (): OperationHandler => ({
     const stroke = session.params.stroke;
     if (!Array.isArray(stroke) || stroke.length < MIN_BOUNDARY_POINTS) {
       return opFailure('validation', 'Invalid trim boundary');
+    }
+    const metrics = kernel.payload.metrics as Readonly<Record<string, number>> | undefined;
+    const removed =
+      metricNumber(metrics, 'removedTriangles') ??
+      metaNumber(kernel.payload.diagnostics, 'removedTriangles');
+    const inputFaces =
+      metricNumber(metrics, 'inputFaceCount') ??
+      metaNumber(kernel.payload.diagnostics, 'inputFaceCount');
+    const outputFaces =
+      metricNumber(metrics, 'faceCount') ??
+      metricNumber(metrics, 'triangleCount') ??
+      (typeof kernel.payload.faceCount === 'number' ? kernel.payload.faceCount : undefined);
+    const inputFp =
+      typeof kernel.payload.inputFingerprint === 'string'
+        ? kernel.payload.inputFingerprint
+        : metaString(kernel.payload.diagnostics, 'inputFingerprint');
+    if (
+      inputFp !== undefined &&
+      (kernel.fingerprint === inputFp ||
+        kernel.fingerprint === `geo:${inputFp}` ||
+        `geo:${kernel.fingerprint}` === inputFp)
+    ) {
+      return opFailure('validation', 'Trim produced no geometry change.');
+    }
+    if (
+      (removed !== undefined && removed <= 0 && inputFaces !== undefined && outputFaces === inputFaces) ||
+      (removed !== undefined && removed <= 0 && outputFaces === undefined) ||
+      (removed === undefined && inputFaces !== undefined && outputFaces === inputFaces)
+    ) {
+      return opFailure('validation', 'Trim produced no geometry change.');
     }
     return opSuccess(undefined);
   },

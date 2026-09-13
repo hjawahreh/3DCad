@@ -1,9 +1,11 @@
 /**
  * Tooth identification — separate from segmentation.
  * Never forces FDI when confidence is insufficient.
+ * FDI slots use the same 14-tooth arch bank as missingSlots (no wisdom).
  */
 
 import {
+  ARCH_ORDER_WITHOUT_WISDOM,
   expectedFdiForArchSlot,
   getFdiDefinition,
   type FdiNumber
@@ -24,7 +26,32 @@ export interface IdentificationResult {
   readonly warnings: readonly string[];
 }
 
-type PartialInstance = Omit<ToothInstancePrediction, 'identification'>;
+type PartialInstance = Omit<ToothInstancePrediction, 'identification' | 'neighbors'>;
+
+/** Attach arch-order neighbors (X-sorted). Not contact geometry. */
+export const attachArchOrderNeighbors = (
+  instances: readonly ToothInstancePrediction[]
+): readonly ToothInstancePrediction[] => {
+  const sorted = [...instances].sort((a, b) => a.centroid[0] - b.centroid[0]);
+  const byId = new Map(sorted.map((inst, index) => [inst.instanceId, index]));
+  return Object.freeze(
+    instances.map((inst) => {
+      const index = byId.get(inst.instanceId);
+      if (index === undefined) return inst;
+      const prev = index > 0 ? sorted[index - 1] : undefined;
+      const next = index < sorted.length - 1 ? sorted[index + 1] : undefined;
+      return Object.freeze({
+        ...inst,
+        neighbors: Object.freeze({
+          archPreviousId: prev?.instanceId,
+          archNextId: next?.instanceId,
+          confidence: 'low' as const,
+          basis: 'arch-x-order' as const
+        })
+      });
+    })
+  );
+};
 
 export const identifyToothInstances = (input: {
   readonly instances: readonly PartialInstance[];
@@ -38,18 +65,23 @@ export const identifyToothInstances = (input: {
   const sorted = [...input.instances].sort((a, b) => a.centroid[0] - b.centroid[0]);
   const identified: ToothInstancePrediction[] = [];
   const used = new Set<FdiNumber>();
+  const bank = ARCH_ORDER_WITHOUT_WISDOM[input.arch];
 
   for (let i = 0; i < sorted.length; i += 1) {
     const inst = sorted[i]!;
     const expected = expectedFdiForArchSlot(input.arch, i, sorted.length);
     const candidates: { fdi: FdiNumber; score: number }[] = [];
     if (expected !== undefined) {
-      candidates.push({ fdi: expected, score: 0.7 + Math.min(0.25, inst.confidence * 0.25) });
+      // Cap identification score — heuristic slot mapping is not clinical-grade.
+      const score = Math.min(0.82, 0.55 + Math.min(0.25, inst.confidence * 0.25));
+      candidates.push({ fdi: expected, score });
       const def = getFdiDefinition(expected);
       if (def !== undefined) {
-        const neighbors = [expected - 1, expected + 1].filter((n) => getFdiDefinition(n));
+        const neighbors = [expected - 1, expected + 1].filter(
+          (n) => getFdiDefinition(n) !== undefined && bank.includes(n as FdiNumber)
+        );
         for (const n of neighbors) {
-          candidates.push({ fdi: n as FdiNumber, score: 0.35 });
+          candidates.push({ fdi: n as FdiNumber, score: 0.32 });
         }
       }
     }
@@ -70,7 +102,11 @@ export const identifyToothInstances = (input: {
         confidence: top.score,
         candidates: Object.freeze(candidates.slice(0, 3))
       });
-      warnings.push(`Instance ${inst.instanceId} left UNCERTAIN (threshold ${String(input.threshold)})`);
+      if (warnings.length < 24) {
+        warnings.push(
+          `Instance ${inst.instanceId} left UNCERTAIN (threshold ${String(input.threshold)})`
+        );
+      }
     } else {
       used.add(top.fdi);
       identification = Object.freeze({
@@ -88,19 +124,19 @@ export const identifyToothInstances = (input: {
     );
   }
 
+  const withNeighbors = attachArchOrderNeighbors(identified);
+
   const missingSlots: IdentificationResult['missingSlots'][number][] = [];
-  const expectedAll =
-    input.arch === 'upper'
-      ? ([17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27] as FdiNumber[])
-      : ([47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37] as FdiNumber[]);
-  for (const fdi of expectedAll.slice(0, input.expectedSlots)) {
+  const expectedAll = bank;
+  const slotLimit = Math.min(input.expectedSlots, expectedAll.length);
+  for (const fdi of expectedAll.slice(0, slotLimit)) {
     if (!used.has(fdi)) {
       missingSlots.push(Object.freeze({ fdi, presence: 'MISSING' as const }));
     }
   }
 
   return {
-    instances: Object.freeze(identified),
+    instances: withNeighbors,
     missingSlots: Object.freeze(missingSlots),
     warnings: Object.freeze(warnings)
   };

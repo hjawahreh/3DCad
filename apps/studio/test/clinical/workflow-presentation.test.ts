@@ -50,7 +50,7 @@ describe('clinical workflow presentation', () => {
 
     expect(presentation.emptyWorkspace).toBe(true);
     expect(presentation.currentStepId).toBe('import');
-    expect(presentation.primaryAction.label).toBe('Import Scan');
+    expect(presentation.primaryAction.label).toBe('New Case');
     expect(presentation.secondaryActions.some((a) => a.label === 'Open Case')).toBe(true);
     expect(presentation.statusLine).toContain('Import');
     expect(presentation.steps.find((s) => s.id === 'import')?.status).toBe('current');
@@ -81,7 +81,7 @@ describe('clinical workflow presentation', () => {
     const presentation = buildClinicalWorkflowPresentation(boot.workspace);
     expect(presentation.emptyWorkspace).toBe(false);
     expect(presentation.currentStepId).toBe('orient');
-    expect(presentation.primaryAction.label).toMatch(/Orient|Start Orientation/);
+    expect(presentation.primaryAction.label).toMatch(/Orient|Auto Orient|Continue to Orientation|Start Orientation|Accept Orientation/);
     expect(presentation.steps.find((s) => s.id === 'import')?.status).toBe('completed');
     expect(presentation.steps.find((s) => s.id === 'orient')?.status).toBe('current');
     expect(presentation.steps.find((s) => s.id === 'analyze')?.status).toBe('locked');
@@ -104,11 +104,11 @@ describe('clinical workflow presentation', () => {
     boot.workspace.preparation.session.setStage('ready-for-trim');
 
     const presentation = buildClinicalWorkflowPresentation(boot.workspace);
-    expect(presentation.currentStepId).toBe('trim');
-    expect(presentation.primaryAction.label).toMatch(/Trim/);
-    expect(presentation.steps.find((s) => s.id === 'prepare')?.status).toBe('completed');
-    expect(presentation.steps.find((s) => s.id === 'trim')?.status).toBe('current');
-    expect(presentation.statusLine.toLowerCase()).toMatch(/trim|ready/);
+    expect(presentation.currentStepId).toBe('prepare');
+    expect(presentation.primaryAction.label).toMatch(/Continue to Trim|Trim/);
+    expect(presentation.steps.find((s) => s.id === 'prepare')?.status).toBe('current');
+    expect(presentation.steps.find((s) => s.id === 'trim')?.status).toBe('available');
+    expect(presentation.statusLine.toLowerCase()).toMatch(/trim|ready|preparation/);
 
     boot.runtime.dispose();
     h.dispose();
@@ -117,7 +117,7 @@ describe('clinical workflow presentation', () => {
   it('translates internal preparation status into clinical language', () => {
     expect(toUserFacingStatus('Preparation idle')).toBe('Ready to prepare your model');
     expect(toUserFacingStatus('Preparation complete — ready for geometry tools')).toContain(
-      'ready for Trim'
+      'confirmed'
     );
   });
 

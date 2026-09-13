@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -41,5 +41,26 @@ describe('architecture', () => {
     const readme = readFileSync(join(root, 'README.md'), 'utf8');
     expect(readme.includes('composition')).toBe(true);
     expect(readme.includes('platform')).toBe(true);
+  });
+
+  it('clinical trim/close-base/handoff sources do not import VTK', () => {
+    const scan = (dir: string) =>
+      readdirSync(dir)
+        .filter((f) => f.endsWith('.ts') || f.endsWith('.tsx'))
+        .map((f) => readFileSync(join(dir, f), 'utf8'))
+        .join('\n');
+    const handoffSrc = readFileSync(
+      join(root, 'src/clinical/handoff/ClinicalHandoffSnapshot.ts'),
+      'utf8'
+    );
+    const src =
+      scan(join(root, 'src/clinical/trim')) +
+      '\n' +
+      scan(join(root, 'src/clinical/close-base')) +
+      '\n' +
+      handoffSrc;
+    expect(/from ['"]vtk|require\(['"]vtk|vtkmodules/i.test(src)).toBe(false);
+    // Handoff contract must not expose geometry-backend fields to clinical consumers.
+    expect(/geometryBackend\s*:/.test(handoffSrc)).toBe(false);
   });
 });

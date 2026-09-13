@@ -1,13 +1,22 @@
 import { useRef, useSyncExternalStore, useState } from 'react';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
 import {
+  CLINICAL_IMPORT_FORMAT_LABELS,
   CLINICAL_IMPORT_FORMATS,
   type ClinicalArchRole
 } from '../import/ClinicalMeshDescriptor.js';
 import { ARCH_DISPLAY_NAME, suggestArchRole } from '../import/ClinicalMeshParsers.js';
+import type { ClinicalCaseValidationReport } from '../case/ClinicalCaseValidation.js';
 import { useClinicalUiRevision } from './useClinicalUi.js';
+import { ClinicalCaseValidationPanel } from './ClinicalCaseValidationPanel.js';
+import {
+  formatScanBytes,
+  isLargeScan,
+  toClinicalImportError
+} from './ClinicalImportPresentation.js';
 
 const ACCEPT = CLINICAL_IMPORT_FORMATS.map((ext) => `.${ext}`).join(',');
+const FORMAT_HINT = Object.values(CLINICAL_IMPORT_FORMAT_LABELS).join(' / ');
 
 interface ArchFilePick {
   readonly file: File;
@@ -36,6 +45,8 @@ const pickFromFiles = (files: FileList | null): ArchFilePick | null => {
   };
 };
 
+type ImportPhase = 'form' | 'working' | 'result';
+
 export const ClinicalImportDialog = ({
   workspace,
   onClose
@@ -54,8 +65,12 @@ export const ClinicalImportDialog = ({
   const lowerInputRef = useRef<HTMLInputElement | null>(null);
   const [upper, setUpper] = useState<ArchFilePick | null>(null);
   const [lower, setLower] = useState<ArchFilePick | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState<ImportPhase>('form');
   const [localError, setLocalError] = useState<string | undefined>(undefined);
+  const [importedCount, setImportedCount] = useState(0);
+  const [validation, setValidation] = useState<ClinicalCaseValidationReport | undefined>(
+    undefined
+  );
   const [replacePrompt, setReplacePrompt] = useState<{
     readonly arch: ClinicalArchRole;
     readonly file: ArchFilePick;
@@ -64,6 +79,7 @@ export const ClinicalImportDialog = ({
   const doc = workspace.session.getPublicState().activeCase;
   const hasUpper = doc?.objects.some((o) => o.archRole === 'upper') === true;
   const hasLower = doc?.objects.some((o) => o.archRole === 'lower') === true;
+  const busy = phase === 'working';
 
   const assignArch = (arch: ClinicalArchRole, files: FileList | null): void => {
     setLocalError(undefined);
@@ -71,8 +87,12 @@ export const ClinicalImportDialog = ({
     const pick = pickFromFiles(files);
     if (pick === null) {
       if (files?.[0] !== undefined) {
-        setLocalError('Unsupported format. Choose STL, OBJ, or PLY.');
+        setLocalError(`Unsupported format. Choose ${FORMAT_HINT}.`);
       }
+      return;
+    }
+    if (pick.sizeBytes === 0) {
+      setLocalError('Selected file is empty. Choose a dental scan with geometry.');
       return;
     }
     if (arch === 'upper') setUpper(pick);
@@ -99,7 +119,7 @@ export const ClinicalImportDialog = ({
     if (result.ok) return { ok: true };
     return {
       ok: false,
-      message: result.error.message,
+      message: toClinicalImportError(result.error.message),
       conflict: result.error.code === 'conflict'
     };
   };
@@ -109,7 +129,7 @@ export const ClinicalImportDialog = ({
       setLocalError('Choose at least one dental scan.');
       return;
     }
-    setBusy(true);
+    setPhase('working');
     setLocalError(undefined);
     setReplacePrompt(null);
 
@@ -118,7 +138,7 @@ export const ClinicalImportDialog = ({
       const pick = forceReplace === 'upper' ? upper : lower;
       if (pick === null) {
         setLocalError('Choose a file for the arch to replace.');
-        setBusy(false);
+        setPhase('form');
         return;
       }
       queue.push({ arch: forceReplace, pick });
@@ -135,7 +155,7 @@ export const ClinicalImportDialog = ({
         if (outcome.conflict) {
           setReplacePrompt({ arch: item.arch, file: item.pick });
           setLocalError(outcome.message);
-          setBusy(false);
+          setPhase('form');
           return;
         }
         setLocalError(
@@ -143,28 +163,75 @@ export const ClinicalImportDialog = ({
             ? `Could not import the upper scan. ${outcome.message}`
             : `Could not import the lower scan. ${outcome.message}`
         );
-        setBusy(false);
+        setValidation(workspace.importCoordinator.getLastCaseValidation());
+        setPhase('form');
         return;
       }
       imported += 1;
     }
 
+    const report = workspace.importCoordinator.getLastCaseValidation();
+    setValidation(report);
+    setImportedCount(imported);
     if (quiet && imported === 2) {
       workspace.session.getHost().notifications.push(
-        'success',
+        report?.verdict === 'FAIL' ? 'warning' : 'success',
         'Import',
-        'Upper and lower scans imported successfully.'
+        report?.verdict === 'WARNING'
+          ? 'Upper and lower scans imported with warnings.'
+          : 'Upper and lower scans imported successfully.'
       );
     }
+    setPhase('result');
+  };
 
-    setBusy(false);
+  const cancelOrClose = (): void => {
+    if (busy) {
+      workspace.importController.cancel();
+      setPhase('form');
+      setLocalError('Import was cancelled.');
+      return;
+    }
     onClose();
   };
+
+  if (phase === 'result') {
+    const canContinue = validation?.verdict !== 'FAIL';
+    return (
+      <div className="clinical-import-dialog" data-testid="clinical-import-result">
+        <p className="clinical-create-case__success-title">
+          {importedCount === 1 ? 'Scan imported' : 'Scans imported'}
+        </p>
+        <p className="muted">Source geometry preserved. Review validation before continuing.</p>
+        {validation !== undefined ? (
+          <ClinicalCaseValidationPanel report={validation} compact />
+        ) : null}
+        <div className="overlay-actions" style={{ paddingLeft: 0, paddingRight: 0 }}>
+          <button type="button" className="clinical-btn clinical-btn--secondary" onClick={onClose}>
+            Close
+          </button>
+          <button
+            type="button"
+            className="clinical-btn clinical-btn--primary"
+            data-testid="clinical-import-continue-orient"
+            disabled={!canContinue}
+            onClick={() => {
+              onClose();
+              void workspace.session.getHost().commands.invoke('clinical.tool.orient');
+              workspace.session.notifyUi();
+            }}
+          >
+            Continue to Orientation
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="clinical-import-dialog" data-testid="clinical-import-dialog">
       <p className="clinical-import-dialog__intro">
-        Add one or both scans to this case.
+        Add one or both scans to this case ({FORMAT_HINT}).
       </p>
 
       <input
@@ -203,7 +270,11 @@ export const ClinicalImportDialog = ({
           ) : (
             <>
               <strong>✓ {upper.fileName}</strong>
-              <span className="muted"> · Ready</span>
+              <span className="muted">
+                {' '}
+                · {formatScanBytes(upper.sizeBytes)}
+                {isLargeScan(upper.sizeBytes) ? ' · large file' : ''}
+              </span>
             </>
           )}
         </div>
@@ -228,20 +299,28 @@ export const ClinicalImportDialog = ({
           ) : (
             <>
               <strong>✓ {lower.fileName}</strong>
-              <span className="muted"> · Ready</span>
+              <span className="muted">
+                {' '}
+                · {formatScanBytes(lower.sizeBytes)}
+                {isLargeScan(lower.sizeBytes) ? ' · large file' : ''}
+              </span>
             </>
           )}
         </div>
       </div>
 
-      {localError !== undefined ? <p className="clinical-import-dialog__error">{localError}</p> : null}
+      {localError !== undefined ? (
+        <p className="clinical-import-dialog__error" data-testid="clinical-import-error">
+          {localError}
+        </p>
+      ) : null}
 
       {replacePrompt !== null ? (
         <div className="clinical-import-replace" data-testid="clinical-import-replace">
           <p>{ARCH_DISPLAY_NAME[replacePrompt.arch]} already contains a scan.</p>
           <div className="overlay-actions" style={{ paddingLeft: 0, paddingRight: 0 }}>
             <button type="button" disabled={busy} onClick={() => setReplacePrompt(null)}>
-              Cancel
+              Keep existing
             </button>
             <button
               type="button"
@@ -255,10 +334,10 @@ export const ClinicalImportDialog = ({
         </div>
       ) : null}
 
-      {progress.phase !== 'idle' && progress.phase !== 'completed' ? (
-        <div className="clinical-import-progress">
+      {busy || (progress.phase !== 'idle' && progress.phase !== 'completed') ? (
+        <div className="clinical-import-progress" data-testid="clinical-import-progress">
           <div className="clinical-import-progress__bar">
-            <div style={{ width: `${String(Math.round(progress.ratio * 100))}%` }} />
+            <div style={{ width: `${String(Math.round(Math.max(progress.ratio, 0.15) * 100))}%` }} />
           </div>
           <div className={progress.phase === 'failed' ? 'clinical-import-dialog__error' : 'muted'}>
             {progress.message || progress.phase}
@@ -267,8 +346,8 @@ export const ClinicalImportDialog = ({
       ) : null}
 
       <div className="overlay-actions" style={{ paddingLeft: 0, paddingRight: 0 }}>
-        <button type="button" disabled={!busy} onClick={() => workspace.importController.cancel()}>
-          Cancel
+        <button type="button" data-testid="clinical-import-cancel" onClick={cancelOrClose}>
+          {busy ? 'Cancel import' : 'Cancel'}
         </button>
         <button
           type="button"

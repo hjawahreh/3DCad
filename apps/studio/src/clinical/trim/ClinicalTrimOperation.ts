@@ -27,13 +27,20 @@ export class ClinicalTrimOperation {
     readonly document: ClinicalDocumentSnapshot;
     readonly targetObjectId: string;
     readonly points: readonly TrimBoundaryPoint[];
+    readonly stroke?: readonly (readonly [number, number])[];
     readonly drawMode: string;
     readonly viewport?: { readonly width: number; readonly height: number };
+    readonly loop3d?: readonly { readonly x: number; readonly y: number; readonly z: number }[];
+    readonly loopNormal?: readonly [number, number, number];
+    readonly keepMode?: 'KEEP_OUTSIDE' | 'KEEP_INSIDE';
+    readonly algorithm?: string;
+    /** When true, kernel writes preview/display only — working untouched until Accept. */
+    readonly preview?: boolean;
   }): ClinicalResult<OperationSession> {
     if (this.session !== undefined) {
       return clinicalFailure('conflict', 'Trim operation already active');
     }
-    const stroke = boundaryToStroke(input.points);
+    const stroke = input.stroke ?? boundaryToStroke(input.points);
     const started = input.tools.start({
       kind: 'trim',
       baseRevision: asDocumentRevision(Number(input.document.revision)),
@@ -42,7 +49,12 @@ export class ClinicalTrimOperation {
         targetObjectId: input.targetObjectId,
         stroke,
         drawMode: input.drawMode,
-        ...(input.viewport === undefined ? {} : { viewport: input.viewport })
+        preview: input.preview === true,
+        ...(input.viewport === undefined ? {} : { viewport: input.viewport }),
+        ...(input.loop3d === undefined ? {} : { loop3d: input.loop3d }),
+        ...(input.loopNormal === undefined ? {} : { loopNormal: input.loopNormal }),
+        ...(input.keepMode === undefined ? {} : { keepMode: input.keepMode }),
+        ...(input.algorithm === undefined ? {} : { algorithm: input.algorithm })
       })
     });
     if (!started.ok) {

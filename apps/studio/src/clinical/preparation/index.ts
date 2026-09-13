@@ -30,8 +30,18 @@ export {
 } from './ClinicalPreparationStage.js';
 export {
   DEFAULT_PREPARATION_STATE,
-  type ClinicalPreparationState
+  type ClinicalPreparationState,
+  type ClinicalPreparationFailure
 } from './ClinicalPreparationState.js';
+export {
+  runClinicalAutoPreparation,
+  prepareArchGeometry,
+  computeVertexNormals,
+  AUTO_PREPARATION_ALGORITHM_VERSION,
+  type ClinicalAutoPreparationReport,
+  type AutoPreparationUiState,
+  type AutoPreparationStep
+} from './ClinicalAutoPreparationRunner.js';
 export type {
   ValidationCheckId,
   ValidationCheckResult,

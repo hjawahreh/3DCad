@@ -20,8 +20,18 @@ export {
   type OrientationMode,
   type OrientationIncrement,
   type OrientationAxis,
-  type OrientationHandle
+  type OrientationHandle,
+  type OrientationOrigin
 } from './ClinicalOrientationState.js';
+export {
+  estimateClinicalOrientation,
+  samplePositions,
+  mat4FromClinicalAxes,
+  AUTO_ORIENTATION_ALGORITHM_VERSION,
+  type ClinicalOrientationEstimate,
+  type OrientationConfidence,
+  type ClinicalArchSample
+} from './ClinicalAutoOrientationEstimator.js';
 export {
   multiplyMat4,
   rotateXMat4,
@@ -30,5 +40,10 @@ export {
   applyRotationDelta,
   snapToWorldAxes,
   isIdentityTransform,
-  cloneTransform
+  cloneTransform,
+  invertMat4,
+  translateMat4,
+  uniformScaleMat4,
+  transformPoint3,
+  worldToLocalPoint3
 } from './ClinicalTransformMath.js';

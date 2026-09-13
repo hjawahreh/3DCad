@@ -234,6 +234,16 @@ export class MeshRegistry {
     entry.preview = undefined;
   }
 
+  /** Drop stale display mesh so viewport falls back to working/source. */
+  public clearDisplay(objectId: string): void {
+    const entry = this.byObject.get(objectId);
+    if (entry?.display === undefined) {
+      return;
+    }
+    this.byHandle.delete(entry.display.id);
+    entry.display = undefined;
+  }
+
   public cancelPreviews(objectId?: string): void {
     if (objectId !== undefined) {
       this.clearPreview(objectId);

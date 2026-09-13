@@ -7,6 +7,7 @@ import type { ClinicalSceneBuilder } from '../import/ClinicalSceneBuilder.js';
 import type { ClinicalObjectId } from '../import/ClinicalMeshDescriptor.js';
 import type { ClinicalResult } from '../runtime/types.js';
 import { ClinicalOrientationController } from './ClinicalOrientationController.js';
+import type { ClinicalOrientationEstimate } from './ClinicalAutoOrientationEstimator.js';
 import type {
   OrientationIncrement,
   OrientationMode
@@ -41,6 +42,22 @@ export class ClinicalOrientationRuntime {
 
   public enter(preferredId?: ClinicalObjectId): ClinicalResult<void> {
     return this.controller.enter(preferredId);
+  }
+
+  public autoOrient(options?: { readonly force?: boolean }): ClinicalResult<ClinicalOrientationEstimate> {
+    return this.controller.autoOrient(options);
+  }
+
+  public getLastEstimate() {
+    return this.controller.getLastEstimate();
+  }
+
+  public setAfterAcceptPresenter(fn: (() => void) | undefined): void {
+    this.controller.setAfterAcceptPresenter(fn);
+  }
+
+  public setOnEnterPresenter(fn: (() => void) | undefined): void {
+    this.controller.setOnEnterPresenter(fn);
   }
 
   public setMode(mode: OrientationMode): ClinicalResult<void> {

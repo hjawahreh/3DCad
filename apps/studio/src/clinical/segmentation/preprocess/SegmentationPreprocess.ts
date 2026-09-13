@@ -75,10 +75,10 @@ const faceCentroidAndNormal = (
   };
 };
 
-export const preprocessSegmentationMesh = (
+export const preprocessSegmentationMesh = async (
   mesh: TriangleMesh,
   options?: { readonly signal?: AbortSignal }
-): PreprocessResult => {
+): Promise<PreprocessResult> => {
   const started = performance.now();
   if (options?.signal?.aborted) {
     throw new SegmentationError('CANCELLED', 'Preprocessing cancelled');
@@ -104,10 +104,18 @@ export const preprocessSegmentationMesh = (
   const scale = Math.max(dx, dy, dz, 1e-6);
   const faceCentroids = new Float32Array(stats.triangleCount * 3);
   const faceNormals = new Float32Array(stats.triangleCount * 3);
+  // Full 1:1 sample mappings are only needed for small meshes / NN paths.
+  // Large clinical arches use stride sampling via planLargeMeshSampling instead.
+  const buildFullMappings = stats.triangleCount <= 48_000;
   const sampleMappings: SamplePointMapping[] = [];
   for (let f = 0; f < stats.triangleCount; f += 1) {
     if (options?.signal?.aborted) {
       throw new SegmentationError('CANCELLED', 'Preprocessing cancelled');
+    }
+    if ((f & 8191) === 0) {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 0);
+      });
     }
     const { c, n } = faceCentroidAndNormal(working, f);
     faceCentroids[f * 3] = (c[0] - aabb.min[0]) / scale;
@@ -116,13 +124,23 @@ export const preprocessSegmentationMesh = (
     faceNormals[f * 3] = n[0];
     faceNormals[f * 3 + 1] = n[1];
     faceNormals[f * 3 + 2] = n[2];
-    sampleMappings.push(
-      Object.freeze({
+    if (buildFullMappings) {
+      sampleMappings.push({
         sampleIndex: f,
         faceIndex: f,
-        barycentric: Object.freeze([1 / 3, 1 / 3, 1 / 3] as const)
-      })
-    );
+        barycentric: [1 / 3, 1 / 3, 1 / 3]
+      });
+    }
+  }
+  if (!buildFullMappings) {
+    const stride = Math.max(1, Math.ceil(stats.triangleCount / 16_000));
+    for (let f = 0, sampleIndex = 0; f < stats.triangleCount; f += stride, sampleIndex += 1) {
+      sampleMappings.push({
+        sampleIndex,
+        faceIndex: f,
+        barycentric: [1 / 3, 1 / 3, 1 / 3]
+      });
+    }
   }
   return Object.freeze({
     version: PREPROCESSING_VERSION,

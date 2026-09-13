@@ -6,6 +6,11 @@ import type { ClinicalSession } from '../runtime/session.js';
 import type { ClinicalOrientationRuntime } from '../orientation/ClinicalOrientationRuntime.js';
 import type { ClinicalViewportRuntime } from '../display/ClinicalViewportRuntime.js';
 import {
+  withPreparationMeta,
+  type ClinicalDocumentSnapshot,
+  type ClinicalPreparationMeta
+} from '../document/ClinicalDocument.js';
+import {
   clinicalFailure,
   clinicalSuccess,
   type ClinicalResult
@@ -22,6 +27,11 @@ import {
 } from './ClinicalPreparationPreferences.js';
 import type { PreparationOrchestrationToolId } from './ClinicalPreparationPipeline.js';
 import type { ClinicalPreparationStage } from './ClinicalPreparationStage.js';
+import {
+  runClinicalAutoPreparation,
+  type ClinicalAutoPreparationReport,
+  type PrepareArchInput
+} from './ClinicalAutoPreparationRunner.js';
 
 export class ClinicalPreparationController {
   public readonly session: ClinicalPreparationSession;
@@ -36,7 +46,8 @@ export class ClinicalPreparationController {
   public constructor(
     private readonly clinicalSession: ClinicalSession,
     private readonly orientation: ClinicalOrientationRuntime,
-    private readonly viewport: ClinicalViewportRuntime
+    private readonly viewport: ClinicalViewportRuntime,
+    private readonly archContext?: { getMode(): 'upper' | 'lower' | 'both' }
   ) {
     this.session = new ClinicalPreparationSession();
     this.manager = new ClinicalPreparationManager();
@@ -47,19 +58,73 @@ export class ClinicalPreparationController {
   }
 
   public start(): ClinicalResult<void> {
+    // Idempotent: Orient Accept already starts preparation — do not error on repeat.
     if (this.hasActiveSession()) {
-      return clinicalFailure('conflict', 'Preparation session already active');
+      this.clinicalSession.notifyUi();
+      return clinicalSuccess(undefined);
     }
+    if (this.isReadyForGeometry()) {
+      this.clinicalSession.notifyUi();
+      return clinicalSuccess(undefined);
+    }
+
+    const doc = this.clinicalSession.getPublicState().activeCase;
+    const archMode = this.archContext?.getMode() ?? 'both';
+    const fail = (stage: string, reason: string, code: 'validation' | 'conflict' | 'not-found' | 'lifecycle' = 'lifecycle') => {
+      const userMessage =
+        stage === 'SESSION_CREATE'
+          ? 'Could not create preparation session'
+          : reason;
+      this.session.setFailure(
+        Object.freeze({
+          stage,
+          reason,
+          caseId: doc?.caseId as string | undefined,
+          arch: archMode,
+          geometryRevision: doc?.revision as number | undefined,
+          at: Date.now()
+        }),
+        userMessage
+      );
+      this.diagnostics.recordValidationFailure(`${stage}: ${reason}`);
+      this.clinicalSession.notifyUi();
+      return clinicalFailure(code, userMessage);
+    };
+
     const ready = this.manager.ensureCaseReady(this.clinicalSession);
     if (!ready.ok) {
-      this.diagnostics.recordValidationFailure(ready.error.message);
-      return ready;
+      return fail('CASE_READY', ready.error.message, ready.error.code as 'not-found');
     }
+    if (doc === undefined) {
+      return fail('CASE_LOOKUP', 'No active case', 'not-found');
+    }
+
     const now = Date.now();
+    const fingerprint = this.geometryFingerprint();
+    const sessionId = `prep-${String(doc.caseId)}-${String(now)}`;
+    const binding = Object.freeze({
+      sessionId,
+      caseId: String(doc.caseId),
+      geometryRevision: Number(doc.revision),
+      geometryFingerprint: fingerprint,
+      archMode
+    });
+
     const wf = this.session.getWorkflow();
-    wf.reset();
-    wf.transition('case-ready');
-    wf.transition('orientation-validation');
+    if (wf.getPhase() === 'cancelled' || wf.getPhase() === 'ready-for-geometry') {
+      wf.reset();
+      this.session.forceWorkflowPhase('idle');
+    } else if (wf.getPhase() === 'idle') {
+      // ok
+    }
+
+    // Advance workflow from idle → preparation-ready (idempotent per phase).
+    if (wf.getPhase() === 'idle') {
+      wf.transition('case-ready');
+    }
+    if (wf.getPhase() === 'case-ready') {
+      wf.transition('orientation-validation');
+    }
 
     const context = this.buildContext(now);
     const report = this.manager.runValidation(context, { requireSavedCase: false });
@@ -68,31 +133,312 @@ export class ClinicalPreparationController {
 
     if (!report.passed) {
       this.metrics.recordValidationFailure();
-      this.diagnostics.recordValidationFailure('Initial validation failed');
+      const failed = report.checks.find((c) => !c.passed);
       wf.transition('cancelled');
-      this.session.setWorkflowPhase('cancelled', 'Validation failed');
-      return clinicalFailure('validation', 'Preparation validation failed');
+      this.session.setWorkflowPhase('cancelled', failed?.message ?? 'Validation failed');
+      return fail(
+        'VALIDATION',
+        failed?.message ?? 'Preparation validation failed',
+        'validation'
+      );
     }
 
     this.metrics.recordValidationSuccess();
-    wf.transition('preparation-ready');
-    this.session.setWorkflowPhase('preparation-ready', 'Preparation ready');
+    if (wf.getPhase() === 'orientation-validation') {
+      wf.transition('preparation-ready');
+    }
+    this.session.setWorkflowPhase(
+      'preparation-ready',
+      'Your scans are oriented and ready.'
+    );
     this.session.setOrientationValidated(
       report.checks.find((c) => c.id === 'orientation-completed')?.passed === true
     );
     this.session.setStage('orientation-complete');
     this.metrics.recordStageCompletion('orientation-complete');
 
-    if (!this.session.createSession(now)) {
-      return clinicalFailure('conflict', 'Could not create preparation session');
+    if (!this.session.ensureSession(now, binding)) {
+      return fail(
+        'SESSION_CREATE',
+        `Lifecycle blocked at ${this.session.getLifecycle().getPhase()}`,
+        'conflict'
+      );
     }
-    this.activeSessionId = `prep-${String(now)}`;
+    this.activeSessionId = binding.sessionId;
+    this.session.clearFailure();
     this.diagnostics.recordSessionStart();
     this.events.emit({ type: 'session', action: 'create', at: now });
     this.events.emit({ type: 'workflow', phase: 'preparation-ready', at: now });
     this.events.emit({ type: 'stage', stage: 'orientation-complete', at: now });
     this.clinicalSession.notifyUi();
     return clinicalSuccess(undefined);
+  }
+
+  private geometryFingerprint(): string {
+    const arches = this.collectArchInputs();
+    if (arches.length === 0) {
+      const doc = this.clinicalSession.getPublicState().activeCase;
+      return `doc:${String(doc?.caseId ?? 'none')}:${String(doc?.revision ?? 0)}`;
+    }
+    return arches
+      .map((a) => `${a.objectId}:${a.mesh.revision}:${a.mesh.fingerprint}`)
+      .sort()
+      .join('|');
+  }
+
+  /**
+   * Truthful preparation gate: validate → mark ready for Trim.
+   * No fake mesh repair. Idempotent when already ready for geometry.
+   */
+  public confirmReadyForTrim(): ClinicalResult<void> {
+    if (this.isReadyForGeometry()) {
+      this.clinicalSession.notifyUi();
+      return clinicalSuccess(undefined);
+    }
+    const started = this.start();
+    if (!started.ok) {
+      return started;
+    }
+    // Activate so completeSession can transition lifecycle created → completed.
+    if (this.session.getLifecycle().getPhase() === 'created') {
+      this.activateSession();
+    }
+    const completed = this.complete({ quiet: true });
+    if (!completed.ok) {
+      return completed;
+    }
+    // Ensure stage allows trim validation.
+    this.session.setStage('ready-for-trim');
+    this.clinicalSession.notifyUi();
+    return clinicalSuccess(undefined);
+  }
+
+  /**
+   * Automatic clinical preparation after orientation.
+   * Runs safe diagnostics + derived caches, then marks ready for Trim.
+   * Idempotent for the same geometry fingerprint.
+   */
+  public autoPrepare(): ClinicalResult<ClinicalAutoPreparationReport> {
+    const host = this.clinicalSession.getHost();
+    const doc = this.clinicalSession.getPublicState().activeCase;
+    if (doc === undefined) {
+      return clinicalFailure('not-found', 'No active case');
+    }
+
+    const arches = this.collectArchInputs();
+    const fingerprintPreview = arches
+      .map((a) => `${a.objectId}:${a.mesh.revision}:${a.mesh.fingerprint}`)
+      .sort()
+      .join('|');
+
+    // Idempotent: already prepared for this geometry.
+    const existing = this.session.getState().autoReport;
+    if (
+      this.isReadyForGeometry() &&
+      existing?.ok === true &&
+      existing.sourceFingerprint === fingerprintPreview
+    ) {
+      this.clinicalSession.notifyUi();
+      return clinicalSuccess(existing);
+    }
+    if (
+      doc.preparationMeta?.sourceFingerprint === fingerprintPreview &&
+      (doc.preparationMeta.uiState === 'ready' || doc.preparationMeta.uiState === 'warning') &&
+      this.isReadyForGeometry()
+    ) {
+      this.clinicalSession.notifyUi();
+      return clinicalSuccess(
+        existing ??
+          Object.freeze({
+            ok: true,
+            uiState: doc.preparationMeta.uiState,
+            algorithmVersion: doc.preparationMeta.algorithmVersion,
+            steps: Object.freeze([]),
+            arches: Object.freeze([]),
+            warnings: Object.freeze([]),
+            message: doc.preparationMeta.message,
+            timingMs: doc.preparationMeta.timingMs,
+            preparedAt: doc.preparationMeta.preparedAt,
+            sourceFingerprint: doc.preparationMeta.sourceFingerprint
+          })
+      );
+    }
+
+    this.session.setAutoPreparation({
+      autoUiState: 'analyzing',
+      statusMessage: 'Preparing your scans for trimming.',
+      nextStep: 'Analyzing clinical geometry'
+    });
+    host.processFeedback.begin({
+      kind: 'preparation',
+      title: 'Preparation',
+      stages: [
+        { id: 'analyze', label: 'Analyzing clinical geometry' },
+        { id: 'prepare', label: 'Preparing clinical geometry' },
+        { id: 'confirm', label: 'Confirming ready for trim' }
+      ],
+      initialStageId: 'analyze'
+    });
+    host.notifications.push('progress', 'Preparation', 'Preparing case…');
+    this.clinicalSession.notifyUi();
+
+    const started = this.start();
+    if (!started.ok) {
+      host.processFeedback.fail(started.error.message);
+      host.processFeedback.complete();
+      const failure = this.session.getState().lastFailure;
+      this.session.setAutoPreparation({
+        autoUiState: 'failed',
+        statusMessage: started.error.message,
+        nextStep: 'Fix the case and retry preparation'
+      });
+      if (failure !== undefined && import.meta.env.DEV) {
+        host.notifications.push(
+          'warning',
+          'Preparation',
+          `${started.error.message} [${failure.stage}: ${failure.reason}]`
+        );
+      }
+      return clinicalFailure(started.error.code, started.error.message);
+    }
+
+    host.processFeedback.setStage('prepare');
+    this.session.setAutoPreparation({
+      autoUiState: 'preparing',
+      statusMessage: 'Preparing clinical geometry…'
+    });
+
+    let report: ClinicalAutoPreparationReport;
+    if (arches.length === 0) {
+      // Document objects exist but MeshRegistry is empty (e.g. descriptor-only tests).
+      // Fall back to document readiness without claiming mesh caches were built.
+      const confirmedEmpty = this.confirmReadyForTrim();
+      if (!confirmedEmpty.ok) {
+        this.session.setAutoPreparation({
+          autoUiState: 'failed',
+          statusMessage: confirmedEmpty.error.message,
+          nextStep: 'Retry preparation'
+        });
+        return clinicalFailure(confirmedEmpty.error.code, confirmedEmpty.error.message);
+      }
+      report = Object.freeze({
+        ok: true,
+        uiState: 'warning',
+        algorithmVersion: 'clinical-auto-prep-v1',
+        steps: Object.freeze([
+          Object.freeze({ id: 'validate', label: 'Mesh validation', done: true }),
+          Object.freeze({ id: 'ready', label: 'Clinical readiness', done: true })
+        ]),
+        arches: Object.freeze([]),
+        warnings: Object.freeze([
+          'Mesh buffers were unavailable; readiness is based on document checks only.'
+        ]),
+        message: 'Ready with warnings. Some scan regions may require review.',
+        timingMs: 0,
+        preparedAt: Date.now(),
+        sourceFingerprint: `doc:${doc.caseId as string}:${String(doc.revision)}`
+      });
+    } else {
+      report = runClinicalAutoPreparation({
+        arches,
+        registry: host.runtimes.kernel.registry,
+        cache: host.runtimes.kernel.cache,
+        now: Date.now(),
+        onProgress: (progress) => {
+          this.session.setAutoPreparation({
+            autoUiState: 'preparing',
+            autoSteps: progress.steps,
+            statusMessage: progress.message
+          });
+          this.clinicalSession.notifyUi();
+        }
+      });
+    }
+    this.session.setAutoPreparation({
+      autoUiState: report.uiState,
+      autoSteps: report.steps,
+      autoReport: report,
+      statusMessage: report.message,
+      nextStep: report.ok ? 'Continue to Trim' : 'Review the scan and retry'
+    });
+
+    if (!report.ok) {
+      this.diagnostics.recordValidationFailure(report.message);
+      host.processFeedback.fail(report.message);
+      host.processFeedback.complete();
+      host.notifications.push('error', 'Preparation', report.message);
+      this.clinicalSession.notifyUi();
+      return clinicalSuccess(report);
+    }
+
+    host.processFeedback.setStage('confirm');
+    const confirmed = this.confirmReadyForTrim();
+    if (!confirmed.ok) {
+      host.processFeedback.fail(confirmed.error.message);
+      host.processFeedback.complete();
+      this.session.setAutoPreparation({
+        autoUiState: 'failed',
+        statusMessage: confirmed.error.message,
+        nextStep: 'Retry preparation'
+      });
+      return clinicalFailure(confirmed.error.code, confirmed.error.message);
+    }
+
+    const meta: ClinicalPreparationMeta = Object.freeze({
+      algorithmVersion: report.algorithmVersion,
+      uiState: report.uiState === 'warning' ? 'warning' : 'ready',
+      sourceFingerprint: report.sourceFingerprint,
+      warningCount: report.warnings.length,
+      archCount: report.arches.length,
+      preparedAt: report.preparedAt,
+      timingMs: report.timingMs,
+      message: report.message
+    });
+    const current = this.clinicalSession.getPublicState().activeCase;
+    if (current !== undefined) {
+      this.clinicalSession.applyDocument(withPreparationMeta(current, meta, Date.now()), true);
+    }
+
+    this.session.setStage('ready-for-trim');
+    this.session.setAutoPreparation({
+      autoUiState: report.uiState,
+      autoSteps: report.steps,
+      autoReport: report,
+      statusMessage: report.message,
+      nextStep: 'Continue to Trim'
+    });
+
+    host.processFeedback.complete();
+    host.notifications.push(
+      report.uiState === 'warning' ? 'warning' : 'success',
+      'Preparation',
+      report.message
+    );
+    this.clinicalSession.notifyUi();
+    return clinicalSuccess(report);
+  }
+
+  private collectArchInputs(): PrepareArchInput[] {
+    const doc = this.clinicalSession.getPublicState().activeCase;
+    if (doc === undefined) return [];
+    const registry = this.clinicalSession.getHost().runtimes.kernel.registry;
+    const mode = this.archContext?.getMode() ?? 'both';
+    const arches: PrepareArchInput[] = [];
+    for (const obj of doc.objects) {
+      if (mode === 'upper' && obj.archRole !== 'upper') continue;
+      if (mode === 'lower' && obj.archRole !== 'lower') continue;
+      const mesh =
+        registry.getByObjectId(obj.id as string, 'working') ??
+        registry.getByObjectId(obj.id as string, 'source');
+      if (mesh === undefined) continue;
+      arches.push({
+        objectId: obj.id as string,
+        archRole: obj.archRole,
+        displayName: obj.displayName,
+        mesh
+      });
+    }
+    return arches;
   }
 
   public validate(): ClinicalResult<void> {
@@ -120,12 +466,32 @@ export class ClinicalPreparationController {
   }
 
   public activateSession(): ClinicalResult<void> {
-    if (!this.session.activateSession()) {
+    const phase = this.session.getLifecycle().getPhase();
+    if (phase === 'created') {
+      if (!this.session.activateSession()) {
+        return clinicalFailure('lifecycle', 'Cannot activate preparation session');
+      }
+    } else if (phase !== 'active' && phase !== 'suspended') {
       return clinicalFailure('lifecycle', 'Cannot activate preparation session');
+    } else if (phase === 'suspended') {
+      if (!this.session.resumeSession()) {
+        return clinicalFailure('lifecycle', 'Cannot activate preparation session');
+      }
     }
     const now = Date.now();
-    this.session.getWorkflow().transition('preparation-session');
-    this.session.setWorkflowPhase('preparation-session', 'Preparation session active');
+    const wf = this.session.getWorkflow();
+    if (wf.getPhase() === 'preparation-ready') {
+      wf.transition('preparation-session');
+    } else if (wf.getPhase() === 'tool-selection') {
+      wf.transition('preparation-session');
+    }
+    this.session.setWorkflowPhase(
+      wf.getPhase() === 'preparation-session' ? 'preparation-session' : wf.getPhase(),
+      'Preparation session active'
+    );
+    if (this.activeSessionId === undefined) {
+      this.activeSessionId = this.session.getState().sessionId ?? `prep-${String(now)}`;
+    }
     this.events.emit({ type: 'lifecycle', phase: 'active', at: now });
     this.events.emit({ type: 'session', action: 'create', at: now });
     this.clinicalSession.notifyUi();
@@ -213,7 +579,7 @@ export class ClinicalPreparationController {
     return advanced;
   }
 
-  public complete(): ClinicalResult<void> {
+  public complete(options?: { readonly quiet?: boolean }): ClinicalResult<void> {
     if (!this.hasActiveSession()) {
       return clinicalFailure('lifecycle', 'No active preparation session');
     }
@@ -237,12 +603,17 @@ export class ClinicalPreparationController {
     this.metrics.recordPreparationComplete(duration);
     this.events.emit({ type: 'session', action: 'complete', at: now });
     this.events.emit({ type: 'workflow', phase: 'ready-for-geometry', at: now });
-    this.activeSessionId = undefined;
-    this.clinicalSession.getHost().notifications.push(
-      'success',
-      'Preparation',
-      'Preparation complete — ready for geometry tools'
-    );
+    // Keep session id bound for diagnostics; lifecycle is completed + ready gate.
+    if (this.activeSessionId === undefined) {
+      this.activeSessionId = this.session.getState().sessionId;
+    }
+    if (options?.quiet !== true) {
+      this.clinicalSession.getHost().notifications.push(
+        'success',
+        'Preparation',
+        'Preparation complete — ready for Trim'
+      );
+    }
     this.clinicalSession.notifyUi();
     return clinicalSuccess(undefined);
   }
@@ -257,11 +628,7 @@ export class ClinicalPreparationController {
     this.session.clear();
     this.activeSessionId = undefined;
     this.clinicalSession.notifyUi();
-    this.clinicalSession.getHost().notifications.push(
-      'info',
-      'Preparation',
-      'Preparation cancelled'
-    );
+    // Inline status preferred — avoid toast spam for routine cancel.
     return clinicalSuccess(undefined);
   }
 
@@ -288,7 +655,53 @@ export class ClinicalPreparationController {
   }
 
   public hasActiveSession(): boolean {
+    const phase = this.session.getLifecycle().getPhase();
+    if (this.isReadyForGeometry() && (phase === 'completed' || phase === 'active')) {
+      return true;
+    }
     return this.activeSessionId !== undefined && this.session.getLifecycle().hasSession();
+  }
+
+  /** Bind a resumed/hydrated document into preparation UI without orphaning lifecycle. */
+  public hydrateFromDocument(doc: ClinicalDocumentSnapshot): void {
+    const now = Date.now();
+    if (doc.orientationMeta?.acceptedAt !== undefined) {
+      this.session.setOrientationValidated(true);
+    }
+    const readyMeta =
+      doc.preparationMeta?.uiState === 'ready' || doc.preparationMeta?.uiState === 'warning';
+    if (readyMeta) {
+      this.session.forceWorkflowPhase(
+        'ready-for-geometry',
+        doc.preparationMeta?.uiState === 'warning'
+          ? 'Ready with warnings'
+          : 'Preparation complete — ready for geometry tools'
+      );
+      this.session.setStage('ready-for-trim');
+      this.activeSessionId =
+        this.activeSessionId ?? `prep-resume-${String(doc.caseId)}-${String(doc.revision)}`;
+      const life = this.session.getLifecycle();
+      if (life.getPhase() === 'none') {
+        life.transition('created');
+        life.transition('active');
+        life.transition('completed');
+        this.session.setLifecyclePhase('completed');
+      }
+      this.session.setAutoPreparation({
+        autoUiState: doc.preparationMeta?.uiState === 'warning' ? 'warning' : 'ready',
+        statusMessage: 'Preparation restored from saved case',
+        nextStep: 'Continue to Trim'
+      });
+    } else if (doc.orientationMeta?.acceptedAt !== undefined) {
+      this.session.setStage('orientation-complete');
+      this.session.setAutoPreparation({
+        autoUiState: 'not-started',
+        statusMessage: 'Orientation accepted — prepare the case when ready',
+        nextStep: 'Prepare Case'
+      });
+    }
+    this.clinicalSession.notifyUi();
+    void now;
   }
 
   public dispose(): void {

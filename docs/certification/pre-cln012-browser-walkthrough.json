@@ -1,0 +1,139 @@
+{
+  "at": "2026-09-10T19:56:59.142Z",
+  "host": "http://localhost:1420/",
+  "fixtures": [
+    "apps/studio/public/clinical-fixtures/upper.stl",
+    "apps/studio/public/clinical-fixtures/lower.stl"
+  ],
+  "cameraAfterImport": {
+    "eye": {
+      "x": -0.7540035247802734,
+      "y": 123.32670699834965,
+      "z": 41.00472675929826
+    },
+    "target": {
+      "x": -0.7540035247802734,
+      "y": 2.5536556243896484,
+      "z": 1.76318359375
+    },
+    "up": {
+      "x": 0,
+      "y": 0,
+      "z": 1
+    }
+  },
+  "results": [
+    {
+      "name": "Shell boot",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Import Upper + Lower",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "AC-01 patient-facing anterior bite",
+      "status": "PASS",
+      "detail": "eye=(-0.75,123.33,41.00) elev=0.309 up.z=1.000"
+    },
+    {
+      "name": "AC-02 wheel zoom in/out",
+      "status": "PASS",
+      "detail": "before=126.99 in=95.41 out=126.99"
+    },
+    {
+      "name": "Zoom in Orient",
+      "status": "PASS",
+      "detail": "before=126.99 afterIn=115.44"
+    },
+    {
+      "name": "Accept Orientation → Prepare",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Zoom in Prepare",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Continue to Trim",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "AC-05 Trim opens idle",
+      "status": "PASS",
+      "detail": "mode=idle"
+    },
+    {
+      "name": "Upper Active label",
+      "status": "PASS",
+      "detail": "Upper Arch · Active"
+    },
+    {
+      "name": "AC-06 Upper isolation",
+      "status": "PASS",
+      "detail": "[{\"id\":\"case-1789070087622:upper-arch\",\"name\":\"Upper Arch\",\"role\":\"upper\",\"visible\":true},{\"id\":\"case-1789070087622:lower-arch\",\"name\":\"Lower Arch\",\"role\":\"lower\",\"visible\":false}]"
+    },
+    {
+      "name": "Zoom in Trim",
+      "status": "PASS",
+      "detail": "in=104.84 out=115.32"
+    },
+    {
+      "name": "AC-03 Validate normal polygon",
+      "status": "PASS",
+      "detail": "Points: 6 · Closed: yes · Valid"
+    },
+    {
+      "name": "AC-09 Accept Trim",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "AC-10 Undo",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "AC-10 Redo",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Lower Active label",
+      "status": "PASS",
+      "detail": "Lower Arch · Active"
+    },
+    {
+      "name": "AC-07 Lower isolation",
+      "status": "PASS",
+      "detail": "[{\"id\":\"case-1789070087622:upper-arch\",\"name\":\"Upper Arch\",\"role\":\"upper\",\"visible\":false},{\"id\":\"case-1789070087622:lower-arch\",\"name\":\"Lower Arch\",\"role\":\"lower\",\"visible\":true}]"
+    },
+    {
+      "name": "Lower Validate",
+      "status": "PASS",
+      "detail": "Points: 6 · Closed: yes · Valid"
+    },
+    {
+      "name": "Lower Accept Trim",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Console errors",
+      "status": "PASS",
+      "detail": "0"
+    }
+  ],
+  "consoleErrors": [],
+  "summary": {
+    "total": 21,
+    "fail": 0,
+    "pass": 21,
+    "observe": 0
+  }
+}

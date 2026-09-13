@@ -9,12 +9,25 @@ declare module 'three' {
     setHex(hex: number): this;
   }
 
+  export class Vector2 {
+    x: number;
+    y: number;
+    set(x: number, y: number): this;
+  }
+
   export class Vector3 {
+    x: number;
+    y: number;
+    z: number;
     set(x: number, y: number, z: number): this;
+    copy(v: Vector3): this;
+    applyMatrix4(m: Matrix4): this;
   }
 
   export class Matrix4 {
     fromArray(array: ArrayLike<number>, offset?: number): this;
+    copy(m: Matrix4): this;
+    identity(): this;
   }
 
   export class BufferAttribute {
@@ -23,9 +36,13 @@ declare module 'three' {
 
   export class BufferGeometry {
     setAttribute(name: string, attribute: BufferAttribute): this;
-    setIndex(index: BufferAttribute): this;
+    getAttribute(name: string): BufferAttribute | undefined;
+    setIndex(index: BufferAttribute | null): this;
     computeVertexNormals(): void;
+    computeBoundingSphere(): void;
+    toNonIndexed(): BufferGeometry;
     dispose(): void;
+    attributes: Record<string, BufferAttribute>;
   }
 
   export class Material {
@@ -43,6 +60,10 @@ declare module 'three' {
       transparent?: boolean;
       opacity?: number;
       side?: number;
+      vertexColors?: boolean;
+      emissive?: number;
+      emissiveIntensity?: number;
+      depthTest?: boolean;
     });
     color: Color;
     emissive: Color;
@@ -52,6 +73,41 @@ declare module 'three' {
     flatShading: boolean;
     transparent: boolean;
     opacity: number;
+    vertexColors: boolean;
+  }
+
+  export class LineBasicMaterial extends Material {
+    constructor(params?: {
+      color?: number;
+      depthTest?: boolean;
+      transparent?: boolean;
+      opacity?: number;
+    });
+  }
+
+  export class SphereGeometry extends BufferGeometry {
+    constructor(radius?: number, widthSegments?: number, heightSegments?: number);
+  }
+
+  export class CanvasTexture {
+    constructor(canvas: HTMLCanvasElement);
+    needsUpdate: boolean;
+    dispose(): void;
+  }
+
+  export class SpriteMaterial extends Material {
+    constructor(params?: {
+      map?: CanvasTexture;
+      depthTest?: boolean;
+      transparent?: boolean;
+      sizeAttenuation?: boolean;
+    });
+    map: CanvasTexture | null;
+  }
+
+  export class Sprite extends Object3D {
+    constructor(material?: SpriteMaterial);
+    material: SpriteMaterial;
   }
 
   export class Object3D {
@@ -59,15 +115,26 @@ declare module 'three' {
     matrixAutoUpdate: boolean;
     matrixWorldNeedsUpdate: boolean;
     visible: boolean;
+    frustumCulled: boolean;
+    renderOrder: number;
+    children: Object3D[];
     add(...objects: Object3D[]): this;
     remove(...objects: Object3D[]): this;
     position: Vector3;
+    scale: Vector3;
     up: Vector3;
     lookAt(x: number, y: number, z: number): void;
+    worldToLocal(vector: Vector3): Vector3;
   }
 
   export class Mesh extends Object3D {
     constructor(geometry: BufferGeometry, material: Material);
+    geometry: BufferGeometry;
+    material: Material;
+  }
+
+  export class Line extends Object3D {
+    constructor(geometry?: BufferGeometry, material?: Material);
     geometry: BufferGeometry;
     material: Material;
   }
@@ -100,6 +167,18 @@ declare module 'three' {
     constructor(fov?: number, aspect?: number, near?: number, far?: number);
     fov: number;
     aspect: number;
+  }
+
+  export interface Intersection {
+    point: Vector3;
+    object: Object3D;
+    faceIndex?: number | null;
+    distance: number;
+  }
+
+  export class Raycaster {
+    setFromCamera(coords: Vector2, camera: Camera): void;
+    intersectObjects(objects: Object3D[], recursive?: boolean): Intersection[];
   }
 
   export class WebGLRenderer {

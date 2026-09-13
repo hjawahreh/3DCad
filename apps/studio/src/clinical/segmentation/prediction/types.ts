@@ -36,6 +36,16 @@ export interface ToothInstancePrediction {
   readonly faceCount: number;
   readonly presence: ToothPresence;
   readonly identification: ToothIdentificationPrediction;
+  /**
+   * Arch-order neighbors (X-sorted). Geometric proximity heuristic only —
+   * not contact detection. Optional so ONNX providers may omit.
+   */
+  readonly neighbors?: {
+    readonly archPreviousId: string | undefined;
+    readonly archNextId: string | undefined;
+    readonly confidence: 'low';
+    readonly basis: 'arch-x-order';
+  };
 }
 
 export interface ToothIdentificationPrediction {
@@ -80,8 +90,11 @@ export interface SegmentationPrediction {
 }
 
 export const PREPROCESSING_VERSION = 'seg-pre-1.0.0';
-export const POSTPROCESSING_VERSION = 'seg-post-1.0.0';
-export const IDENTIFICATION_VERSION = 'seg-id-1.0.0';
+export const POSTPROCESSING_VERSION = 'seg-post-1.1.0';
+export const IDENTIFICATION_VERSION = 'seg-id-1.1.0';
+
+/** Clinical instance cap shared by separation + validation. */
+export const MAX_CLINICAL_TOOTH_INSTANCES = 32;
 
 export const confidenceBand = (value: number): ConfidenceBand => {
   if (value >= 0.85) return 'high';

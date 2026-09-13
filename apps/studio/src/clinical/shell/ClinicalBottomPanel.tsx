@@ -2,6 +2,7 @@ import type { ClinicalBottomTab } from '../workspace/ClinicalLayout.js';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
 import { useClinicalLayout } from './useClinicalLayout.js';
 import { useClinicalUiRevision } from './useClinicalUi.js';
+import { getClinicalGeometryDevDiagEvents } from '../diagnostics/ClinicalGeometryDevDiagnostics.js';
 
 const TABS: readonly ClinicalBottomTab[] = Object.freeze([
   'notifications',
@@ -42,6 +43,13 @@ export const ClinicalBottomPanel = ({
   const displayMetrics = workspace.viewport.metrics.snapshot();
   const orientDiag = workspace.orientation.diagnostics.snapshot();
   const orientMetrics = workspace.orientation.metrics.snapshot();
+  const trimState = workspace.trim.session.getState();
+  const trimActive = workspace.trim.isActive();
+  const camSize = camera?.viewportSize;
+  const topologyNormEvents = import.meta.env.DEV
+    ? getClinicalGeometryDevDiagEvents().filter((e) => e.operation === 'normalize-topology')
+    : [];
+  const latestNorm = topologyNormEvents.length > 0 ? topologyNormEvents[topologyNormEvents.length - 1] : undefined;
   return (
     <div className="clinical-bottom" data-testid="clinical-diagnostics-panel">
       <div className="clinical-tabs">
@@ -125,6 +133,42 @@ export const ClinicalBottomPanel = ({
               {String(orientDiag.accepted)} · avg {orientMetrics.averageCompletionTimeMs.toFixed(0)}{' '}
               ms
             </dd>
+            {trimActive ? (
+              <>
+                <dt>Trim Input</dt>
+                <dd data-testid="clinical-trim-diag-mode">Mode: {trimState.drawMode}</dd>
+                <dt>Pointer Capture</dt>
+                <dd data-testid="clinical-trim-diag-capture">
+                  {trimState.pointerCaptured ? 'true' : 'false'}
+                </dd>
+                <dt>Active Object</dt>
+                <dd>{trimState.targetObjectId ?? '—'}</dd>
+                <dt>Viewport size</dt>
+                <dd>
+                  {camSize === undefined
+                    ? '—'
+                    : `${String(Math.round(camSize.width))} × ${String(Math.round(camSize.height))}`}
+                </dd>
+                <dt>Last Hit</dt>
+                <dd>{trimState.lastHitSummary ?? '—'}</dd>
+                <dt>Trim Points</dt>
+                <dd>{String(trimState.points.length)}</dd>
+              </>
+            ) : null}
+            {import.meta.env.DEV && latestNorm !== undefined ? (
+              <>
+                <dt>Topology (DEV)</dt>
+                <dd data-testid="clinical-topology-norm-diag">
+                  RAW→NORM {latestNorm.warning ?? '—'}
+                  <br />
+                  fp {latestNorm.inputFingerprint ?? '—'} → {latestNorm.outputFingerprint ?? '—'}
+                  <br />
+                  {latestNorm.elapsedMs !== undefined
+                    ? `${latestNorm.elapsedMs.toFixed(0)} ms`
+                    : ''}
+                </dd>
+              </>
+            ) : null}
           </dl>
         ) : null}
 

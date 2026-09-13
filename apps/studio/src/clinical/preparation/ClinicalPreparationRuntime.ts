@@ -6,6 +6,7 @@ import type { ClinicalSession } from '../runtime/session.js';
 import type { ClinicalOrientationRuntime } from '../orientation/ClinicalOrientationRuntime.js';
 import type { ClinicalViewportRuntime } from '../display/ClinicalViewportRuntime.js';
 import type { ClinicalResult } from '../runtime/types.js';
+import type { ClinicalArchVisibilityMode } from '../shell/ClinicalArchContext.js';
 import { ClinicalPreparationController } from './ClinicalPreparationController.js';
 import type { PreparationOrchestrationToolId } from './ClinicalPreparationPipeline.js';
 import type { ClinicalPreparationStage } from './ClinicalPreparationStage.js';
@@ -16,9 +17,15 @@ export class ClinicalPreparationRuntime {
   public constructor(
     session: ClinicalSession,
     orientation: ClinicalOrientationRuntime,
-    viewport: ClinicalViewportRuntime
+    viewport: ClinicalViewportRuntime,
+    archContext?: { getMode(): ClinicalArchVisibilityMode }
   ) {
-    this.controller = new ClinicalPreparationController(session, orientation, viewport);
+    this.controller = new ClinicalPreparationController(
+      session,
+      orientation,
+      viewport,
+      archContext
+    );
   }
 
   public get session() {
@@ -77,8 +84,16 @@ export class ClinicalPreparationRuntime {
     return this.controller.advanceStage();
   }
 
-  public complete(): ClinicalResult<void> {
-    return this.controller.complete();
+  public complete(options?: { readonly quiet?: boolean }): ClinicalResult<void> {
+    return this.controller.complete(options);
+  }
+
+  public confirmReadyForTrim(): ClinicalResult<void> {
+    return this.controller.confirmReadyForTrim();
+  }
+
+  public autoPrepare() {
+    return this.controller.autoPrepare();
   }
 
   public cancel(): ClinicalResult<void> {

@@ -1,0 +1,299 @@
+{
+  "milestone": "PROD-002SB",
+  "overall": "PASS",
+  "steps": [
+    {
+      "id": "00-import",
+      "step": "00-import",
+      "status": "PASS",
+      "at": "2026-09-13T03:17:00.175Z",
+      "timestamp": "2026-09-13T03:17:00.175Z",
+      "screenshot": "orientation-before.png"
+    },
+    {
+      "id": "E-auto-orientation",
+      "step": "E-auto-orientation",
+      "status": "PASS",
+      "at": "2026-09-13T03:17:07.959Z",
+      "timestamp": "2026-09-13T03:17:07.959Z",
+      "screenshot": "orientation-auto-complete.png",
+      "orientation": {
+        "active": true,
+        "origin": "auto",
+        "archMode": "both",
+        "bothVisible": true
+      },
+      "camera": {
+        "eye": {
+          "x": -0.8938292103569552,
+          "y": 27.12669636664537,
+          "z": 72.36557887505776
+        },
+        "target": {
+          "x": -0.8938292103569552,
+          "y": 2.3927997732201156,
+          "z": -3.757527480722228
+        },
+        "up": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "look": {
+          "x": 0,
+          "y": 0.3090169943749474,
+          "z": 0.9510565162951535
+        },
+        "clinicalAnterior": true
+      }
+    },
+    {
+      "id": "F-rerun-auto-orient",
+      "step": "F-rerun-auto-orient",
+      "status": "PASS",
+      "at": "2026-09-13T03:17:19.208Z",
+      "timestamp": "2026-09-13T03:17:19.208Z",
+      "screenshot": "orientation-rerun.png",
+      "camera": {
+        "eye": {
+          "x": -0.8938292103569552,
+          "y": 27.12669636664537,
+          "z": 72.36557887505776
+        },
+        "target": {
+          "x": -0.8938292103569552,
+          "y": 2.3927997732201156,
+          "z": -3.757527480722228
+        },
+        "up": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "look": {
+          "x": 0,
+          "y": 0.3090169943749474,
+          "z": 0.9510565162951535
+        },
+        "clinicalAnterior": true
+      }
+    },
+    {
+      "id": "G-home",
+      "step": "G-home",
+      "status": "PASS",
+      "at": "2026-09-13T03:17:28.063Z",
+      "timestamp": "2026-09-13T03:17:28.063Z",
+      "screenshot": "orientation-home.png",
+      "camera": {
+        "eye": {
+          "x": -0.7540035247802734,
+          "y": 26.098581523718615,
+          "z": 74.22701441812602
+        },
+        "target": {
+          "x": -0.7540035247802734,
+          "y": 2.5536556243896484,
+          "z": 1.76318359375
+        },
+        "up": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "look": {
+          "x": 0,
+          "y": 0.3090169943749474,
+          "z": 0.9510565162951535
+        },
+        "clinicalAnterior": true
+      }
+    },
+    {
+      "id": "trim-idle",
+      "step": "trim-idle",
+      "status": "PASS",
+      "at": "2026-09-13T03:18:02.269Z",
+      "timestamp": "2026-09-13T03:18:02.269Z",
+      "screenshot": "trim-idle.png",
+      "trim": {
+        "active": true,
+        "drawMode": "idle",
+        "points": 0,
+        "closed": false,
+        "pointerCaptured": false,
+        "previewReady": false,
+        "phase": "drawing",
+        "overlayState": "IDLE",
+        "toolState": "IDLE",
+        "hasLocal": true
+      }
+    },
+    {
+      "id": "A1-freehand-armed",
+      "step": "A1-freehand-armed",
+      "status": "PASS",
+      "at": "2026-09-13T03:18:10.485Z",
+      "timestamp": "2026-09-13T03:18:10.485Z",
+      "screenshot": "trim-freehand-armed.png",
+      "trim": {
+        "active": true,
+        "drawMode": "freehand",
+        "points": 0,
+        "closed": false,
+        "pointerCaptured": false,
+        "previewReady": false,
+        "phase": "drawing",
+        "overlayState": "FREEHAND_ARMED",
+        "toolState": "FREEHAND_ARMED",
+        "hasLocal": true
+      }
+    },
+    {
+      "id": "A2-freehand-points",
+      "step": "A2-freehand-points",
+      "status": "PASS",
+      "at": "2026-09-13T03:18:59.779Z",
+      "timestamp": "2026-09-13T03:18:59.779Z",
+      "screenshot": "trim-drawing.png",
+      "trim": {
+        "active": true,
+        "drawMode": "freehand",
+        "points": 27,
+        "closed": false,
+        "pointerCaptured": false,
+        "previewReady": false,
+        "phase": "preview-boundary",
+        "overlayState": "FREEHAND_ARMED",
+        "toolState": "FREEHAND_ARMED",
+        "hasLocal": true
+      }
+    },
+    {
+      "id": "A3-closed",
+      "step": "A3-closed",
+      "status": "PASS",
+      "at": "2026-09-13T03:19:05.212Z",
+      "timestamp": "2026-09-13T03:19:05.212Z",
+      "trim": {
+        "active": true,
+        "drawMode": "freehand",
+        "points": 28,
+        "closed": true,
+        "pointerCaptured": false,
+        "previewReady": false,
+        "phase": "preview-boundary",
+        "overlayState": "CLOSED",
+        "toolState": "CLOSED",
+        "hasLocal": true
+      }
+    },
+    {
+      "id": "A4-preview-ready",
+      "step": "A4-preview-ready",
+      "status": "PASS",
+      "at": "2026-09-13T03:19:32.543Z",
+      "timestamp": "2026-09-13T03:19:32.543Z",
+      "trim": {
+        "active": true,
+        "drawMode": "freehand",
+        "points": 28,
+        "closed": true,
+        "pointerCaptured": false,
+        "previewReady": true,
+        "phase": "executing",
+        "overlayState": "COMMITTING",
+        "toolState": "COMMITTING",
+        "hasLocal": true
+      }
+    },
+    {
+      "id": "B1-clear",
+      "step": "B1-clear",
+      "status": "PASS",
+      "at": "2026-09-13T03:19:46.035Z",
+      "timestamp": "2026-09-13T03:19:46.035Z",
+      "screenshot": "trim-after-clear.png",
+      "trim": {
+        "active": true,
+        "drawMode": "freehand",
+        "points": 0,
+        "closed": false,
+        "pointerCaptured": false,
+        "previewReady": false,
+        "phase": "drawing",
+        "overlayState": "FREEHAND_ARMED",
+        "toolState": "FREEHAND_ARMED",
+        "hasLocal": true
+      }
+    },
+    {
+      "id": "B2-redraw",
+      "step": "B2-redraw",
+      "status": "PASS",
+      "at": "2026-09-13T03:20:15.994Z",
+      "timestamp": "2026-09-13T03:20:15.994Z",
+      "trim": {
+        "active": true,
+        "drawMode": "freehand",
+        "points": 15,
+        "closed": false,
+        "pointerCaptured": false,
+        "previewReady": false,
+        "phase": "preview-boundary",
+        "overlayState": "FREEHAND_ARMED",
+        "toolState": "FREEHAND_ARMED",
+        "hasLocal": true
+      }
+    },
+    {
+      "id": "D-tool-switch",
+      "step": "D-tool-switch",
+      "status": "PASS",
+      "at": "2026-09-13T03:20:21.811Z",
+      "timestamp": "2026-09-13T03:20:21.811Z",
+      "trim": {
+        "active": true,
+        "drawMode": "polyline",
+        "points": 0,
+        "closed": false,
+        "pointerCaptured": false,
+        "previewReady": false,
+        "phase": "drawing",
+        "overlayState": "POLYLINE_ARMED",
+        "toolState": "POLYLINE_ARMED",
+        "hasLocal": true
+      }
+    },
+    {
+      "id": "C-polyline-points",
+      "step": "C-polyline-points",
+      "status": "PASS",
+      "at": "2026-09-13T03:20:40.201Z",
+      "timestamp": "2026-09-13T03:20:40.201Z",
+      "screenshot": "trim-polyline.png",
+      "trim": {
+        "active": true,
+        "drawMode": "polyline",
+        "points": 5,
+        "closed": false,
+        "pointerCaptured": false,
+        "previewReady": false,
+        "phase": "preview-boundary",
+        "overlayState": "POLYLINE_ARMED",
+        "toolState": "POLYLINE_ARMED",
+        "hasLocal": true
+      }
+    },
+    {
+      "id": "accept-gated",
+      "step": "accept-gated",
+      "status": "PASS",
+      "at": "2026-09-13T03:20:40.686Z",
+      "timestamp": "2026-09-13T03:20:40.686Z",
+      "detail": "Accept disabled until Preview Ready"
+    }
+  ],
+  "screenshotsDir": "docs/certification/prod-002sb-browser-shots",
+  "at": "2026-09-13T03:20:40.686Z"
+}

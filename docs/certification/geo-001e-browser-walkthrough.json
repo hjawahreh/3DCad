@@ -1,0 +1,327 @@
+{
+  "generatedAt": "2026-09-13T16:10:57.014Z",
+  "summary": {
+    "pass": 11,
+    "fail": 1,
+    "observe": 0
+  },
+  "steps": [
+    {
+      "id": "00-create-import",
+      "status": "PASS",
+      "at": "2026-09-13T16:05:00.177Z"
+    },
+    {
+      "id": "00-auto-orientation",
+      "status": "PASS",
+      "at": "2026-09-13T16:05:14.036Z"
+    },
+    {
+      "id": "01-before-trim",
+      "status": "PASS",
+      "at": "2026-09-13T16:05:24.796Z",
+      "baseline": {
+        "id": "case-1789315449292:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "revision": 1,
+        "meshFingerprint": "geo:c828c055",
+        "meshFaces": 261287,
+        "meshVerts": 131779
+      }
+    },
+    {
+      "id": "02-surface-loop",
+      "status": "PASS",
+      "at": "2026-09-13T16:05:56.123Z",
+      "detail": "anchors=6"
+    },
+    {
+      "id": "03-04-trim-a",
+      "status": "PASS",
+      "at": "2026-09-13T16:07:00.836Z",
+      "detail": "previewMs=48834 mutated=true",
+      "before": {
+        "id": "case-1789315449292:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "revision": 1,
+        "meshFingerprint": "geo:c828c055",
+        "meshFaces": 261287,
+        "meshVerts": 131779
+      },
+      "after": {
+        "id": "case-1789315449292:upper-arch",
+        "fingerprint": "geo:9d186916",
+        "faceCount": 255851,
+        "revision": 13,
+        "meshFingerprint": "geo:9d186916",
+        "meshFaces": 255851,
+        "meshVerts": 129337
+      },
+      "previewFp": "geo:9d186916",
+      "pathInfo": {
+        "ok": false,
+        "error": "Trim boundary crosses itself. Adjust the drawing."
+      }
+    },
+    {
+      "id": "04b-preview-eq-commit",
+      "status": "PASS",
+      "at": "2026-09-13T16:07:00.836Z",
+      "previewFp": "geo:9d186916",
+      "committed": {
+        "id": "case-1789315449292:upper-arch",
+        "fingerprint": "geo:9d186916",
+        "faceCount": 255851,
+        "revision": 13,
+        "meshFingerprint": "geo:9d186916",
+        "meshFaces": 255851,
+        "meshVerts": 129337
+      }
+    },
+    {
+      "id": "05-undo",
+      "status": "PASS",
+      "at": "2026-09-13T16:07:03.985Z",
+      "undo": {
+        "ok": true,
+        "message": null
+      },
+      "afterUndo": {
+        "id": "case-1789315449292:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "revision": 1,
+        "meshFingerprint": "geo:c828c055",
+        "meshFaces": 261287,
+        "meshVerts": 131779
+      },
+      "before": {
+        "id": "case-1789315449292:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "revision": 1,
+        "meshFingerprint": "geo:c828c055",
+        "meshFaces": 261287,
+        "meshVerts": 131779
+      }
+    },
+    {
+      "id": "06-redo",
+      "status": "PASS",
+      "at": "2026-09-13T16:07:07.184Z",
+      "redo": {
+        "ok": true,
+        "message": null
+      },
+      "afterRedo": {
+        "id": "case-1789315449292:upper-arch",
+        "fingerprint": "geo:9d186916",
+        "faceCount": 255851,
+        "revision": 13,
+        "meshFingerprint": "geo:9d186916",
+        "meshFaces": 255851,
+        "meshVerts": 129337
+      },
+      "afterA": {
+        "id": "case-1789315449292:upper-arch",
+        "fingerprint": "geo:9d186916",
+        "faceCount": 255851,
+        "revision": 13,
+        "meshFingerprint": "geo:9d186916",
+        "meshFaces": 255851,
+        "meshVerts": 129337
+      }
+    },
+    {
+      "id": "07-second-trim",
+      "status": "PASS",
+      "at": "2026-09-13T16:08:46.785Z",
+      "detail": "previewMs=51856",
+      "afterA": {
+        "id": "case-1789315449292:upper-arch",
+        "fingerprint": "geo:9d186916",
+        "faceCount": 255851,
+        "revision": 13,
+        "meshFingerprint": "geo:9d186916",
+        "meshFaces": 255851,
+        "meshVerts": 129337
+      },
+      "afterB": {
+        "id": "case-1789315449292:upper-arch",
+        "fingerprint": "geo:020c212a",
+        "faceCount": 244253,
+        "revision": 14,
+        "meshFingerprint": "geo:020c212a",
+        "meshFaces": 244253,
+        "meshVerts": 123796
+      }
+    },
+    {
+      "id": "08-reopen",
+      "status": "PASS",
+      "at": "2026-09-13T16:08:52.750Z",
+      "saveRes": {
+        "ok": true
+      },
+      "evidence": {
+        "reopened": {
+          "id": "case-1789315449292:upper-arch",
+          "fingerprint": "geo:020c212a",
+          "faceCount": 244253,
+          "revision": 14,
+          "meshFingerprint": "geo:020c212a",
+          "meshFaces": 244253,
+          "meshVerts": 123796
+        },
+        "expected": {
+          "id": "case-1789315449292:upper-arch",
+          "fingerprint": "geo:020c212a",
+          "faceCount": 244253,
+          "revision": 14,
+          "meshFingerprint": "geo:020c212a",
+          "meshFaces": 244253,
+          "meshVerts": 123796
+        }
+      }
+    },
+    {
+      "id": "09-10-base-handoff",
+      "status": "FAIL",
+      "at": "2026-09-13T16:10:57.011Z",
+      "basePreview": {
+        "ok": false,
+        "toolStatus": "timeout"
+      },
+      "handoff": {
+        "baseInputFingerprint": "geo:020c212a",
+        "previewFingerprint": "geo:020c212a",
+        "expected": "geo:020c212a",
+        "match": true
+      },
+      "trimmedFingerprint": "geo:020c212a"
+    },
+    {
+      "id": "11-performance",
+      "status": "PASS",
+      "at": "2026-09-13T16:10:57.013Z",
+      "detail": "trimAPreviewMs=48834ms, trimBPreviewMs=51856ms, basePreviewMs=117915ms",
+      "performance": {
+        "trimAPreviewMs": 48834,
+        "trimBPreviewMs": 51856,
+        "basePreviewMs": 117915
+      }
+    }
+  ],
+  "evidence": {
+    "performance": {
+      "trimAPreviewMs": 48834,
+      "trimBPreviewMs": 51856,
+      "basePreviewMs": 117915
+    },
+    "trims": [
+      {
+        "id": "A",
+        "anchors": 6,
+        "pathInfo": {
+          "ok": false,
+          "error": "Trim boundary crosses itself. Adjust the drawing."
+        },
+        "before": {
+          "id": "case-1789315449292:upper-arch",
+          "fingerprint": "geo:c828c055",
+          "faceCount": 261287,
+          "revision": 1,
+          "meshFingerprint": "geo:c828c055",
+          "meshFaces": 261287,
+          "meshVerts": 131779
+        },
+        "after": {
+          "id": "case-1789315449292:upper-arch",
+          "fingerprint": "geo:9d186916",
+          "faceCount": 255851,
+          "revision": 13,
+          "meshFingerprint": "geo:9d186916",
+          "meshFaces": 255851,
+          "meshVerts": 129337
+        },
+        "previewFp": "geo:9d186916",
+        "accept": {
+          "ok": true,
+          "message": null
+        },
+        "previewMs": 48834,
+        "mutated": true
+      },
+      {
+        "id": "B",
+        "anchors": 6,
+        "pathInfo": {
+          "ok": false,
+          "error": "Trim boundary crosses itself. Adjust the drawing."
+        },
+        "before": {
+          "id": "case-1789315449292:upper-arch",
+          "fingerprint": "geo:9d186916",
+          "faceCount": 255851,
+          "revision": 13,
+          "meshFingerprint": "geo:9d186916",
+          "meshFaces": 255851,
+          "meshVerts": 129337
+        },
+        "after": {
+          "id": "case-1789315449292:upper-arch",
+          "fingerprint": "geo:020c212a",
+          "faceCount": 244253,
+          "revision": 14,
+          "meshFingerprint": "geo:020c212a",
+          "meshFaces": 244253,
+          "meshVerts": 123796
+        },
+        "previewFp": "geo:020c212a",
+        "accept": {
+          "ok": true,
+          "message": null
+        },
+        "previewMs": 51856,
+        "mutated": true
+      }
+    ],
+    "baseline": {
+      "id": "case-1789315449292:upper-arch",
+      "fingerprint": "geo:c828c055",
+      "faceCount": 261287,
+      "revision": 1,
+      "meshFingerprint": "geo:c828c055",
+      "meshFaces": 261287,
+      "meshVerts": 131779
+    },
+    "reopen": {
+      "reopened": {
+        "id": "case-1789315449292:upper-arch",
+        "fingerprint": "geo:020c212a",
+        "faceCount": 244253,
+        "revision": 14,
+        "meshFingerprint": "geo:020c212a",
+        "meshFaces": 244253,
+        "meshVerts": 123796
+      },
+      "expected": {
+        "id": "case-1789315449292:upper-arch",
+        "fingerprint": "geo:020c212a",
+        "faceCount": 244253,
+        "revision": 14,
+        "meshFingerprint": "geo:020c212a",
+        "meshFaces": 244253,
+        "meshVerts": 123796
+      }
+    },
+    "baseHandoff": {
+      "baseInputFingerprint": "geo:020c212a",
+      "previewFingerprint": "geo:020c212a",
+      "expected": "geo:020c212a",
+      "match": true
+    }
+  }
+}

@@ -1,6 +1,8 @@
 /**
- * Notification host model — progress / error / info toasts for the shell.
- * Success/info auto-dismiss; errors/warnings stay until dismissed.
+ * Notification host model — exactly ONE visible notification at a time.
+ * New notifications replace the previous immediately (timers cleared).
+ * Ordinary info/success/warning auto-dismiss after 10s; errors stay until dismissed.
+ * Progress toasts are replaced by stage updates and do not stack.
  *
  * CRITICAL: getSnapshot (list) MUST return a stable reference when contents
  * are unchanged — otherwise React useSyncExternalStore infinite-loops and
@@ -22,17 +24,22 @@ export interface StudioNotification {
 
 export type NotificationListener = (items: readonly StudioNotification[]) => void;
 
+/** Ordinary informational notifications auto-dismiss after 10 seconds. */
 const AUTO_DISMISS_MS: Readonly<Partial<Record<NotificationKind, number>>> = Object.freeze({
-  success: 3200,
-  info: 4000
+  success: 10_000,
+  info: 10_000,
+  warning: 10_000
+  // progress / error: no auto-dismiss (progress replaced by next stage or clearProgress)
 });
 
 export class NotificationHost {
-  private readonly items: StudioNotification[] = [];
+  private current: StudioNotification | undefined;
   private cached: readonly StudioNotification[] = Object.freeze([]);
   private readonly listeners = new Set<NotificationListener>();
   private serial = 0;
   private expireTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Stable identity for an in-flight progress sequence (title-scoped). */
+  private progressIdentity: string | undefined;
 
   /**
    * Stable snapshot for React useSyncExternalStore.
@@ -48,18 +55,39 @@ export class NotificationHost {
     message: string,
     progress?: number
   ): StudioNotification {
-    this.purgeExpiredSilent();
-    // Deduplicate identical active toast (same kind+title+message).
-    const duplicate = this.items.find(
-      (n) => n.kind === kind && n.title === title && n.message === message
-    );
-    if (duplicate !== undefined) {
-      return duplicate;
+    // Reuse stable identity when updating the same progress sequence.
+    if (
+      kind === 'progress' &&
+      this.current !== undefined &&
+      this.current.kind === 'progress' &&
+      this.current.title === title &&
+      this.progressIdentity !== undefined
+    ) {
+      const updated: StudioNotification = Object.freeze({
+        id: this.progressIdentity,
+        kind,
+        title,
+        message,
+        ...(progress !== undefined ? { progress } : {}),
+        createdAt: this.current.createdAt
+      });
+      this.clearExpireTimer();
+      this.current = updated;
+      this.emit();
+      return updated;
     }
+
+    this.clearExpireTimer();
     this.serial += 1;
+    const id = `n-${String(this.serial)}`;
+    if (kind === 'progress') {
+      this.progressIdentity = id;
+    } else {
+      this.progressIdentity = undefined;
+    }
     const ttl = AUTO_DISMISS_MS[kind];
     const item: StudioNotification = Object.freeze({
-      id: `n-${String(this.serial)}`,
+      id,
       kind,
       title,
       message,
@@ -67,47 +95,61 @@ export class NotificationHost {
       createdAt: Date.now(),
       ...(ttl === undefined ? {} : { expiresAt: Date.now() + ttl })
     });
-    this.items.unshift(item);
-    if (this.items.length > 8) {
-      this.items.pop();
-    }
+    // Exactly one active notification — replace previous immediately.
+    this.current = item;
     this.emit();
     this.scheduleExpiry();
     return item;
   }
 
   public updateProgress(id: string, progress: number, message?: string): void {
-    const index = this.items.findIndex((n) => n.id === id);
-    if (index < 0) {
+    if (this.current === undefined || this.current.id !== id) {
       return;
     }
-    const prev = this.items[index];
-    if (prev === undefined) {
-      return;
-    }
-    this.items[index] = Object.freeze({
-      ...prev,
+    this.current = Object.freeze({
+      ...this.current,
       progress,
       ...(message !== undefined ? { message } : {})
     });
     this.emit();
   }
 
-  public dismiss(id: string): void {
-    const index = this.items.findIndex((n) => n.id === id);
-    if (index >= 0) {
-      this.items.splice(index, 1);
-      this.emit();
+  /** Clear a progress toast (e.g. when an operation completes). */
+  public clearProgress(title?: string): void {
+    if (this.current === undefined || this.current.kind !== 'progress') {
+      return;
     }
+    if (title !== undefined && this.current.title !== title) {
+      return;
+    }
+    this.clearExpireTimer();
+    this.current = undefined;
+    this.progressIdentity = undefined;
+    this.emit();
+  }
+
+  public dismiss(id: string): void {
+    if (this.current?.id !== id) {
+      return;
+    }
+    this.clearExpireTimer();
+    if (this.progressIdentity === id) {
+      this.progressIdentity = undefined;
+    }
+    this.current = undefined;
+    this.emit();
   }
 
   public clearTransient(): void {
-    const kept = this.items.filter((n) => n.kind === 'error' || n.kind === 'warning');
-    if (kept.length === this.items.length) {
+    if (this.current === undefined) {
       return;
     }
-    this.items.length = 0;
-    this.items.push(...kept);
+    if (this.current.kind === 'error') {
+      return;
+    }
+    this.clearExpireTimer();
+    this.current = undefined;
+    this.progressIdentity = undefined;
     this.emit();
   }
 
@@ -118,46 +160,32 @@ export class NotificationHost {
     };
   }
 
-  /** Drop expired items without notifying (used before mutating pushes). */
-  private purgeExpiredSilent(): void {
-    const now = Date.now();
-    for (let i = this.items.length - 1; i >= 0; i -= 1) {
-      const item = this.items[i];
-      if (item?.expiresAt !== undefined && item.expiresAt <= now) {
-        this.items.splice(i, 1);
-      }
-    }
-  }
-
-  private purgeExpiredAndEmit(): void {
-    const before = this.items.length;
-    this.purgeExpiredSilent();
-    if (this.items.length !== before) {
-      this.emit();
-    }
-  }
-
-  private scheduleExpiry(): void {
+  private clearExpireTimer(): void {
     if (this.expireTimer !== undefined) {
       clearTimeout(this.expireTimer);
       this.expireTimer = undefined;
     }
-    const next = this.items
-      .map((n) => n.expiresAt)
-      .filter((t): t is number => t !== undefined)
-      .sort((a, b) => a - b)[0];
-    if (next === undefined) {
+  }
+
+  private scheduleExpiry(): void {
+    this.clearExpireTimer();
+    const expiresAt = this.current?.expiresAt;
+    if (expiresAt === undefined) {
       return;
     }
-    const delay = Math.max(50, next - Date.now());
+    const delay = Math.max(50, expiresAt - Date.now());
     this.expireTimer = setTimeout(() => {
-      this.purgeExpiredAndEmit();
-      this.scheduleExpiry();
+      if (this.current?.expiresAt !== undefined && this.current.expiresAt <= Date.now()) {
+        this.current = undefined;
+        this.progressIdentity = undefined;
+        this.emit();
+      }
     }, delay);
   }
 
   private emit(): void {
-    this.cached = Object.freeze([...this.items]);
+    this.cached =
+      this.current === undefined ? Object.freeze([]) : Object.freeze([this.current]);
     for (const listener of this.listeners) {
       listener(this.cached);
     }

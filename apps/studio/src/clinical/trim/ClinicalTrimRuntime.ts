@@ -5,11 +5,15 @@
 import type { ClinicalSession } from '../runtime/session.js';
 import type { ClinicalPreparationRuntime } from '../preparation/ClinicalPreparationRuntime.js';
 import type { ClinicalSceneBuilder } from '../import/ClinicalSceneBuilder.js';
+import type { ClinicalMeshPicker } from '../display/ClinicalMeshPicker.js';
+import type { ClinicalViewportRuntime } from '../display/ClinicalViewportRuntime.js';
+import type { ClinicalArchContext } from '../shell/ClinicalArchContext.js';
 import type { ClinicalResult } from '../runtime/types.js';
 import type { ClinicalObjectId } from '../import/ClinicalMeshDescriptor.js';
 import { ClinicalTrimController } from './ClinicalTrimController.js';
 import type { TrimDrawMode } from './ClinicalTrimState.js';
 import type { TrimBoundaryPoint } from './ClinicalTrimBoundaryMath.js';
+import type { ClinicalArchVisibilityMode } from '../shell/ClinicalArchContext.js';
 
 export class ClinicalTrimRuntime {
   public readonly controller: ClinicalTrimController;
@@ -17,9 +21,19 @@ export class ClinicalTrimRuntime {
   public constructor(
     session: ClinicalSession,
     preparation: ClinicalPreparationRuntime,
-    sceneBuilder: ClinicalSceneBuilder
+    sceneBuilder: ClinicalSceneBuilder,
+    meshPicker?: ClinicalMeshPicker,
+    viewport?: ClinicalViewportRuntime,
+    archContext?: ClinicalArchContext
   ) {
-    this.controller = new ClinicalTrimController(session, preparation, sceneBuilder);
+    this.controller = new ClinicalTrimController(
+      session,
+      preparation,
+      sceneBuilder,
+      meshPicker,
+      viewport,
+      archContext
+    );
   }
 
   public get session() {
@@ -42,8 +56,20 @@ export class ClinicalTrimRuntime {
     return this.controller.preferences;
   }
 
+  public get manager() {
+    return this.controller.manager;
+  }
+
   public enter(preferredId?: ClinicalObjectId): ClinicalResult<void> {
     return this.controller.enter(preferredId);
+  }
+
+  public setActiveArch(arch: 'upper' | 'lower'): ClinicalResult<void> {
+    return this.controller.setActiveArch(arch);
+  }
+
+  public setArchVisibility(mode: ClinicalArchVisibilityMode): ClinicalResult<void> {
+    return this.controller.setArchVisibility(mode);
   }
 
   public setDrawMode(mode: TrimDrawMode): ClinicalResult<void> {
@@ -62,6 +88,10 @@ export class ClinicalTrimRuntime {
     return this.controller.clearBoundary();
   }
 
+  public resetDrawing(): ClinicalResult<void> {
+    return this.controller.resetDrawing();
+  }
+
   public closeBoundary(): ClinicalResult<void> {
     return this.controller.closeBoundary();
   }
@@ -74,8 +104,16 @@ export class ClinicalTrimRuntime {
     return this.controller.submit();
   }
 
+  public preview() {
+    return this.controller.preview();
+  }
+
   public accept() {
     return this.controller.accept();
+  }
+
+  public cancelPreview(): ClinicalResult<void> {
+    return this.controller.cancelPreview();
   }
 
   public cancel(): ClinicalResult<void> {

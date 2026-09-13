@@ -23,14 +23,29 @@ export {
 } from './ClinicalCloseBasePreferences.js';
 export { buildCloseBaseContext, type ClinicalCloseBaseContext } from './ClinicalCloseBaseContext.js';
 export {
+  estimateAutoCloseBase,
+  estimateBaseOrientation,
+  estimateCloseBaseStrategy,
+  estimateCloseBaseParameters,
+  AUTO_CLOSE_BASE_ALGORITHM_VERSION,
+  AUTO_CLOSE_BASE_SAFETY,
+  type ClinicalAutoCloseBaseEstimate,
+  type AutoCloseBaseAnalysis,
+  type AutoCloseBaseUiState
+} from './ClinicalAutoCloseBaseEstimator.js';
+
+export {
   DEFAULT_CLOSE_BASE_STATE,
   type ClinicalCloseBaseState,
-  type CloseBaseToolStatus
+  type CloseBaseToolStatus,
+  type CloseBaseInteractionMode
 } from './ClinicalCloseBaseState.js';
 export {
   DEFAULT_CLOSE_BASE_PARAMETERS,
+  AUTO_CLOSE_BASE_PARAMETERS,
   CLOSE_BASE_PARAMETER_LIMITS,
   sanitizeCloseBaseParameters,
+  describeCloseBaseParameters,
   type ClinicalCloseBaseParameters
 } from './ClinicalCloseBaseParameters.js';
 export {

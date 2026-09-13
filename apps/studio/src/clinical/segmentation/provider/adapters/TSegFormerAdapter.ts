@@ -10,7 +10,7 @@ export class TSegFormerAdapter implements SegmentationProvider {
       modelVersion: '0.0.0-scaffold',
       operational: false,
       licenseNotes:
-        'Research geometry-guided transformer — enable only after code/weights/dataset licenses verified',
+        'Research geometry-guided transformer (MICCAI 2023). Code public; SPDX license / pretrained weights / dataset terms not cleared for redistribution — not enabled.',
       capabilities: Object.freeze([
         'semantic',
         'instance',
@@ -23,6 +23,8 @@ export class TSegFormerAdapter implements SegmentationProvider {
   public readonly info = this.inner.info;
   public initialize = this.inner.initialize.bind(this.inner);
   public capabilities = this.inner.capabilities.bind(this.inner);
+  public modelInformation = this.inner.modelInformation.bind(this.inner);
+  public runtimeInformation = this.inner.runtimeInformation.bind(this.inner);
   public validateInput = this.inner.validateInput.bind(this.inner);
   public preprocess = this.inner.preprocess.bind(this.inner);
   public infer = this.inner.infer.bind(this.inner);

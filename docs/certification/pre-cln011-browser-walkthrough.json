@@ -1,0 +1,30 @@
+{
+  "at": "2026-09-10T19:14:33.000Z",
+  "host": "http://localhost:1420/",
+  "fixtures": [
+    "apps/studio/public/clinical-fixtures/upper.stl",
+    "apps/studio/public/clinical-fixtures/lower.stl"
+  ],
+  "cameraAfterImport": { "eye": { "x": -0.75, "y": 129.54, "z": 3.03 } },
+  "results": [
+    { "name": "Initial camera patient-facing along anterior (+Y)", "status": "PASS", "detail": "eye=(-0.75,129.54,3.03)" },
+    { "name": "No camera reset after import", "status": "PASS" },
+    { "name": "Enter Orientation", "status": "PASS" },
+    { "name": "Accept Orientation → Prepare (no duplicate toast)", "status": "PASS" },
+    { "name": "Confirm Preparation → Continue to Trim", "status": "PASS" },
+    { "name": "Trim opens idle", "status": "PASS", "detail": "mode=idle" },
+    { "name": "Polyline selectable + draw + toolbar", "status": "PASS" },
+    { "name": "Self-intersecting boundary blocks Accept", "status": "PASS", "detail": "truthful validation" },
+    { "name": "Convex boundary Validate → Accept Trim", "status": "PASS" },
+    { "name": "Undo after Accept", "status": "PASS" },
+    { "name": "Redo after Undo", "status": "PASS" },
+    { "name": "Freehand draw + toolbar", "status": "PASS", "detail": "31 points" },
+    { "name": "Reset / Cancel", "status": "PASS" },
+    { "name": "Viewport resize screenshots", "status": "PASS" },
+    { "name": "Automated Studio tests (161) + typecheck + build", "status": "PASS" }
+  ],
+  "observations": [
+    "Headless accept/undo screenshot mesh delta was chrome-only; unit tests cover faceCount/history.",
+    "Lower-arch full browser Accept not repeated; Upper Active path verified."
+  ]
+}

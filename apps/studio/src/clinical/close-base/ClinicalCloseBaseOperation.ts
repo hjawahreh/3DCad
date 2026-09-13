@@ -28,6 +28,8 @@ export class ClinicalCloseBaseOperation {
     readonly document: ClinicalDocumentSnapshot;
     readonly targetObjectId: string;
     readonly parameters: ClinicalCloseBaseParameters;
+    /** When true, kernel writes preview/display only — working/source untouched. */
+    readonly preview?: boolean;
   }): ClinicalResult<OperationSession> {
     if (this.session !== undefined) {
       return clinicalFailure('conflict', 'Close Base operation already active');
@@ -47,7 +49,8 @@ export class ClinicalCloseBaseOperation {
         thickness: input.parameters.thickness,
         orientation: input.parameters.orientation,
         margin: input.parameters.margin,
-        smoothing: input.parameters.smoothing
+        smoothing: input.parameters.smoothing,
+        preview: input.preview === true
       })
     });
     if (!started.ok) {
@@ -117,12 +120,20 @@ export class ClinicalCloseBaseOperation {
     if (this.session === undefined) {
       return;
     }
-    this.session.cancel();
+    const phase = this.session.snapshot().phase;
+    // Committed / disposed / cancelled are already terminal — cancel() would fail.
+    if (phase !== 'committed' && phase !== 'disposed' && phase !== 'cancelled') {
+      this.session.cancel();
+    }
     this.session.dispose();
     this.session = undefined;
   }
 
   public dispose(): void {
-    this.cancel();
+    if (this.session === undefined) {
+      return;
+    }
+    this.session.dispose();
+    this.session = undefined;
   }
 }

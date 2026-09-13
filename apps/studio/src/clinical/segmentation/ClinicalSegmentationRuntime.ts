@@ -2,11 +2,13 @@
  * ClinicalSegmentationRuntime — façade for segmentation tool.
  */
 
-import type { ClinicalObjectId } from '../import/ClinicalMeshDescriptor.js';
+import type { ClinicalObjectId, ClinicalArchRole } from '../import/ClinicalMeshDescriptor.js';
 import type { ClinicalSceneBuilder } from '../import/ClinicalSceneBuilder.js';
 import type { ClinicalPreparationRuntime } from '../preparation/ClinicalPreparationRuntime.js';
 import type { ClinicalResult } from '../runtime/types.js';
 import type { ClinicalSession } from '../runtime/session.js';
+import type { ClinicalMeshPicker } from '../display/ClinicalMeshPicker.js';
+import type { ClinicalViewportRuntime } from '../display/ClinicalViewportRuntime.js';
 import { ClinicalSegmentationController } from './ClinicalSegmentationController.js';
 import type { SegmentationViewMode } from './ClinicalSegmentationSession.js';
 import type { FdiNumber } from './fdi/FdiNumbering.js';
@@ -18,9 +20,18 @@ export class ClinicalSegmentationRuntime {
   public constructor(
     session: ClinicalSession,
     preparation: ClinicalPreparationRuntime,
-    sceneBuilder: ClinicalSceneBuilder
+    sceneBuilder: ClinicalSceneBuilder,
+    meshPicker?: ClinicalMeshPicker,
+    viewport?: ClinicalViewportRuntime
   ) {
-    this.controller = new ClinicalSegmentationController(session, preparation, sceneBuilder);
+    this.controller = new ClinicalSegmentationController(
+      session,
+      preparation,
+      sceneBuilder,
+      undefined,
+      meshPicker,
+      viewport
+    );
   }
 
   public get session() {
@@ -47,8 +58,26 @@ export class ClinicalSegmentationRuntime {
     return this.controller.enter(preferredId);
   }
 
+  /** One-click: enter tool (if needed) and run inference. */
+  public async segmentTeeth(preferredId?: ClinicalObjectId): Promise<ClinicalResult<void>> {
+    return this.controller.segmentTeeth(preferredId);
+  }
+
   public setProvider(providerId: string): ClinicalResult<void> {
     return this.controller.setProvider(providerId);
+  }
+
+  public setActiveArch(arch: ClinicalArchRole): ClinicalResult<void> {
+    return this.controller.setActiveArch(arch);
+  }
+
+  public pickToothAt(screen: {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+  }): ClinicalResult<void> {
+    return this.controller.pickToothAt(screen);
   }
 
   public async runInference(): Promise<ClinicalResult<void>> {
@@ -75,6 +104,10 @@ export class ClinicalSegmentationRuntime {
     return this.controller.selectInstance(id);
   }
 
+  public acknowledgeReview(): ClinicalResult<void> {
+    return this.controller.acknowledgeReview();
+  }
+
   public relabelFdi(instanceId: string, fdi: FdiNumber | undefined): ClinicalResult<void> {
     return this.controller.relabelFdi(instanceId, fdi);
   }
@@ -89,6 +122,10 @@ export class ClinicalSegmentationRuntime {
 
   public markUnknown(instanceId: string): ClinicalResult<void> {
     return this.controller.markUnknown(instanceId);
+  }
+
+  public markMissing(instanceId: string): ClinicalResult<void> {
+    return this.controller.markMissing(instanceId);
   }
 
   public markSemantic(faces: readonly number[], label: SemanticLabel): ClinicalResult<void> {

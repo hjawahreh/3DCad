@@ -13,9 +13,13 @@ import { ClinicalCloseBaseOverlay } from '../close-base/ClinicalCloseBaseOverlay
 import { ClinicalCloseBaseToolbar } from '../close-base/ClinicalCloseBaseToolbar.js';
 import { ClinicalSegmentationOverlay } from '../segmentation/ClinicalSegmentationOverlay.js';
 import { ClinicalSegmentationToolbar } from '../segmentation/ClinicalSegmentationToolbar.js';
+import { ClinicalSegmentationCompletionBanner } from '../segmentation/ClinicalSegmentationCompletionBanner.js';
 import { ClinicalAnalysisOverlay } from '../analysis/ClinicalAnalysisOverlay.js';
 import { ClinicalAnalysisToolbar } from '../analysis/ClinicalAnalysisToolbar.js';
 import { ClinicalMeshViewport } from '../display/ClinicalMeshViewport.js';
+import { ClinicalViewCube } from '../display/ClinicalViewCube.js';
+import { ClinicalProcessFeedbackOverlay } from './ClinicalProcessFeedbackOverlay.js';
+import { ClinicalGlobalArchBar } from './ClinicalGlobalArchBar.js';
 
 /**
  * ClinicalDocumentHost — clinical viewport surface (display + orientation + geometry tools).
@@ -67,9 +71,8 @@ export const ClinicalDocumentHost = ({
       }}
     >
       <ClinicalOrientationToolbar workspace={workspace} />
-      <ClinicalTrimToolbar workspace={workspace} />
       <ClinicalCloseBaseToolbar workspace={workspace} />
-      <ClinicalSegmentationToolbar runtime={workspace.segmentation} />
+      <ClinicalSegmentationToolbar workspace={workspace} />
       <ClinicalAnalysisToolbar workspace={workspace} />
       <ViewportHost root={host} showGrid={showGrid} />
       <ClinicalMeshViewport workspace={workspace} />
@@ -78,9 +81,15 @@ export const ClinicalDocumentHost = ({
       <ClinicalOrientationOverlay workspace={workspace} />
       <ClinicalTrimOverlay workspace={workspace} />
       <ClinicalCloseBaseOverlay workspace={workspace} />
-      <ClinicalSegmentationOverlay session={workspace.segmentation.session} />
+      <ClinicalSegmentationOverlay workspace={workspace} />
+      <ClinicalSegmentationCompletionBanner workspace={workspace} />
       <ClinicalAnalysisOverlay workspace={workspace} />
       <ClinicalViewportHUD workspace={workspace} />
+      <ClinicalViewCube workspace={workspace} />
+      <ClinicalProcessFeedbackOverlay workspace={workspace} />
+      <ClinicalGlobalArchBar workspace={workspace} />
+      {/* Toolbar after overlay in DOM + higher z-index → separate pointer ownership */}
+      <ClinicalTrimToolbar workspace={workspace} />
     </div>
   );
 };

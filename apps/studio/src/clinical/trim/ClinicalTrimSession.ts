@@ -12,6 +12,7 @@ import { ClinicalTrimWorkflow } from './ClinicalTrimWorkflow.js';
 import { ClinicalTrimLifecycle } from './ClinicalTrimLifecycle.js';
 import type { TrimValidationReport } from './ClinicalTrimValidation.js';
 import {
+  clonePoint,
   clonePoints,
   closeBoundary,
   isClosedBoundary,
@@ -46,7 +47,6 @@ export class ClinicalTrimSession {
 
   public begin(input: {
     readonly objectId: ClinicalObjectId;
-    readonly drawMode: TrimDrawMode;
     readonly now: number;
   }): void {
     this.workflow.reset();
@@ -60,35 +60,59 @@ export class ClinicalTrimSession {
       phase: 'drawing',
       lifecycle: 'active',
       targetObjectId: input.objectId,
-      drawMode: input.drawMode,
+      drawMode: 'idle',
       points: Object.freeze([]),
       closed: false,
       previewActive: true,
+      previewCursor: undefined,
+      pointerCaptured: false,
+      lastHitSummary: undefined,
+      validationReport: undefined,
       sessionStartedAt: input.now,
-      statusMessage: 'Draw trim boundary — click to add points'
+      statusMessage: 'Choose Polyline or Freehand, then draw on the scan'
     });
   }
 
   public setDrawMode(mode: TrimDrawMode): void {
-    this.patch({ drawMode: mode, statusMessage: `Draw mode: ${mode}` });
+    const message =
+      mode === 'idle'
+        ? 'Choose Polyline or Freehand, then draw on the scan'
+        : mode === 'polyline'
+          ? 'Polyline — click the scan to add points'
+          : 'Freehand — drag on the scan to draw';
+    this.patch({
+      drawMode: mode,
+      previewCursor: undefined,
+      statusMessage: message
+    });
   }
 
   public setPoints(points: readonly TrimBoundaryPoint[], closed?: boolean): void {
     const isClosed = closed ?? isClosedBoundary(points);
     if (this.state.phase === 'drawing') {
-      this.workflow.transition('preview-boundary');
+      if (!this.workflow.transition('preview-boundary')) {
+        // Keep session phase coherent even if workflow was mid-execute (should be rare after resume).
+        this.workflow.reset();
+        this.workflow.transition('activating');
+        this.workflow.transition('acquiring-pointer');
+        this.workflow.transition('drawing');
+        this.workflow.transition('preview-boundary');
+      }
     }
     this.patch({
-      phase: this.workflow.getPhase(),
+      phase: this.workflow.getPhase() === 'idle' ? 'drawing' : this.workflow.getPhase(),
       points: Object.freeze(clonePoints(points)),
       closed: isClosed,
       previewActive: true,
-      statusMessage: isClosed ? 'Boundary closed — validate and accept' : 'Boundary preview'
+      validationReport: undefined,
+      statusMessage: isClosed
+        ? `Boundary closed — ${String(points.length)} points. Validate and accept.`
+        : `Boundary: ${String(points.length)} point${points.length === 1 ? '' : 's'}`
     });
   }
 
   public addPoint(point: TrimBoundaryPoint): void {
-    const next = Object.freeze([...this.state.points, Object.freeze({ x: point.x, y: point.y })]);
+    const next = Object.freeze([...this.state.points, clonePoint(point)]);
     this.setPoints(next);
   }
 
@@ -101,13 +125,75 @@ export class ClinicalTrimSession {
   }
 
   public clearPoints(): void {
-    this.workflow.transition('drawing');
+    // After preview/execute, workflow may be submitting/executing — force back to drawing.
+    if (!this.workflow.canTransition('drawing')) {
+      this.workflow.reset();
+      this.workflow.transition('activating');
+      this.workflow.transition('acquiring-pointer');
+      this.workflow.transition('drawing');
+    } else {
+      this.workflow.transition('drawing');
+    }
+    this.lifecycle.reset();
+    this.lifecycle.transition('created');
+    this.lifecycle.transition('active');
     this.patch({
       phase: 'drawing',
+      lifecycle: 'active',
       points: Object.freeze([]),
       closed: false,
       validationReport: undefined,
-      statusMessage: 'Boundary cleared'
+      previewCursor: undefined,
+      previewActive: true,
+      pointerCaptured: false,
+      lastHitSummary: undefined,
+      kernelFingerprint: undefined,
+      operationId: undefined,
+      statusMessage: 'Boundary cleared — click to start a new loop'
+    });
+  }
+
+  public patchStatus(message: string): void {
+    this.patch({ statusMessage: message });
+  }
+
+  /** Return to editable drawing after preview cancel / failed execute. */
+  public resumeDrawingAfterPreview(): void {
+    if (!this.workflow.canTransition('drawing')) {
+      this.workflow.reset();
+      this.workflow.transition('activating');
+      this.workflow.transition('acquiring-pointer');
+      this.workflow.transition('drawing');
+    } else {
+      this.workflow.transition('drawing');
+    }
+    this.lifecycle.reset();
+    this.lifecycle.transition('created');
+    this.lifecycle.transition('active');
+    this.patch({
+      phase: 'drawing',
+      lifecycle: 'active',
+      previewActive: true,
+      pointerCaptured: false,
+      kernelFingerprint: undefined,
+      operationId: undefined,
+      validationReport: undefined
+    });
+  }
+
+  /** Reset drawing state while remaining inside Trim (idle mode). */
+  public resetDrawing(): void {
+    this.workflow.transition('drawing');
+    this.patch({
+      phase: 'drawing',
+      drawMode: 'idle',
+      points: Object.freeze([]),
+      closed: false,
+      validationReport: undefined,
+      previewCursor: undefined,
+      pointerCaptured: false,
+      lastHitSummary: undefined,
+      statusMessage: 'Choose Polyline or Freehand, then draw on the scan'
     });
   }
 
@@ -118,11 +204,45 @@ export class ClinicalTrimSession {
 
   public setValidationReport(report: TrimValidationReport): void {
     this.workflow.transition('validating');
+    const fail = report.checks.find((c) => !c.passed);
     this.patch({
       phase: 'validating',
       validationReport: report,
-      statusMessage: report.passed ? 'Validation passed' : 'Validation failed'
+      statusMessage: report.passed
+        ? 'Boundary is valid.'
+        : fail?.message ?? 'Validation failed'
     });
+  }
+
+  /** Live validation — update report without leaving the drawing loop noisily. */
+  public setLiveValidationReport(report: TrimValidationReport): void {
+    const fail = report.checks.find((c) => !c.passed);
+    const severe =
+      fail !== undefined &&
+      (fail.id === 'self-intersection' ||
+        fail.id === 'target-surface' ||
+        fail.id === 'finite-values' ||
+        fail.id === 'boundary-area');
+    this.patch({
+      validationReport: report,
+      ...(severe
+        ? { statusMessage: fail.message }
+        : report.passed && this.state.closed
+          ? { statusMessage: 'Boundary is valid.' }
+          : {})
+    });
+  }
+
+  public setPreviewCursor(point: TrimBoundaryPoint | undefined): void {
+    this.patch({ previewCursor: point === undefined ? undefined : clonePoint(point) });
+  }
+
+  public setPointerCaptured(captured: boolean): void {
+    this.patch({ pointerCaptured: captured });
+  }
+
+  public setLastHitSummary(summary: string | undefined): void {
+    this.patch({ lastHitSummary: summary });
   }
 
   public markSubmitting(): void {
@@ -154,7 +274,60 @@ export class ClinicalTrimSession {
       phase: 'completed',
       lifecycle: 'completed',
       previewActive: false,
+      pointerCaptured: false,
       statusMessage: 'Trim committed'
+    });
+  }
+
+  /**
+   * After an accepted trim, stay in the tool for another cut on the same arch.
+   * Document undo/redo is separate from drawing undo.
+   */
+  public continueAfterCommit(input: {
+    readonly objectId: ClinicalObjectId;
+    readonly now: number;
+  }): void {
+    this.workflow.reset();
+    this.lifecycle.reset();
+    this.lifecycle.transition('created');
+    this.lifecycle.transition('active');
+    this.workflow.transition('activating');
+    this.workflow.transition('acquiring-pointer');
+    this.workflow.transition('drawing');
+    this.patch({
+      phase: 'drawing',
+      lifecycle: 'active',
+      targetObjectId: input.objectId,
+      drawMode: 'idle',
+      points: Object.freeze([]),
+      closed: false,
+      previewActive: true,
+      previewCursor: undefined,
+      pointerCaptured: false,
+      lastHitSummary: undefined,
+      validationReport: undefined,
+      kernelFingerprint: undefined,
+      operationId: undefined,
+      sessionStartedAt: input.now,
+      statusMessage: 'Trim accepted — choose Freehand or Polyline to draw again'
+    });
+  }
+
+  public retarget(objectId: ClinicalObjectId): void {
+    this.workflow.transition('drawing');
+    this.patch({
+      phase: 'drawing',
+      targetObjectId: objectId,
+      drawMode: 'idle',
+      points: Object.freeze([]),
+      closed: false,
+      previewCursor: undefined,
+      pointerCaptured: false,
+      lastHitSummary: undefined,
+      validationReport: undefined,
+      kernelFingerprint: undefined,
+      operationId: undefined,
+      statusMessage: 'Arch switched — choose Freehand or Polyline'
     });
   }
 
@@ -165,6 +338,7 @@ export class ClinicalTrimSession {
       phase: 'cancelled',
       lifecycle: 'cancelled',
       previewActive: false,
+      pointerCaptured: false,
       statusMessage: 'Trim cancelled'
     });
   }

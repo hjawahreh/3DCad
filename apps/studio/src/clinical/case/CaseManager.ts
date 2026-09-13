@@ -13,6 +13,11 @@ export class CaseManager {
   public newCase(input?: {
     readonly name?: string;
     readonly patientName?: string;
+    readonly firstName?: string;
+    readonly lastName?: string;
+    readonly patientId?: string;
+    readonly chartNumber?: string;
+    readonly notes?: string;
   }): ClinicalResult<ClinicalDocumentSnapshot> {
     return this.session.newCase(input);
   }

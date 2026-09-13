@@ -22,10 +22,10 @@ const ALLOWED: Readonly<Record<TrimWorkflowPhase, readonly TrimWorkflowPhase[]>>
   drawing: ['drawing', 'preview-boundary', 'validating', 'cancelled', 'idle'],
   'preview-boundary': ['drawing', 'validating', 'cancelled', 'idle'],
   validating: ['submitting', 'drawing', 'cancelled', 'idle'],
-  submitting: ['executing', 'cancelled', 'idle'],
-  executing: ['committing', 'cancelled', 'idle'],
-  committing: ['completed', 'cancelled', 'idle'],
-  completed: ['idle'],
+  submitting: ['executing', 'cancelled', 'idle', 'drawing'],
+  executing: ['committing', 'cancelled', 'idle', 'drawing'],
+  committing: ['completed', 'cancelled', 'idle', 'drawing'],
+  completed: ['idle', 'drawing', 'activating'],
   cancelled: ['idle']
 });
 

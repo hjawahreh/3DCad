@@ -1,7 +1,12 @@
 /**
- * Deterministic reference segmentation provider (CLN-009).
- * Geometry-heuristic inference for tests/benchmarks — NOT a research NN model.
- * Does not claim clinical production accuracy.
+ * Deterministic reference segmentation provider (Phase 7 production default).
+ *
+ * Geometry-heuristic inference — NOT a research NN. Selected as production default
+ * after license/runtime review of TSegFormer / MeshSegNet / TGNet / DentalMAE
+ * (see docs/architecture/segmentation-model-decision.md).
+ *
+ * Produces real instance labels + FDI candidates from mesh analysis.
+ * Does not mutate source mesh topology.
  */
 
 import type { TriangleMesh } from '../../../geometry-kernel/mesh/TriangleMesh.js';
@@ -10,6 +15,7 @@ import {
   POSTPROCESSING_VERSION,
   IDENTIFICATION_VERSION,
   PREPROCESSING_VERSION,
+  MAX_CLINICAL_TOOTH_INSTANCES,
   confidenceBand,
   type FaceSemanticPrediction,
   type SegmentationPrediction,
@@ -23,6 +29,7 @@ import {
   preprocessSegmentationMesh,
   type PreprocessResult
 } from '../preprocess/SegmentationPreprocess.js';
+import { planLargeMeshSampling } from '../preprocess/LargeMeshSampling.js';
 import { refineBoundaries } from '../postprocess/BoundaryRefinement.js';
 import { separateToothInstances } from '../postprocess/InstanceSeparation.js';
 import { identifyToothInstances } from '../identify/ToothIdentification.js';
@@ -30,17 +37,25 @@ import type {
   SegmentationInferRequest,
   SegmentationProvider,
   SegmentationProviderCapability,
-  SegmentationProviderInfo
+  SegmentationProviderInfo,
+  SegmentationProviderRuntimeInfo
 } from './SegmentationProvider.js';
+import { detectInferenceRuntime } from './adapters/InferenceCapabilityDetector.js';
+
+const yieldTick = (): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
 
 export class ReferenceHeuristicProvider implements SegmentationProvider {
   public readonly info: SegmentationProviderInfo = Object.freeze({
     id: 'reference-heuristic',
-    displayName: 'Reference Heuristic (deterministic)',
+    displayName: 'Reference Geometry Inference (CPU)',
     modelId: 'clinical-reference-seg',
-    modelVersion: '1.0.0',
+    modelVersion: '1.1.0',
     operational: true,
-    licenseNotes: 'First-party CAD Studio clinical reference — not a research NN weight set',
+    licenseNotes:
+      'First-party CAD Studio clinical reference geometry inference — not a research NN weight set',
     capabilities: Object.freeze([
       'semantic',
       'instance',
@@ -51,13 +66,37 @@ export class ReferenceHeuristicProvider implements SegmentationProvider {
   });
 
   private cancelled = false;
+  private runtime: SegmentationProviderRuntimeInfo = Object.freeze({
+    preferredExecutionProvider: 'cpu',
+    availableExecutionProviders: Object.freeze(['cpu'] as const),
+    message: 'Not initialized',
+    gpuAvailable: false,
+    cpuFallback: true
+  });
 
   public async initialize(): Promise<void> {
     this.cancelled = false;
+    const snap = await detectInferenceRuntime({ probeOnnx: false });
+    this.runtime = Object.freeze({
+      preferredExecutionProvider: 'cpu',
+      availableExecutionProviders: snap.available,
+      message: `Reference geometry inference · CPU · detected preferred EP ${snap.preferred}` +
+        (snap.webgpu ? ' (GPU present but unused — provider is CPU-only)' : ' · CPU fallback'),
+      gpuAvailable: snap.webgpu,
+      cpuFallback: true
+    });
   }
 
   public capabilities(): readonly SegmentationProviderCapability[] {
     return this.info.capabilities;
+  }
+
+  public modelInformation(): SegmentationProviderInfo {
+    return this.info;
+  }
+
+  public runtimeInformation(): SegmentationProviderRuntimeInfo {
+    return this.runtime;
   }
 
   public validateInput(mesh: TriangleMesh): { readonly ok: boolean; readonly message?: string } {
@@ -69,94 +108,153 @@ export class ReferenceHeuristicProvider implements SegmentationProvider {
   }
 
   public async preprocess(mesh: TriangleMesh, signal: AbortSignal): Promise<PreprocessResult> {
-    return preprocessSegmentationMesh(mesh, { signal });
+    const result = await preprocessSegmentationMesh(mesh, { signal });
+    // Large-mesh plan keeps Model Input → Source Face mapping ready without mutating source.
+    void planLargeMeshSampling(result);
+    return result;
+  }
+
+  public async postprocess(prediction: SegmentationPrediction): Promise<SegmentationPrediction> {
+    return prediction;
   }
 
   public async infer(request: SegmentationInferRequest): Promise<SegmentationPrediction> {
     const started = performance.now();
-    if (request.signal.aborted || this.cancelled) {
-      throw new SegmentationError('CANCELLED', 'Inference cancelled');
-    }
-    request.report({ completed: 0, total: 5, message: 'Preparing mesh…' });
+    const throwIfCancelled = (): void => {
+      if (request.signal.aborted || this.cancelled) {
+        throw new SegmentationError('CANCELLED', 'Inference cancelled');
+      }
+    };
+
+    throwIfCancelled();
+    request.report({ completed: 0, total: 7, message: 'Preparing scan…' });
+    await yieldTick();
+    throwIfCancelled();
+
+    request.report({ completed: 1, total: 7, message: 'Loading segmentation model…' });
+    await yieldTick();
+    // Geometry provider has no NN weights to load — stage retained for truthful UX parity.
+    throwIfCancelled();
+
     const preprocess = request.preprocess;
-    request.report({ completed: 1, total: 5, message: 'Semantic classification…' });
+    request.report({ completed: 2, total: 7, message: 'Analyzing dental surface…' });
+    await yieldTick();
+    throwIfCancelled();
 
-  const faceCount = preprocess.faceCount;
-  const faceLabels: FaceSemanticPrediction[] = [];
-  // Classify by relative height within mesh Z-range (not full AABB diagonal scale).
-  let zMin = Infinity;
-  let zMax = -Infinity;
-  for (let f = 0; f < faceCount; f += 1) {
-    const i0 = request.mesh.indices[f * 3]!;
-    const i1 = request.mesh.indices[f * 3 + 1]!;
-    const i2 = request.mesh.indices[f * 3 + 2]!;
-    const z =
-      (request.mesh.positions[i0 * 3 + 2]! +
-        request.mesh.positions[i1 * 3 + 2]! +
-        request.mesh.positions[i2 * 3 + 2]!) /
-      3;
-    if (z < zMin) zMin = z;
-    if (z > zMax) zMax = z;
-  }
-  const zSpan = Math.max(1e-6, zMax - zMin);
+    const faceCount = preprocess.faceCount;
 
-  for (let f = 0; f < faceCount; f += 1) {
-    if (request.signal.aborted || this.cancelled) {
-      throw new SegmentationError('CANCELLED', 'Inference cancelled');
+    // Prefer superior axis with larger AABB span (clinical Y-up after orientation; Z-up fixtures).
+    const aabb = preprocess.aabb;
+    const ySpanAbs = Math.abs(aabb.max[1] - aabb.min[1]);
+    const zSpanAbs = Math.abs(aabb.max[2] - aabb.min[2]);
+    const heightAxis: 1 | 2 = ySpanAbs >= zSpanAbs ? 1 : 2;
+    const arch =
+      request.archRole === 'lower' || request.archRole === 'upper'
+        ? request.archRole
+        : 'upper';
+
+    let hMin = Infinity;
+    let hMax = -Infinity;
+    for (let f = 0; f < faceCount; f += 1) {
+      const h = preprocess.faceCentroids[f * 3 + heightAxis]!;
+      if (h < hMin) hMin = h;
+      if (h > hMax) hMax = h;
     }
-    const i0 = request.mesh.indices[f * 3]!;
-    const i1 = request.mesh.indices[f * 3 + 1]!;
-    const i2 = request.mesh.indices[f * 3 + 2]!;
-    const z =
-      (request.mesh.positions[i0 * 3 + 2]! +
-        request.mesh.positions[i1 * 3 + 2]! +
-        request.mesh.positions[i2 * 3 + 2]!) /
-      3;
-    const zNorm = (z - zMin) / zSpan;
-    const nz = preprocess.faceNormals[f * 3 + 2]!;
-    let label: FaceSemanticPrediction['label'] = 'TOOTH';
-    let confidence = 0.72;
-    if (zNorm < 0.35) {
-      label = 'GINGIVA';
-      confidence = 0.7 + Math.min(0.25, (0.35 - zNorm) * 0.6);
-    } else if (zNorm > 0.95 && Math.abs(nz) < 0.15) {
-      label = 'UNKNOWN';
-      confidence = 0.35;
-    } else {
-      confidence = 0.65 + Math.min(0.3, (zNorm - 0.35) * 0.5);
-    }
-    faceLabels.push(
-      Object.freeze({
-        faceIndex: f,
-        label,
-        confidence: Math.max(0.05, Math.min(0.99, confidence))
-      })
-    );
-  }
+    const hSpan = Math.max(1e-6, hMax - hMin);
 
-    request.report({ completed: 2, total: 5, message: 'Instance separation…' });
+    const labelWithInvert = (invertHeight: boolean): FaceSemanticPrediction[] => {
+      const labels: FaceSemanticPrediction[] = [];
+      for (let f = 0; f < faceCount; f += 1) {
+        const h = preprocess.faceCentroids[f * 3 + heightAxis]!;
+        let hNorm = (h - hMin) / hSpan;
+        if (invertHeight) hNorm = 1 - hNorm;
+        const nh = preprocess.faceNormals[f * 3 + heightAxis]!;
+        let label: FaceSemanticPrediction['label'] = 'TOOTH';
+        let confidence = 0.72;
+        if (hNorm < 0.32) {
+          label = 'GINGIVA';
+          confidence = 0.7 + Math.min(0.25, (0.32 - hNorm) * 0.6);
+        } else if (hNorm > 0.96 && Math.abs(nh) < 0.12) {
+          label = 'UNKNOWN';
+          confidence = 0.35;
+        } else {
+          confidence = 0.65 + Math.min(0.3, (hNorm - 0.32) * 0.5);
+        }
+        labels.push({
+          faceIndex: f,
+          label,
+          confidence: Math.max(0.05, Math.min(0.99, confidence))
+        });
+      }
+      return labels;
+    };
+
+    const countTooth = (labels: readonly FaceSemanticPrediction[]): number => {
+      let n = 0;
+      for (const fl of labels) if (fl.label === 'TOOTH') n += 1;
+      return n;
+    };
+
+    // Pick the superior-axis polarity that yields a clinically plausible tooth surface area.
+    // Lower arches often need the opposite polarity after orientation bake.
+    const preferredInvert = arch === 'lower';
+    const primary = labelWithInvert(preferredInvert);
+    const alternate = labelWithInvert(!preferredInvert);
+    const primaryTooth = countTooth(primary);
+    const alternateTooth = countTooth(alternate);
+    // Always prefer the polarity with more TOOTH surface (lower arches often invert).
+    let faceLabels = alternateTooth > primaryTooth ? alternate : primary;
+    if (primaryTooth === 0 && alternateTooth === 0) {
+      // Last resort: treat the upper half of the taller polarity as tooth.
+      faceLabels = labelWithInvert(false).map((fl) => {
+        const h = preprocess.faceCentroids[fl.faceIndex * 3 + heightAxis]!;
+        const hNorm = (h - hMin) / hSpan;
+        if (hNorm >= 0.4) {
+          return { ...fl, label: 'TOOTH' as const, confidence: 0.7 };
+        }
+        return { ...fl, label: 'GINGIVA' as const, confidence: 0.7 };
+      });
+    }
+
+    for (let f = 0; f < faceCount; f += 8192) {
+      await yieldTick();
+      throwIfCancelled();
+    }
+
+    request.report({ completed: 3, total: 7, message: 'Separating teeth…' });
+    await yieldTick();
+    throwIfCancelled();
     const separated = separateToothInstances({
       faceLabels,
       faceCentroids: preprocess.faceCentroids,
       mesh: request.mesh
     });
 
-    request.report({ completed: 3, total: 5, message: 'Boundary refinement…' });
+    request.report({ completed: 4, total: 7, message: 'Identifying teeth…' });
+    await yieldTick();
+    throwIfCancelled();
+
+    request.report({ completed: 5, total: 7, message: 'Refining boundaries…' });
+    await yieldTick();
+    throwIfCancelled();
     const refinedFaces = refineBoundaries({
       faceLabels,
       faceNormals: preprocess.faceNormals,
       faceCentroids: preprocess.faceCentroids,
-      adjacency: separated.faceAdjacency
+      adjacency: separated.allFaceAdjacency
     });
 
-    request.report({ completed: 4, total: 5, message: 'Tooth identification…' });
     const identified = identifyToothInstances({
       instances: separated.instances,
       faceLabels: refinedFaces,
-      arch: 'upper',
+      arch,
       threshold: request.identificationThreshold,
       expectedSlots: 14
     });
+
+    request.report({ completed: 6, total: 7, message: 'Checking results…' });
+    await yieldTick();
+    throwIfCancelled();
 
     const instanceMean =
       identified.instances.reduce((s, i) => s + i.confidence, 0) /
@@ -174,7 +272,13 @@ export class ReferenceHeuristicProvider implements SegmentationProvider {
     ).length;
 
     const timingMs = performance.now() - started;
-    request.report({ completed: 5, total: 5, message: 'Ready for review' });
+    request.report({ completed: 7, total: 7, message: 'Ready for review' });
+
+    const capWarnings = separated.capped
+      ? [
+          `Instance cap ${String(MAX_CLINICAL_TOOTH_INSTANCES)} applied (raw groups ${String(separated.rawGroupCount)}) — over-fragmentation collapsed; confidence reduced on merged residual`
+        ]
+      : [];
 
     return Object.freeze({
       predictionId: `pred-${request.objectId}-${String(request.sourceRevision)}-${String(Math.floor(started))}`,
@@ -200,12 +304,17 @@ export class ReferenceHeuristicProvider implements SegmentationProvider {
       }),
       warnings: Object.freeze([
         ...preprocess.warnings,
-        'Reference heuristic provider — decision support only; not clinically validated NN inference',
+        'Reference geometry inference — decision support; not a licensed research NN; not clinical-grade tooth identity',
+        `Runtime: CPU · arch=${arch} · heightAxis=${heightAxis === 1 ? 'Y' : 'Z'}`,
+        ...capWarnings,
         ...identified.warnings
       ]),
       metrics: Object.freeze({
         faceCount,
         instanceCount: identified.instances.length,
+        rawGroupCount: separated.rawGroupCount,
+        instanceCapped: separated.capped ? 1 : 0,
+        neighborLinked: identified.instances.filter((i) => i.neighbors !== undefined).length,
         preprocessingMs: preprocess.timingMs,
         inferenceMs: timingMs,
         postprocessingMs: separated.timingMs,

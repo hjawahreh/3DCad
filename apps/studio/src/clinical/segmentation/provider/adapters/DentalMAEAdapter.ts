@@ -9,14 +9,22 @@ export class DentalMAEAdapter implements SegmentationProvider {
       modelId: 'dentalmae',
       modelVersion: '0.0.0-scaffold',
       operational: false,
-      licenseNotes: 'Research DentalMAE adapter — not operational in CLN-009',
-      capabilities: Object.freeze(['semantic', 'gpu', 'cpu'] as SegmentationProviderCapability[])
+      licenseNotes:
+        'WACV 2024 research method — public code/weights/license not verified for redistribution; not enabled.',
+      capabilities: Object.freeze([
+        'semantic',
+        'instance',
+        'gpu',
+        'cpu'
+      ] as SegmentationProviderCapability[])
     })
   );
 
   public readonly info = this.inner.info;
   public initialize = this.inner.initialize.bind(this.inner);
   public capabilities = this.inner.capabilities.bind(this.inner);
+  public modelInformation = this.inner.modelInformation.bind(this.inner);
+  public runtimeInformation = this.inner.runtimeInformation.bind(this.inner);
   public validateInput = this.inner.validateInput.bind(this.inner);
   public preprocess = this.inner.preprocess.bind(this.inner);
   public infer = this.inner.infer.bind(this.inner);

@@ -1,0 +1,2618 @@
+{
+  "at": "2026-09-11T20:04:06.007Z",
+  "host": "http://localhost:1420/",
+  "fixtures": [
+    "apps/studio/public/clinical-fixtures/upper.stl",
+    "apps/studio/public/clinical-fixtures/lower.stl"
+  ],
+  "results": [
+    {
+      "name": "Shell boot",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Worker health (Studio log)",
+      "status": "PASS",
+      "detail": "console: VTK HTTP worker available"
+    },
+    {
+      "name": "Load case (Create Case + dual STL)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Accept Orientation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Continue to Trim",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Surface world picks",
+      "status": "PASS",
+      "detail": "hits=28 span={\"halfU\":65.6992,\"halfV\":25.597600000000007} picks={\"points\":5,\"closed\":false,\"worldComplete\":true,\"sample\":[{\"x\":372.8541259765625,\"y\":346.6124267578125,\"worldX\":-6.202027847039192,\"worldY\":13.611798418147293,\"worldZ\":19.241762219867656},{\"x\":438.5533447265625,\"y\":346.6124267578125,\"worldX\":1.8277490344178213,\"worldY\":14.200437011679798,\"worldZ\":20.89072063199514},{\"x\":504.2525634765625,\"y\":346.6124267578125,\"worldX\":10.043270943501977,\"worldY\":13.29329514165439,\"worldZ\":18.349536221039877}]}"
+    },
+    {
+      "name": "Validate Trim loop",
+      "status": "PASS",
+      "detail": "Points: 6 · Closed: yes · Valid"
+    },
+    {
+      "name": "VTK Trim preview (boundary overlay)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "VTK Trim commit",
+      "status": "PASS",
+      "detail": "accept={\"ok\":true,\"error\":null} resp={\"url\":\"http://127.0.0.1:8765/v1/geometry\",\"phase\":\"response\",\"status\":200,\"ok\":true,\"cmd\":\"trim\",\"removed\":16260,\"output_triangles\":245027} pre={\"id\":\"case-1789156908415:upper-arch\",\"faceCount\":261287,\"vertexCount\":783861,\"fingerprint\":null,\"backend\":null,\"revision\":null,\"dirty\":true} post={\"id\":\"case-1789156908415:upper-arch\",\"faceCount\":245027,\"vertexCount\":124106,\"fingerprint\":\"geo:fb2e851d\",\"backend\":\"hybrid-vtk-reference-v1\",\"revision\":8,\"dirty\":true} vtkTrimCalls=2"
+    },
+    {
+      "name": "VTK worker trim request",
+      "status": "PASS",
+      "detail": "n=2"
+    },
+    {
+      "name": "Undo",
+      "status": "PASS",
+      "detail": "preTrim={\"id\":\"case-1789156908415:upper-arch\",\"faceCount\":261287,\"vertexCount\":783861,\"fingerprint\":null,\"backend\":null,\"revision\":null,\"dirty\":true} undone={\"id\":\"case-1789156908415:upper-arch\",\"faceCount\":261287,\"vertexCount\":783861,\"fingerprint\":null,\"backend\":null,\"revision\":null,\"dirty\":true}"
+    },
+    {
+      "name": "Redo",
+      "status": "PASS",
+      "detail": "afterTrim={\"id\":\"case-1789156908415:upper-arch\",\"faceCount\":245027,\"vertexCount\":124106,\"fingerprint\":\"geo:fb2e851d\",\"backend\":\"hybrid-vtk-reference-v1\",\"revision\":8,\"dirty\":true} redone={\"id\":\"case-1789156908415:upper-arch\",\"faceCount\":245027,\"vertexCount\":124106,\"fingerprint\":\"geo:fb2e851d\",\"backend\":\"hybrid-vtk-reference-v1\",\"revision\":8,\"dirty\":true}"
+    },
+    {
+      "name": "VTK Close Base",
+      "status": "PASS",
+      "detail": "accept={\"ok\":true,\"error\":null} orient={\"orientation\":\"xz\",\"strategy\":\"plane\",\"phase\":\"previewing\"} pre={\"id\":\"case-1789156908415:upper-arch\",\"faceCount\":245027,\"vertexCount\":124106,\"fingerprint\":\"geo:fb2e851d\",\"backend\":\"hybrid-vtk-reference-v1\",\"revision\":8,\"dirty\":true} post={\"id\":\"case-1789156908415:upper-arch\",\"faceCount\":254293,\"vertexCount\":143850,\"fingerprint\":\"geo:2fd4b625\",\"backend\":\"hybrid-vtk-reference-v1\",\"revision\":11,\"dirty\":true} vtkClose=4 clinicalDir=true"
+    },
+    {
+      "name": "Close Base clinical orientation (not AABB authority)",
+      "status": "PASS",
+      "detail": "direction_source clinical=true; session orientation=xz"
+    },
+    {
+      "name": "Save/reopen",
+      "status": "PASS",
+      "detail": "opened={\"via\":\"id\",\"caseId\":\"case-1789156908415\"} before={\"id\":\"case-1789156908415:upper-arch\",\"faceCount\":254293,\"vertexCount\":143850,\"fingerprint\":\"geo:2fd4b625\",\"backend\":\"hybrid-vtk-reference-v1\",\"revision\":11,\"dirty\":true} after={\"id\":\"case-1789156908415:upper-arch\",\"faceCount\":254293,\"vertexCount\":143850,\"fingerprint\":\"geo:2fd4b625\",\"backend\":\"hybrid-vtk-reference-v1\",\"revision\":11,\"dirty\":false}"
+    },
+    {
+      "name": "Evidence screenshots",
+      "status": "PASS",
+      "detail": "18 pngs: 00-boot.png, 01-case-imported.png, 01-import-fail.png, 01-upper-trim-boundary.png, 02-orient-accepted.png, 02-upper-trim-preview.png, 03-trim-entered.png, 03-upper-trimmed.png, 04-lower-trimmed.png, 05-close-base-preview.png, 06-close-base-result.png, 07-undo.png, 08-redo.png, 09-reopen-fail.png, 09-reopened-case.png, accept-disabled.png, close-base-fail.png, trim-draw-fail.png"
+    },
+    {
+      "name": "Console errors",
+      "status": "PASS",
+      "detail": "0"
+    }
+  ],
+  "vtkCalls": [
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/v1/geometry",
+      "method": "POST",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/v1/geometry",
+      "phase": "post",
+      "cmd": "trim",
+      "loopLen": 5,
+      "inside_out": false
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/v1/geometry",
+      "phase": "response",
+      "status": 200,
+      "ok": true,
+      "cmd": "trim",
+      "removed": 16260,
+      "output_triangles": 245027
+    },
+    {
+      "url": "http://127.0.0.1:8765/v1/geometry",
+      "status": 200,
+      "phase": "response"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/v1/geometry",
+      "method": "POST",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/v1/geometry",
+      "phase": "post",
+      "cmd": "close_base",
+      "direction_source": "clinical:xz"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response"
+    },
+    {
+      "url": "http://127.0.0.1:8765/v1/geometry",
+      "phase": "response",
+      "status": 200,
+      "ok": true,
+      "cmd": "close_base",
+      "output_triangles": 254293,
+      "direction_source": "clinical:xz"
+    },
+    {
+      "url": "http://127.0.0.1:8765/v1/geometry",
+      "status": 200,
+      "phase": "response",
+      "ok": true,
+      "output_triangles": 254293,
+      "direction_source": "clinical:xz"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/v1/geometry",
+      "method": "POST",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/v1/geometry",
+      "phase": "post",
+      "cmd": "close_base",
+      "direction_source": "clinical:xz"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/v1/geometry",
+      "phase": "response",
+      "status": 200,
+      "ok": true,
+      "cmd": "close_base",
+      "output_triangles": 254293,
+      "direction_source": "clinical:xz"
+    },
+    {
+      "url": "http://127.0.0.1:8765/v1/geometry",
+      "status": 200,
+      "phase": "response",
+      "ok": true,
+      "output_triangles": 254293,
+      "direction_source": "clinical:xz"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "method": "GET",
+      "phase": "request"
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    },
+    {
+      "url": "http://127.0.0.1:8765/health",
+      "status": 200,
+      "phase": "response",
+      "ok": true
+    }
+  ],
+  "consoleErrors": [],
+  "geometryLogs": [
+    {
+      "type": "info",
+      "text": "[geometry] VTK HTTP worker available — hybrid backend enabled"
+    },
+    {
+      "type": "info",
+      "text": "[geometry] VTK HTTP worker available — hybrid backend enabled"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x1bac0017c400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x1bac0017c400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x1bac0017c400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x1bac0017c400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 1, geometryRef: 2, fingerprint: geo:052a19f9}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:57bbdb75}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 8, geometryRef: 5, fingerprint: geo:fb2e851d}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 7, fingerprint: geo:8c0b344c}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 4, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:upper-arch, revision: 11, geometryRef: 11, fingerprint: geo:2fd4b625}"
+    },
+    {
+      "type": "debug",
+      "text": "[clinical-geo-dev] {operation: viewport-bind, objectId: case-1789156908415:lower-arch, revision: 1, geometryRef: 9, fingerprint: geo:4f0579c1}"
+    }
+  ],
+  "summary": {
+    "total": 17,
+    "fail": 0,
+    "pass": 17,
+    "observe": 0
+  }
+}

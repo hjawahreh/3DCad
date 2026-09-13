@@ -1,0 +1,90 @@
+{
+  "gate": "PROD-002R",
+  "host": "http://localhost:1420/",
+  "at": "2026-09-12T10:20:52.950Z",
+  "results": [
+    {
+      "name": "Open Studio",
+      "status": "PASS",
+      "detail": "http://localhost:1420/"
+    },
+    {
+      "name": "Select Upper/Lower scans",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Long case name preserved on create",
+      "status": "PASS",
+      "detail": "Patient-2026-09-12-Upper-Lower-PROD-002R-Walkthrough-Milestone"
+    },
+    {
+      "name": "Validation panel visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Orientation auto-run on enter",
+      "status": "PASS",
+      "detail": "orientationOrigin=auto"
+    },
+    {
+      "name": "View cube visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "View cube anterior preset",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Preparation after orient accept",
+      "status": "OBSERVE",
+      "detail": ""
+    },
+    {
+      "name": "Arch context UPPER/BOTH/LOWER",
+      "status": "PASS",
+      "detail": "mode=lower"
+    },
+    {
+      "name": "Enter Trim tool",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Trim add points (polyline)",
+      "status": "PASS",
+      "detail": "count=4"
+    },
+    {
+      "name": "Trim clear boundary",
+      "status": "PASS",
+      "detail": "points=0"
+    },
+    {
+      "name": "Trim redraw after clear",
+      "status": "PASS",
+      "detail": "points=5"
+    },
+    {
+      "name": "Trim close + accept [VTK]",
+      "status": "OBSERVE",
+      "detail": "requires VTK worker — not run in default headless path"
+    },
+    {
+      "name": "Trim arch target switch",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Notifications ≤1 visible",
+      "status": "PASS",
+      "detail": "count=0"
+    }
+  ],
+  "pass": 14,
+  "observe": 2,
+  "fail": 0
+}

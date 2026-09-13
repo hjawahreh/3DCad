@@ -18,7 +18,8 @@ import {
   closeBoundary,
   hasSelfIntersection,
   isClosedBoundary,
-  MIN_BOUNDARY_POINTS
+  MIN_BOUNDARY_POINTS,
+  type TrimBoundaryPoint
 } from '../../src/clinical/trim/ClinicalTrimBoundaryMath.js';
 import { ClinicalTrimHistory } from '../../src/clinical/trim/ClinicalTrimHistory.js';
 import {
@@ -63,10 +64,12 @@ const mesh = (id: string, name: string): ClinicalMeshDescriptor =>
     importerId: 'studio-passthrough',
     sourceEntityId: id,
     displayState: 'default' as const,
-    transform: IDENTITY_CLINICAL_TRANSFORM
+    transform: IDENTITY_CLINICAL_TRANSFORM,
+    archRole: 'upper' as const
   });
 
 const seed = (
+  host: StudioCompositionRoot,
   clinical: ReturnType<ClinicalBootstrap['bootstrap']>,
   objects: readonly ClinicalMeshDescriptor[]
 ) => {
@@ -76,16 +79,60 @@ const seed = (
   expect(clinical.session.applyDocument(withClinicalObjects(doc, objects, 18001), true).ok).toBe(
     true
   );
+  const registry = host.runtimes.kernel.registry;
+  for (const obj of objects) {
+    registry.ensureSourceMesh(String(obj.id), { gridResolution: 24 });
+  }
 };
 
-const triangle = Object.freeze([
+/** Screen + mesh-local loop around synthetic grid center (removable under KEEP_OUTSIDE). */
+const surfaceLoop = (): readonly TrimBoundaryPoint[] =>
+  Object.freeze([
+    Object.freeze({
+      x: 100,
+      y: 100,
+      localX: -8,
+      localY: -8,
+      localZ: 0,
+      objectId: 'jaw'
+    }),
+    Object.freeze({
+      x: 300,
+      y: 100,
+      localX: 8,
+      localY: -8,
+      localZ: 0,
+      objectId: 'jaw'
+    }),
+    Object.freeze({
+      x: 300,
+      y: 280,
+      localX: 8,
+      localY: 8,
+      localZ: 0,
+      objectId: 'jaw'
+    }),
+    Object.freeze({
+      x: 100,
+      y: 280,
+      localX: -8,
+      localY: 8,
+      localZ: 0,
+      objectId: 'jaw'
+    })
+  ]);
+
+const screenTriangle = Object.freeze([
   Object.freeze({ x: 100, y: 100 }),
   Object.freeze({ x: 300, y: 100 }),
   Object.freeze({ x: 200, y: 280 })
 ]);
 
-const prepareTrimReady = async (clinical: ReturnType<ClinicalBootstrap['bootstrap']>) => {
-  seed(clinical, [mesh('jaw', 'Jaw')]);
+const prepareTrimReady = async (
+  host: StudioCompositionRoot,
+  clinical: ReturnType<ClinicalBootstrap['bootstrap']>
+) => {
+  seed(host, clinical, [mesh('jaw', 'Jaw')]);
   expect(clinical.workspace.orientation.enter().ok).toBe(true);
   expect(clinical.workspace.orientation.accept().ok).toBe(true);
   clinical.workspace.preparation.notifyOrientationComplete();
@@ -93,6 +140,16 @@ const prepareTrimReady = async (clinical: ReturnType<ClinicalBootstrap['bootstra
   expect(clinical.workspace.preparation.activateSession().ok).toBe(true);
   expect(clinical.workspace.preparation.advanceStage().ok).toBe(true);
   expect(clinical.workspace.preparation.session.getState().currentStage).toBe('ready-for-trim');
+};
+
+const drawClosedLoop = (trim: ReturnType<ClinicalBootstrap['bootstrap']>['workspace']['trim']) => {
+  expect(trim.enter().ok).toBe(true);
+  expect(trim.setDrawMode('polyline').ok).toBe(true);
+  for (const p of surfaceLoop()) {
+    expect(trim.addPoint(p).ok).toBe(true);
+  }
+  expect(trim.closeBoundary().ok).toBe(true);
+  expect(trim.session.getState().closed).toBe(true);
 };
 
 describe('workflow', () => {
@@ -107,17 +164,12 @@ describe('workflow', () => {
 
   it('runs enter → draw → accept end-to-end', async () => {
     const { host, clinical } = await boot();
-    await prepareTrimReady(clinical);
+    await prepareTrimReady(host, clinical);
     const trim = clinical.workspace.trim;
-    expect(trim.enter().ok).toBe(true);
-    expect(trim.isActive()).toBe(true);
-    for (const p of triangle) {
-      expect(trim.addPoint(p).ok).toBe(true);
-    }
-    expect(trim.closeBoundary().ok).toBe(true);
-    expect(trim.session.getState().closed).toBe(true);
+    drawClosedLoop(trim);
     expect(await trim.accept()).toMatchObject({ ok: true });
-    expect(trim.isActive()).toBe(false);
+    // GEO-001E multi-trim: stay active after accept.
+    expect(trim.isActive()).toBe(true);
     expect(trim.history.canUndo()).toBe(true);
     expect(clinical.session.getPublicState().dirty).toBe(true);
     clinical.runtime.dispose();
@@ -127,24 +179,58 @@ describe('workflow', () => {
 
 describe('boundary', () => {
   it('detects closed boundaries and self-intersection', () => {
-    expect(isClosedBoundary(triangle)).toBe(false);
-    const closed = closeBoundary(triangle);
+    expect(isClosedBoundary(screenTriangle)).toBe(false);
+    const closed = closeBoundary(screenTriangle);
     expect(closed.length).toBeGreaterThanOrEqual(MIN_BOUNDARY_POINTS);
     expect(isClosedBoundary(closed)).toBe(true);
     expect(hasSelfIntersection(closed)).toBe(false);
+  });
+
+  it('accepts a normal closed convex polygon (P1→P2→P3→P4→P1)', () => {
+    const quad = [
+      { x: 0, y: 0 },
+      { x: 40, y: 0 },
+      { x: 40, y: 30 },
+      { x: 0, y: 30 }
+    ];
+    const closed = closeBoundary(quad);
+    expect(isClosedBoundary(closed)).toBe(true);
+    expect(hasSelfIntersection(closed)).toBe(false);
+  });
+
+  it('accepts a normal closed pentagon (operator 5-point case)', () => {
+    const pent = [
+      { x: 20, y: 0 },
+      { x: 40, y: 15 },
+      { x: 32, y: 40 },
+      { x: 8, y: 40 },
+      { x: 0, y: 15 }
+    ];
+    const closed = closeBoundary(pent);
+    expect(isClosedBoundary(closed)).toBe(true);
+    expect(hasSelfIntersection(closed)).toBe(false);
+  });
+
+  it('rejects a genuinely self-crossing bow-tie polygon', () => {
+    const bow = [
+      { x: 0, y: 0 },
+      { x: 40, y: 40 },
+      { x: 40, y: 0 },
+      { x: 0, y: 40 }
+    ];
+    expect(hasSelfIntersection(closeBoundary(bow))).toBe(true);
   });
 });
 
 describe('validation', () => {
   it('produces immutable validation reports', async () => {
     const { host, clinical } = await boot();
-    await prepareTrimReady(clinical);
-    const validator = new ClinicalTrimValidation();
-    const closed = closeBoundary(triangle);
-    const report = validator.validate({
+    await prepareTrimReady(host, clinical);
+    const validation = new ClinicalTrimValidation();
+    const report = validation.validate({
       session: clinical.session,
       preparation: clinical.workspace.preparation,
-      points: closed,
+      points: surfaceLoop(),
       closed: true,
       targetObjectId: asClinicalObjectId('jaw'),
       kernelAvailable: true,
@@ -155,19 +241,68 @@ describe('validation', () => {
     clinical.runtime.dispose();
     host.dispose();
   });
+
+  it('reports actionable self-crossing message', async () => {
+    const { host, clinical } = await boot();
+    await prepareTrimReady(host, clinical);
+    const validation = new ClinicalTrimValidation();
+    const bow = [
+      { x: 0, y: 0 },
+      { x: 40, y: 40 },
+      { x: 40, y: 0 },
+      { x: 0, y: 40 }
+    ];
+    const report = validation.validate({
+      session: clinical.session,
+      preparation: clinical.workspace.preparation,
+      points: closeBoundary(bow),
+      closed: true,
+      targetObjectId: asClinicalObjectId('jaw'),
+      kernelAvailable: true,
+      now: 18003
+    });
+    expect(report.passed).toBe(false);
+    expect(report.checks.some((c) => !c.passed && /self|cross/i.test(c.message))).toBe(true);
+    clinical.runtime.dispose();
+    host.dispose();
+  });
 });
 
 describe('preview', () => {
   it('does not mutate document while drawing', async () => {
     const { host, clinical } = await boot();
-    await prepareTrimReady(clinical);
-    const before = clinical.session.getPublicState().activeCase!.revision;
+    await prepareTrimReady(host, clinical);
     expect(clinical.workspace.trim.enter().ok).toBe(true);
-    expect(clinical.workspace.trim.addPoint(triangle[0]!).ok).toBe(true);
-    expect(clinical.workspace.trim.addPoint(triangle[1]!).ok).toBe(true);
-    const during = clinical.session.getPublicState().activeCase!.revision;
-    expect(during).toBe(before);
+    expect(clinical.workspace.trim.setDrawMode('polyline').ok).toBe(true);
+    const before = clinical.session.getPublicState().activeCase!.objects[0]!.geometryFingerprint;
+    const beforeFaces = clinical.session.getPublicState().activeCase!.objects[0]!.faceCount;
+    expect(clinical.workspace.trim.addPoint(surfaceLoop()[0]!).ok).toBe(true);
+    expect(clinical.workspace.trim.addPoint(surfaceLoop()[1]!).ok).toBe(true);
+    const after = clinical.session.getPublicState().activeCase!.objects[0]!;
+    expect(after.geometryFingerprint).toBe(before);
+    expect(after.faceCount).toBe(beforeFaces);
     expect(clinical.workspace.trim.cancel().ok).toBe(true);
+    clinical.runtime.dispose();
+    host.dispose();
+  });
+});
+
+describe('multi-trim and arch switch', () => {
+  it('keeps trim active after accept for a second cut', async () => {
+    const { host, clinical } = await boot();
+    await prepareTrimReady(host, clinical);
+    const trim = clinical.workspace.trim;
+    drawClosedLoop(trim);
+    const fpA = clinical.session.getPublicState().activeCase!.objects[0]!.geometryFingerprint;
+    expect(await trim.accept()).toMatchObject({ ok: true });
+    expect(trim.isActive()).toBe(true);
+    expect(trim.session.getState().points).toHaveLength(0);
+    const fpB = clinical.session.getPublicState().activeCase!.objects[0]!.geometryFingerprint;
+    expect(fpB).not.toBe(fpA);
+    expect(trim.setDrawMode('polyline').ok).toBe(true);
+    // Re-arm drawing on current geometry (second accept covered by GEO-001E browser walkthrough).
+    expect(trim.addPoint(surfaceLoop()[0]!).ok).toBe(true);
+    expect(trim.session.getState().points.length).toBeGreaterThan(0);
     clinical.runtime.dispose();
     host.dispose();
   });
@@ -176,67 +311,66 @@ describe('preview', () => {
 describe('commit', () => {
   it('marks case dirty and updates mesh metadata', async () => {
     const { host, clinical } = await boot();
-    await prepareTrimReady(clinical);
+    await prepareTrimReady(host, clinical);
     const trim = clinical.workspace.trim;
-    expect(trim.enter().ok).toBe(true);
-    for (const p of triangle) {
-      trim.addPoint(p);
-    }
-    trim.closeBoundary();
+    drawClosedLoop(trim);
     expect(await trim.accept()).toMatchObject({ ok: true });
     const obj = clinical.session.getPublicState().activeCase!.objects[0]!;
     expect(obj.geometryFingerprint).toMatch(/^geo:/);
     expect(obj.vertexCount).toBeGreaterThan(0);
     expect(obj.faceCount).toBeGreaterThan(0);
-    expect(obj.faceCount!).toBeLessThan(200 * 24); // retained < full synthetic
+    expect(obj.faceCount!).toBeLessThan(200 * 24);
     clinical.runtime.dispose();
     host.dispose();
   });
 });
 
 describe('history', () => {
-  it('stores trim operations only', () => {
+  it('stores trim operations only', async () => {
+    const { host, clinical } = await boot();
+    await prepareTrimReady(host, clinical);
+    const registry = host.runtimes.kernel.registry;
+    const working = registry.getByObjectId('jaw', 'working') ?? registry.getByObjectId('jaw', 'source');
+    expect(working).toBeDefined();
     const history = new ClinicalTrimHistory();
-    const previous = { objects: [], dirty: false } as unknown as Parameters<
-      ClinicalTrimHistory['push']
-    >[0]['previous'];
-    const next = { objects: [], dirty: true } as unknown as Parameters<
-      ClinicalTrimHistory['push']
-    >[0]['next'];
+    const previous = clinical.session.getPublicState().activeCase!;
+    const next = { ...previous, dirty: true } as typeof previous;
     history.push({
       label: 'Trim mesh',
       objectId: 'jaw',
       fingerprint: 'mock:boolean:subtract:1',
       previous,
       next,
+      previousMesh: working!,
+      nextMesh: working!,
       createdAt: 1
     });
     expect(history.canUndo()).toBe(true);
+    clinical.runtime.dispose();
+    host.dispose();
   });
 });
 
 describe('undo/redo', () => {
   it('restores document via history', async () => {
     const { host, clinical } = await boot();
-    await prepareTrimReady(clinical);
+    await prepareTrimReady(host, clinical);
     const trim = clinical.workspace.trim;
     const original = clinical.session.getPublicState().activeCase!.objects[0]!;
     const originalCount = original.vertexCount!;
-    expect(trim.enter().ok).toBe(true);
-    for (const p of triangle) {
-      trim.addPoint(p);
-    }
-    trim.closeBoundary();
+    drawClosedLoop(trim);
     expect(await trim.accept()).toMatchObject({ ok: true });
     const trimmed = clinical.session.getPublicState().activeCase!.objects[0]!;
     expect(trimmed.geometryFingerprint).toMatch(/^geo:/);
-    expect(trimmed.faceCount!).toBeLessThan(1152); // synthetic 24^2*2 tris upper bound
+    expect(trimmed.faceCount!).toBeLessThan(1152);
     expect(trim.undo().ok).toBe(true);
     expect(clinical.session.getPublicState().activeCase!.objects[0]!.vertexCount).toBe(
       originalCount
     );
     expect(trim.redo().ok).toBe(true);
-    expect(clinical.session.getPublicState().activeCase!.objects[0]!.geometryFingerprint).toMatch(/^geo:/);
+    expect(clinical.session.getPublicState().activeCase!.objects[0]!.geometryFingerprint).toMatch(
+      /^geo:/
+    );
     clinical.runtime.dispose();
     host.dispose();
   });
@@ -245,13 +379,9 @@ describe('undo/redo', () => {
 describe('operation runtime integration', () => {
   it('routes trim through geometry services and kernel bridge', async () => {
     const { host, clinical } = await boot();
-    await prepareTrimReady(clinical);
+    await prepareTrimReady(host, clinical);
     const trim = clinical.workspace.trim;
-    expect(trim.enter().ok).toBe(true);
-    for (const p of triangle) {
-      trim.addPoint(p);
-    }
-    trim.closeBoundary();
+    drawClosedLoop(trim);
     expect(await trim.submit()).toMatchObject({ ok: true });
     expect(host.runtimes.kernel.calls.length).toBeGreaterThan(0);
     expect(host.runtimes.tools.getActive()?.snapshot().phase).toBe('ready-to-commit');
@@ -264,13 +394,23 @@ describe('operation runtime integration', () => {
 describe('geometry services integration', () => {
   it('executes boolean subtract for trim kernel request', async () => {
     const { host, clinical } = await boot();
-    await prepareTrimReady(clinical);
+    await prepareTrimReady(host, clinical);
     const result = await host.runtimes.geometry.execute(
       {
         family: 'boolean',
         operation: 'subtract',
         inputRevision: 1,
-        payload: { boundary: triangle }
+        payload: {
+          targetObjectId: 'jaw',
+          boundary: screenTriangle,
+          loop3d: surfaceLoop().map((p) => ({
+            x: p.localX!,
+            y: p.localY!,
+            z: p.localZ!
+          })),
+          keepMode: 'KEEP_OUTSIDE',
+          algorithm: 'exact-edge-clip'
+        }
       },
       new AbortController().signal
     );

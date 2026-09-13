@@ -16,9 +16,14 @@ export type TrimValidationCheckId =
   | 'closed-boundary'
   | 'minimum-points'
   | 'self-intersection'
+  | 'finite-values'
+  | 'boundary-area'
+  | 'target-surface'
+  | 'target-arch'
   | 'model-available'
   | 'preparation-stage'
-  | 'kernel-available';
+  | 'kernel-available'
+  | 'projection-validity';
 
 export interface TrimValidationCheckResult {
   readonly id: TrimValidationCheckId;
@@ -36,6 +41,17 @@ export interface TrimValidationReport {
 const freezeCheck = (check: TrimValidationCheckResult): TrimValidationCheckResult =>
   Object.freeze(check);
 
+const polygonScreenArea = (points: readonly TrimBoundaryPoint[]): number => {
+  if (points.length < 3) {
+    return 0;
+  }
+  let area = 0;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    area += (points[j]!.x + points[i]!.x) * (points[j]!.y - points[i]!.y);
+  }
+  return Math.abs(area * 0.5);
+};
+
 export class ClinicalTrimValidation {
   public validate(input: {
     readonly session: ClinicalSession;
@@ -48,12 +64,46 @@ export class ClinicalTrimValidation {
   }): TrimValidationReport {
     const checks: TrimValidationCheckResult[] = [
       this.checkModelAvailable(input),
+      this.checkTargetArch(input),
       this.checkPreparationStage(input),
+      this.checkFiniteValues(input),
       this.checkMinimumPoints(input),
       this.checkClosedBoundary(input),
       this.checkSelfIntersection(input),
+      this.checkBoundaryArea(input),
+      this.checkTargetSurface(input),
+      this.checkProjectionValidity(input),
       this.checkKernelAvailable(input)
     ];
+    return Object.freeze({
+      passed: checks.every((c) => c.passed),
+      checks: Object.freeze(checks),
+      validatedAt: input.now
+    });
+  }
+
+  /**
+   * Live checks while drawing — only obvious failures (no kernel / prep spam).
+   */
+  public validateLive(input: {
+    readonly session: ClinicalSession;
+    readonly points: readonly TrimBoundaryPoint[];
+    readonly closed: boolean;
+    readonly targetObjectId: ClinicalObjectId | undefined;
+    readonly now: number;
+  }): TrimValidationReport {
+    const checks: TrimValidationCheckResult[] = [
+      this.checkFiniteValues(input),
+      this.checkSelfIntersection(input)
+    ];
+    if (input.closed || input.points.length >= MIN_BOUNDARY_POINTS) {
+      checks.push(this.checkMinimumPoints(input));
+      checks.push(this.checkClosedBoundary(input));
+      checks.push(this.checkBoundaryArea(input));
+      checks.push(this.checkTargetSurface(input));
+      checks.push(this.checkProjectionValidity(input));
+      checks.push(this.checkTargetArch(input));
+    }
     return Object.freeze({
       passed: checks.every((c) => c.passed),
       checks: Object.freeze(checks),
@@ -79,6 +129,26 @@ export class ClinicalTrimValidation {
     });
   }
 
+  private checkTargetArch(input: {
+    readonly session: ClinicalSession;
+    readonly targetObjectId: ClinicalObjectId | undefined;
+  }): TrimValidationCheckResult {
+    const doc = input.session.getPublicState().activeCase;
+    const obj = doc?.objects.find((o) => o.id === input.targetObjectId);
+    const passed = obj !== undefined;
+    const role = obj?.archRole;
+    return freezeCheck({
+      id: 'target-arch',
+      label: 'Target arch',
+      passed,
+      message: !passed
+        ? 'Select an arch to trim'
+        : role === 'upper' || role === 'lower'
+          ? `Active ${role} arch`
+          : 'Target object selected'
+    });
+  }
+
   private checkPreparationStage(input: {
     readonly preparation: ClinicalPreparationRuntime;
   }): TrimValidationCheckResult {
@@ -92,8 +162,26 @@ export class ClinicalTrimValidation {
       label: 'Active preparation stage',
       passed,
       message: passed
-        ? `Stage ${stage} allows trim`
-        : "Preparation can't continue yet. Complete orientation and preparation first."
+        ? 'Preparation confirmed for Trim'
+        : 'Preparation is not ready for Trim.'
+    });
+  }
+
+  private checkFiniteValues(input: {
+    readonly points: readonly TrimBoundaryPoint[];
+  }): TrimValidationCheckResult {
+    const passed = input.points.every(
+      (p) =>
+        Number.isFinite(p.x) &&
+        Number.isFinite(p.y) &&
+        (p.meshX === undefined || Number.isFinite(p.meshX)) &&
+        (p.meshY === undefined || Number.isFinite(p.meshY))
+    );
+    return freezeCheck({
+      id: 'finite-values',
+      label: 'Finite coordinates',
+      passed,
+      message: passed ? 'Coordinates are finite' : 'Boundary contains invalid coordinates'
     });
   }
 
@@ -105,9 +193,7 @@ export class ClinicalTrimValidation {
       id: 'minimum-points',
       label: 'Minimum point count',
       passed,
-      message: passed
-        ? `${String(input.points.length)} points`
-        : `Add at least ${String(MIN_BOUNDARY_POINTS)} points.`
+      message: passed ? `${String(input.points.length)} points` : 'Add at least 3 points.'
     });
   }
 
@@ -120,21 +206,111 @@ export class ClinicalTrimValidation {
       id: 'closed-boundary',
       label: 'Closed boundary',
       passed,
-      message: passed
-        ? 'Boundary is closed'
-        : 'Close the trim boundary around the area you want to keep.'
+      message: passed ? 'Closed' : 'Close the boundary.'
     });
   }
 
   private checkSelfIntersection(input: {
     readonly points: readonly TrimBoundaryPoint[];
   }): TrimValidationCheckResult {
-    const passed = !hasSelfIntersection(input.points);
+    // GEO-001C: screen-space self-intersection is not authoritative for curved
+    // mesh-local SurfacePath loops. When local 3D samples exist, defer to Close/Preview
+    // SurfacePath validation (still reject obvious screen crossings for screen-only strokes).
+    const hasLocal3d = input.points.every(
+      (p) =>
+        typeof p.localX === 'number' &&
+        typeof p.localY === 'number' &&
+        typeof p.localZ === 'number'
+    );
+    const passed = hasLocal3d ? true : !hasSelfIntersection(input.points);
     return freezeCheck({
       id: 'self-intersection',
       label: 'Boundary self-intersection',
       passed,
-      message: passed ? 'No self-intersection' : 'Boundary intersects itself.'
+      message: passed
+        ? hasLocal3d
+          ? 'Surface path self-intersection deferred to SurfacePath gate'
+          : 'Boundary is valid.'
+        : 'Trim boundary crosses itself. Adjust the drawing.'
+    });
+  }
+
+  private checkBoundaryArea(input: {
+    readonly points: readonly TrimBoundaryPoint[];
+  }): TrimValidationCheckResult {
+    if (input.points.length < MIN_BOUNDARY_POINTS) {
+      return freezeCheck({
+        id: 'boundary-area',
+        label: 'Boundary area',
+        passed: true,
+        message: 'Area deferred'
+      });
+    }
+    const area = polygonScreenArea(input.points);
+    const passed = area >= 4;
+    return freezeCheck({
+      id: 'boundary-area',
+      label: 'Boundary area',
+      passed,
+      message: passed ? 'Area OK' : 'Boundary area is too small.'
+    });
+  }
+
+  private checkTargetSurface(input: {
+    readonly points: readonly TrimBoundaryPoint[];
+    readonly targetObjectId: ClinicalObjectId | undefined;
+  }): TrimValidationCheckResult {
+    if (input.points.length === 0) {
+      return freezeCheck({
+        id: 'target-surface',
+        label: 'Target surface',
+        passed: true,
+        message: 'No points yet'
+      });
+    }
+    const withSurface = input.points.filter(
+      (p) => p.meshX !== undefined && p.meshY !== undefined
+    );
+    // Allow screen-space strokes (viewport projection) when surface picks are absent.
+    if (withSurface.length === 0) {
+      return freezeCheck({
+        id: 'target-surface',
+        label: 'Target surface',
+        passed: true,
+        message: 'Screen projection (no surface pick)'
+      });
+    }
+    const onTarget =
+      input.targetObjectId === undefined ||
+      withSurface.every(
+        (p) => p.objectId === undefined || p.objectId === (input.targetObjectId as string)
+      );
+    const ratio = withSurface.length / input.points.length;
+    const passed = onTarget && ratio >= 0.5;
+    return freezeCheck({
+      id: 'target-surface',
+      label: 'Target surface',
+      passed,
+      message: passed
+        ? 'Boundary on active scan'
+        : 'Boundary is outside the active scan.'
+    });
+  }
+
+  private checkProjectionValidity(input: {
+    readonly points: readonly TrimBoundaryPoint[];
+  }): TrimValidationCheckResult {
+    const passed = input.points.every((p) => {
+      if (p.meshX !== undefined && p.meshY !== undefined) {
+        return Number.isFinite(p.meshX) && Number.isFinite(p.meshY);
+      }
+      return Number.isFinite(p.x) && Number.isFinite(p.y);
+    });
+    return freezeCheck({
+      id: 'projection-validity',
+      label: 'Projection validity',
+      passed,
+      message: passed ? 'Projection valid' : 'Boundary projection is invalid'
     });
   }
 

@@ -4,7 +4,7 @@ import type { OrientationIncrement, OrientationMode } from '../orientation/Clini
 import { useClinicalUiRevision } from './useClinicalUi.js';
 
 /**
- * Orientation toolbar — modes, increments, accept/cancel.
+ * Orientation toolbar — auto-orient + manual refine + accept/cancel.
  */
 export const ClinicalOrientationToolbar = ({
   workspace
@@ -45,11 +45,44 @@ export const ClinicalOrientationToolbar = ({
   ];
 
   const increments: OrientationIncrement[] = [1, 5, 15];
+  const doc = session.getPublicState().activeCase;
+  const hasUpper = doc?.objects.some((o) => o.archRole === 'upper') === true;
+  const hasLower = doc?.objects.some((o) => o.archRole === 'lower') === true;
+  const confidence = state.confidence;
+  const lowConfidence = confidence === 'low' || confidence === 'unavailable';
+  const failed = confidence === 'unavailable';
 
   return (
     <div className="clinical-orientation-toolbar" data-testid="clinical-orientation-toolbar">
+      <div className="clinical-orientation-toolbar__summary">
+        <strong>Orient</strong>
+        <span className="muted">
+          {state.autoMessage ?? 'We positioned your scans for clinical review.'}
+        </span>
+        <span className="clinical-orientation-toolbar__arches muted">
+          {hasUpper ? 'Upper Arch' : null}
+          {hasUpper && hasLower ? ' · ' : null}
+          {hasLower ? 'Lower Arch' : null}
+          {!hasUpper && !hasLower ? 'Scan' : null}
+          {confidence !== undefined ? ` · Confidence: ${confidence}` : null}
+        </span>
+      </div>
+
       <div className="clinical-orientation-toolbar__group">
-        <span className="clinical-orientation-toolbar__label">Rotate</span>
+        <button
+          type="button"
+          className="clinical-orient-btn clinical-orient-btn--auto"
+          data-testid="clinical-orientation-auto"
+          onClick={() => {
+            const result = workspace.orientation.autoOrient({ force: true });
+            if (!result.ok) {
+              session.getHost().notifications.push('warning', 'Orientation', result.error.message);
+            }
+            session.notifyUi();
+          }}
+        >
+          Re-run Auto Orient
+        </button>
         {modes.map((m) => (
           <button
             key={m.id}
@@ -102,26 +135,13 @@ export const ClinicalOrientationToolbar = ({
         >
           +
         </button>
-        <label className="clinical-orient-numeric">
-          <span>Δ°</span>
-          <input
-            type="number"
-            step="1"
-            defaultValue={state.incrementDegrees}
-            onKeyDown={(e) => {
-              if (e.key !== 'Enter') return;
-              const value = Number((e.target as HTMLInputElement).value);
-              if (!Number.isFinite(value)) return;
-              run(() => workspace.orientation.rotateBy(value));
-            }}
-          />
-        </label>
       </div>
 
       <div className="clinical-orientation-toolbar__group clinical-orientation-toolbar__actions">
         <button
           type="button"
           className="clinical-orient-btn"
+          data-testid="clinical-orientation-reset"
           onClick={() => run(() => workspace.orientation.reset())}
         >
           Reset
@@ -133,29 +153,56 @@ export const ClinicalOrientationToolbar = ({
         >
           Cancel
         </button>
-        <button
-          type="button"
-          className="clinical-orient-btn clinical-orient-btn--accept"
-          onClick={() => {
-            const result = workspace.orientation.accept();
-            if (!result.ok) {
-              session.getHost().notifications.push('warning', 'Orientation', result.error.message);
+        {failed ? (
+          <button
+            type="button"
+            className="clinical-orient-btn clinical-orient-btn--accept"
+            data-testid="clinical-orientation-manual"
+            onClick={() => {
+              run(() => workspace.orientation.setMode('free'));
+              session.getHost().notifications.push(
+                'info',
+                'Orientation',
+                'Adjust manually, then Accept Orientation.'
+              );
+            }}
+          >
+            Orient Manually
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="clinical-orient-btn clinical-orient-btn--accept"
+            data-testid="clinical-orientation-accept"
+            onClick={() => {
+              const result = workspace.orientation.accept();
+              if (!result.ok) {
+                session.getHost().notifications.push('warning', 'Orientation', result.error.message);
+                session.notifyUi();
+                return;
+              }
+              workspace.preparation.notifyOrientationComplete();
+              const prep = workspace.preparation.autoPrepare();
+              if (!prep.ok) {
+                session.getHost().notifications.push('warning', 'Prepare', prep.error.message);
+              } else {
+                session.getHost().notifications.push(
+                  prep.value.uiState === 'warning' ? 'warning' : 'success',
+                  'Preparation',
+                  prep.value.message
+                );
+              }
               session.notifyUi();
-              return;
-            }
-            workspace.preparation.notifyOrientationComplete();
-            const prep = workspace.preparation.start();
-            if (!prep.ok) {
-              session.getHost().notifications.push('info', 'Prepare', prep.error.message);
-            }
-            session.notifyUi();
-          }}
-        >
-          Accept
-        </button>
+            }}
+          >
+            {lowConfidence ? 'Review & Accept' : 'Accept Orientation'}
+          </button>
+        )}
       </div>
 
-      <div className="clinical-orientation-toolbar__status muted">{state.statusMessage}</div>
+      <div className="clinical-orientation-toolbar__status muted" data-testid="clinical-orientation-status">
+        {lowConfidence && !failed ? 'Orientation needs review.' : state.statusMessage}
+      </div>
     </div>
   );
 };

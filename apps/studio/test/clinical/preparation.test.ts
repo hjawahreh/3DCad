@@ -170,12 +170,14 @@ describe('session', () => {
     expect(lifecycle.getPhase()).toBe('completed');
   });
 
-  it('allows exactly one active preparation session', async () => {
+  it('allows exactly one active preparation session (start is idempotent)', async () => {
     const { host, clinical } = await boot();
     await prepareCase(clinical);
     const prep = clinical.workspace.preparation;
     expect(prep.start().ok).toBe(true);
-    expect(prep.start().ok).toBe(false);
+    // Second start must not error — Orient Accept + Confirm Preparation share this path.
+    expect(prep.start().ok).toBe(true);
+    expect(prep.hasSession()).toBe(true);
     prep.cancel();
     expect(prep.start().ok).toBe(true);
     clinical.runtime.dispose();

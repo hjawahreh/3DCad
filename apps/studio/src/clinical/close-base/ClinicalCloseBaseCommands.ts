@@ -5,6 +5,9 @@
 export const CLINICAL_CLOSE_BASE_COMMANDS = Object.freeze({
   activate: 'clinical.tool.closeBase',
   accept: 'clinical.closeBase.accept',
+  preview: 'clinical.closeBase.preview',
+  auto: 'clinical.closeBase.auto',
+  manual: 'clinical.closeBase.manual',
   cancel: 'clinical.closeBase.cancel',
   reset: 'clinical.closeBase.reset',
   undo: 'clinical.closeBase.undo',

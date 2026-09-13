@@ -4,7 +4,7 @@
 
 import type { PresetView } from '@cad-studio/camera-runtime';
 import type { ClinicalSession } from '../runtime/session.js';
-import { unionBounds } from '../document/ClinicalDocument.js';
+import { unionBounds, unionOrientedBounds } from '../document/ClinicalDocument.js';
 import type { ClinicalObjectId } from '../import/ClinicalMeshDescriptor.js';
 import type { ClinicalSceneBuilder } from '../import/ClinicalSceneBuilder.js';
 import { ClinicalAppearanceManager } from './ClinicalAppearanceManager.js';
@@ -19,6 +19,21 @@ import {
   ClinicalDisplayMetrics
 } from './ClinicalDisplayObservability.js';
 import { ClinicalVisibilityManager } from './ClinicalVisibilityManager.js';
+import {
+  applyClinicalAnteriorPose,
+  computeClinicalFitDistance,
+  forceApplyCameraSnapshot,
+  shouldPreferClinicalFrame
+} from './ClinicalAnteriorCamera.js';
+import {
+  buildClinicalCornerSnapshot,
+  buildClinicalViewSnapshot,
+  CANONICAL_CLINICAL_ANTERIOR_FACE,
+  clinicalBoundsCenter,
+  clinicalCameraBasisFromSnapshot,
+  type ClinicalCameraBasis,
+  type ClinicalViewCubeFace
+} from './ClinicalViewCubeMath.js';
 import { clinicalFailure, clinicalSuccess, type ClinicalResult } from '../runtime/types.js';
 
 const PRESETS: readonly PresetView[] = Object.freeze([
@@ -39,6 +54,12 @@ export class ClinicalViewportRuntime {
   public readonly pipeline: ClinicalDisplayPipeline;
   public readonly diagnostics: ClinicalDisplayDiagnostics;
   public readonly metrics: ClinicalDisplayMetrics;
+  private presentationBoundsProvider: (() =>
+    | {
+        readonly min: { readonly x: number; readonly y: number; readonly z: number };
+        readonly max: { readonly x: number; readonly y: number; readonly z: number };
+      }
+    | undefined) | undefined;
 
   public constructor(
     private readonly session: ClinicalSession,
@@ -62,6 +83,23 @@ export class ClinicalViewportRuntime {
       this.metrics
     );
     this.metrics.recordViewportOpen();
+  }
+
+  /**
+   * Optional bounds source so Orientation preview transforms participate in
+   * Auto Orient / View Cube / Home identically (document may still be identity).
+   */
+  public setPresentationBoundsProvider(
+    fn:
+      | (() =>
+          | {
+              readonly min: { readonly x: number; readonly y: number; readonly z: number };
+              readonly max: { readonly x: number; readonly y: number; readonly z: number };
+            }
+          | undefined)
+      | undefined
+  ): void {
+    this.presentationBoundsProvider = fn;
   }
 
   public setDisplayMode(mode: ClinicalDisplayMode): ClinicalResult<void> {
@@ -116,9 +154,14 @@ export class ClinicalViewportRuntime {
     if (camera === undefined) {
       return clinicalFailure('unavailable', 'Camera session not attached');
     }
-    const bounds = doc ? unionBounds(doc.objects.filter((o) => o.visible)) : undefined;
+    const visible = doc ? doc.objects.filter((o) => o.visible) : [];
+    const bounds = unionOrientedBounds(visible) ?? unionBounds(visible);
     if (bounds === undefined) {
       camera.resetView();
+    } else if (shouldPreferClinicalFrame(doc)) {
+      return this.presentCanonicalClinicalView(CANONICAL_CLINICAL_ANTERIOR_FACE, {
+        boundsOverride: bounds
+      });
     } else {
       camera.fitAll(
         {
@@ -136,6 +179,93 @@ export class ClinicalViewportRuntime {
     return clinicalSuccess(undefined);
   }
 
+  public presentClinicalAnteriorView(options?: {
+    readonly preferClinicalFrame?: boolean;
+    readonly boundsOverride?: {
+      readonly min: { readonly x: number; readonly y: number; readonly z: number };
+      readonly max: { readonly x: number; readonly y: number; readonly z: number };
+    };
+  }): ClinicalResult<void> {
+    // Single source of truth: View Cube Anterior (Ant) + visible-bounds fit.
+    void options?.preferClinicalFrame;
+    return this.presentCanonicalClinicalView(CANONICAL_CLINICAL_ANTERIOR_FACE, {
+      ...(options?.boundsOverride !== undefined
+        ? { boundsOverride: options.boundsOverride }
+        : {})
+    });
+  }
+
+  /**
+   * Canonical clinical camera: clinical-frame View Cube face + fit to visible bounds.
+   * Auto Orient, Home, and View Cube Ant all use this path.
+   */
+  public presentCanonicalClinicalView(
+    face: ClinicalViewCubeFace,
+    options?: {
+      readonly boundsOverride?: {
+        readonly min: { readonly x: number; readonly y: number; readonly z: number };
+        readonly max: { readonly x: number; readonly y: number; readonly z: number };
+      };
+      readonly animationMs?: number;
+    }
+  ): ClinicalResult<void> {
+    const host = this.session.getHost();
+    const camera = host.sessions.cameraSession;
+    const doc = this.session.getPublicState().activeCase;
+    const visible = doc ? doc.objects.filter((o) => o.visible) : [];
+    const bounds =
+      options?.boundsOverride ??
+      this.presentationBoundsProvider?.() ??
+      unionOrientedBounds(visible) ??
+      unionBounds(visible);
+    if (camera === undefined || bounds === undefined) {
+      return clinicalFailure(
+        'unavailable',
+        'Camera or bounds unavailable for canonical clinical view'
+      );
+    }
+    const distance = computeClinicalFitDistance(bounds, camera.getSnapshot().fovDegrees);
+    const target = clinicalBoundsCenter(bounds);
+    const snapshot = buildClinicalViewSnapshot(
+      camera.getSnapshot(),
+      face,
+      target,
+      distance
+    );
+    const applied = this.animateClinicalViewSnapshot(
+      snapshot,
+      options?.animationMs ?? 280,
+      face === CANONICAL_CLINICAL_ANTERIOR_FACE
+        ? 'Canonical clinical anterior'
+        : `Clinical cube ${face}`
+    );
+    if (!applied.ok && face === CANONICAL_CLINICAL_ANTERIOR_FACE) {
+      const ok = applyClinicalAnteriorPose(camera, bounds, {
+        preferClinicalFrame: true,
+        distanceOverride: distance
+      });
+      if (!ok) {
+        return clinicalFailure('unavailable', 'Canonical clinical view failed to apply');
+      }
+      this.display.setCameraMode('orbit');
+      this.diagnostics.recordCameraTransition('Canonical clinical anterior (fallback)');
+      this.metrics.recordCameraFit();
+      host.sessions.viewportSession?.invalidate('clinical-canonical');
+      this.session.notifyUi();
+      return clinicalSuccess(undefined);
+    }
+    return applied;
+  }
+
+  /** Expose numerical camera basis for certification tests. */
+  public getClinicalCameraBasis(): ClinicalCameraBasis | undefined {
+    const camera = this.session.getHost().sessions.cameraSession;
+    if (camera === undefined) {
+      return undefined;
+    }
+    return clinicalCameraBasisFromSnapshot(camera.getSnapshot());
+  }
+
   /** Future-ready: currently falls back to fitAll when selection empty. */
   public fitSelected(): ClinicalResult<void> {
     const host = this.session.getHost();
@@ -148,6 +278,11 @@ export class ClinicalViewportRuntime {
   }
 
   public resetView(): ClinicalResult<void> {
+    // Home = Anterior + visible-bounds fit (same as Auto Orient / View Cube Ant).
+    const doc = this.session.getPublicState().activeCase;
+    if (doc !== undefined && doc.objects.length > 0) {
+      return this.presentCanonicalClinicalView(CANONICAL_CLINICAL_ANTERIOR_FACE);
+    }
     const camera = this.session.getHost().sessions.cameraSession;
     if (camera === undefined) {
       return clinicalFailure('unavailable', 'Camera session not attached');
@@ -181,6 +316,81 @@ export class ClinicalViewportRuntime {
 
   public listPresets(): readonly PresetView[] {
     return PRESETS;
+  }
+
+  /**
+   * View Cube face click — clinical-frame basis + fit to visible geometry.
+   * Does not use world-axis Camera Runtime presets for clinical faces.
+   */
+  public presentClinicalCubeView(face: ClinicalViewCubeFace): ClinicalResult<void> {
+    return this.presentCanonicalClinicalView(face);
+  }
+
+  /** Iso-style corner between two or three adjacent clinical faces. */
+  public presentClinicalCubeCorner(faces: readonly ClinicalViewCubeFace[]): ClinicalResult<void> {
+    if (faces.length < 2) {
+      return clinicalFailure('validation', 'Corner view requires at least two faces');
+    }
+    const host = this.session.getHost();
+    const camera = host.sessions.cameraSession;
+    const doc = this.session.getPublicState().activeCase;
+    const visible = doc ? doc.objects.filter((o) => o.visible) : [];
+    const bounds = unionOrientedBounds(visible) ?? unionBounds(visible);
+    if (camera === undefined) {
+      return clinicalFailure('unavailable', 'Camera session not attached');
+    }
+    const current = camera.getSnapshot();
+    const target = bounds !== undefined ? clinicalBoundsCenter(bounds) : undefined;
+    const radius =
+      bounds !== undefined
+        ? computeClinicalFitDistance(bounds, current.fovDegrees)
+        : undefined;
+    const base =
+      target !== undefined && radius !== undefined
+        ? buildClinicalViewSnapshot(current, faces[0]!, target, radius)
+        : current;
+    return this.animateClinicalViewSnapshot(
+      buildClinicalCornerSnapshot(base, faces, target),
+      280,
+      'View cube corner'
+    );
+  }
+
+  private animateClinicalViewSnapshot(
+    target: ReturnType<typeof buildClinicalViewSnapshot>,
+    durationMs = 280,
+    label = 'View cube'
+  ): ClinicalResult<void> {
+    const host = this.session.getHost();
+    const camera = host.sessions.cameraSession;
+    if (camera === undefined) {
+      return clinicalFailure('unavailable', 'Camera session not attached');
+    }
+    const started = camera.animateTo(target, durationMs);
+    if (!started.ok) {
+      if (!forceApplyCameraSnapshot(camera, target)) {
+        return clinicalFailure('unavailable', started.error.message);
+      }
+    } else {
+      const deadline = Date.now() + Math.max(50, durationMs + 40);
+      let completed = false;
+      while (Date.now() <= deadline) {
+        const tick = camera.tickAnimation();
+        if (tick.ok && tick.value.completed) {
+          completed = true;
+          break;
+        }
+      }
+      if (!completed) {
+        forceApplyCameraSnapshot(camera, target);
+      }
+    }
+    this.display.setCameraMode('orbit');
+    this.diagnostics.recordCameraTransition(label);
+    this.metrics.recordCameraFit();
+    host.sessions.viewportSession?.invalidate('clinical-canonical');
+    this.session.notifyUi();
+    return clinicalSuccess(undefined);
   }
 
   public isReady(): boolean {

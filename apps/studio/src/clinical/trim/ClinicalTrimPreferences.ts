@@ -2,8 +2,11 @@
  * ClinicalTrimPreferences — trim tool user preferences.
  */
 
+import type { TrimDrawMode } from './ClinicalTrimState.js';
+
 export interface ClinicalTrimPreferences {
-  readonly drawMode: 'freehand' | 'polyline';
+  /** Last non-idle draw mode preference (polyline/freehand). */
+  readonly drawMode: Exclude<TrimDrawMode, 'idle'>;
   readonly showStatistics: boolean;
   readonly showValidationDetails: boolean;
   readonly lockSelection: boolean;

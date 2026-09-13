@@ -91,6 +91,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: min(480px, 40vw);
 }
 
 .clinical-header__patient {
@@ -624,6 +625,252 @@
   z-index: 2;
 }
 
+.clinical-view-cube {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 7;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  user-select: none;
+}
+
+.clinical-view-cube__home {
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.82);
+  color: var(--studio-text);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+
+.clinical-view-cube__home:hover {
+  background: rgba(30, 41, 59, 0.92);
+  border-color: var(--studio-accent);
+}
+
+.clinical-view-cube__stage {
+  width: 76px;
+  height: 76px;
+  perspective: 140px;
+  perspective-origin: 50% 50%;
+}
+
+.clinical-view-cube__cube {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.28s ease-out;
+}
+
+.clinical-view-cube__face,
+.clinical-view-cube__edge,
+.clinical-view-cube__corner {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  background: rgba(15, 23, 42, 0.78);
+  color: #e2e8f0;
+  cursor: pointer;
+  backface-visibility: hidden;
+}
+
+.clinical-view-cube__face {
+  width: 46px;
+  height: 46px;
+  left: 15px;
+  top: 15px;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.clinical-view-cube__face:hover {
+  background: rgba(51, 65, 85, 0.92);
+  border-color: rgba(148, 163, 184, 0.85);
+}
+
+.clinical-view-cube__face--active {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: rgba(56, 189, 248, 0.85);
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.35);
+}
+
+.clinical-view-cube__face--front {
+  transform: rotateY(0deg) translateZ(23px);
+}
+
+.clinical-view-cube__face--back {
+  transform: rotateY(180deg) translateZ(23px);
+}
+
+.clinical-view-cube__face--left {
+  transform: rotateY(90deg) translateZ(23px);
+}
+
+.clinical-view-cube__face--right {
+  transform: rotateY(-90deg) translateZ(23px);
+}
+
+.clinical-view-cube__face--top {
+  transform: rotateX(90deg) translateZ(23px);
+}
+
+.clinical-view-cube__face--bottom {
+  transform: rotateX(-90deg) translateZ(23px);
+}
+
+.clinical-view-cube__edge {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: rgba(30, 41, 59, 0.65);
+  border-color: rgba(100, 116, 139, 0.55);
+}
+
+.clinical-view-cube__edge:hover,
+.clinical-view-cube__corner:hover {
+  background: rgba(56, 189, 248, 0.35);
+  border-color: rgba(56, 189, 248, 0.75);
+}
+
+.clinical-view-cube__edge--front-top {
+  left: 31px;
+  top: 8px;
+  transform: rotateX(45deg) translateZ(23px);
+}
+
+.clinical-view-cube__edge--front-bottom {
+  left: 31px;
+  bottom: 8px;
+  transform: rotateX(-45deg) translateZ(23px);
+}
+
+.clinical-view-cube__edge--back-top {
+  left: 31px;
+  top: 8px;
+  transform: rotateY(180deg) rotateX(45deg) translateZ(23px);
+}
+
+.clinical-view-cube__edge--back-bottom {
+  left: 31px;
+  bottom: 8px;
+  transform: rotateY(180deg) rotateX(-45deg) translateZ(23px);
+}
+
+.clinical-view-cube__edge--left-top {
+  left: 8px;
+  top: 31px;
+  transform: rotateY(90deg) rotateX(45deg) translateZ(23px);
+}
+
+.clinical-view-cube__edge--right-top {
+  right: 8px;
+  top: 31px;
+  transform: rotateY(-90deg) rotateX(45deg) translateZ(23px);
+}
+
+.clinical-view-cube__edge--left-bottom {
+  left: 8px;
+  bottom: 31px;
+  transform: rotateY(90deg) rotateX(-45deg) translateZ(23px);
+}
+
+.clinical-view-cube__edge--right-bottom {
+  right: 8px;
+  bottom: 31px;
+  transform: rotateY(-90deg) rotateX(-45deg) translateZ(23px);
+}
+
+.clinical-view-cube__edge--front-left {
+  left: 8px;
+  top: 31px;
+  transform: rotateY(45deg) translateZ(23px);
+}
+
+.clinical-view-cube__edge--front-right {
+  right: 8px;
+  top: 31px;
+  transform: rotateY(-45deg) translateZ(23px);
+}
+
+.clinical-view-cube__edge--back-left {
+  left: 8px;
+  top: 31px;
+  transform: rotateY(135deg) translateZ(23px);
+}
+
+.clinical-view-cube__edge--back-right {
+  right: 8px;
+  top: 31px;
+  transform: rotateY(-135deg) translateZ(23px);
+}
+
+.clinical-view-cube__corner {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(51, 65, 85, 0.75);
+}
+
+.clinical-view-cube__corner--ftl {
+  left: 6px;
+  top: 6px;
+  transform: rotateY(45deg) rotateX(45deg) translateZ(23px);
+}
+
+.clinical-view-cube__corner--ftr {
+  right: 6px;
+  top: 6px;
+  transform: rotateY(-45deg) rotateX(45deg) translateZ(23px);
+}
+
+.clinical-view-cube__corner--fbl {
+  left: 6px;
+  bottom: 6px;
+  transform: rotateY(45deg) rotateX(-45deg) translateZ(23px);
+}
+
+.clinical-view-cube__corner--fbr {
+  right: 6px;
+  bottom: 6px;
+  transform: rotateY(-45deg) rotateX(-45deg) translateZ(23px);
+}
+
+.clinical-view-cube__corner--btl {
+  left: 6px;
+  top: 6px;
+  transform: rotateY(135deg) rotateX(45deg) translateZ(23px);
+}
+
+.clinical-view-cube__corner--btr {
+  right: 6px;
+  top: 6px;
+  transform: rotateY(-135deg) rotateX(45deg) translateZ(23px);
+}
+
+.clinical-view-cube__corner--bbl {
+  left: 6px;
+  bottom: 6px;
+  transform: rotateY(135deg) rotateX(-45deg) translateZ(23px);
+}
+
+.clinical-view-cube__corner--bbr {
+  right: 6px;
+  bottom: 6px;
+  transform: rotateY(-135deg) rotateX(-45deg) translateZ(23px);
+}
+
 .clinical-orient-gizmo {
   position: absolute;
   right: 14px;
@@ -1130,6 +1377,21 @@
   color: #fca5a5;
 }
 
+.clinical-arch-anatomy__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.clinical-arch-anatomy__warnings {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  color: var(--studio-warning, #c9872a);
+  font-size: var(--studio-font-meta);
+}
+
 .clinical-preparation-tools {
   display: flex;
   flex-wrap: wrap;
@@ -1194,7 +1456,8 @@
   top: 52px;
   left: 8px;
   right: 8px;
-  z-index: 4;
+  /* Above trim overlay so toolbar clicks are never captured by drawing surface. */
+  z-index: 6;
   display: flex;
   flex-wrap: wrap;
   gap: 10px 16px;
@@ -1204,6 +1467,34 @@
   background: rgba(15, 23, 42, 0.88);
   border: 1px solid rgba(249, 115, 22, 0.35);
   pointer-events: auto;
+}
+
+.clinical-arch-switcher {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 4px;
+  background: rgba(2, 6, 23, 0.45);
+  border: 1px solid var(--studio-border);
+}
+
+.clinical-arch-switcher__btn {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--studio-text);
+}
+
+.clinical-arch-switcher__btn:disabled {
+  opacity: 0.4;
+}
+
+.clinical-arch-switcher__btn--active {
+  background: rgba(249, 115, 22, 0.22);
+  border-color: rgba(249, 115, 22, 0.55);
+  color: var(--studio-text-strong);
 }
 
 .clinical-trim-toolbar__group {
@@ -1241,6 +1532,23 @@
   background: rgba(249, 115, 22, 0.18);
 }
 
+.clinical-trim-btn--armed {
+  box-shadow: inset 0 0 0 1px rgba(249, 115, 22, 0.65);
+  font-weight: 600;
+}
+
+.clinical-trim-btn--drawing {
+  background: rgba(249, 115, 22, 0.32);
+  border-color: rgba(249, 115, 22, 0.85);
+  font-weight: 600;
+}
+
+.clinical-trim-toolbar__state {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .clinical-trim-btn--accept {
   background: rgba(34, 197, 94, 0.18);
   border-color: rgba(34, 197, 94, 0.45);
@@ -1252,11 +1560,35 @@
 }
 
 .clinical-trim-overlay {
-  pointer-events: auto;
+  pointer-events: none;
   position: absolute;
+  /* Full viewport — toolbar sits above with higher z-index and owns its hits.
+     Overlay-local coords must match mesh canvas coords (no 96px Y offset). */
   inset: 0;
   z-index: 5;
+  cursor: default;
+}
+
+.clinical-trim-overlay--drawing {
+  pointer-events: auto;
   cursor: crosshair;
+  /* Above mesh/camera hit targets while armed — View Cube stays higher. */
+  z-index: 5;
+  touch-action: none;
+}
+
+.clinical-trim-overlay--gesture {
+  cursor: crosshair;
+}
+
+.clinical-trim-overlay--idle {
+  pointer-events: none;
+  cursor: default;
+}
+
+.clinical-trim-stroke--preview {
+  stroke-dasharray: 4 4;
+  opacity: 0.7;
 }
 
 .clinical-trim-overlay--preview::before {
@@ -1299,6 +1631,13 @@
 
 .clinical-trim-point--active {
   fill: #fb923c;
+}
+
+.clinical-trim-surface-cursor {
+  fill: rgba(34, 197, 94, 0.85);
+  stroke: #14532d;
+  stroke-width: 2;
+  pointer-events: none;
 }
 
 .clinical-trim-status {
@@ -1711,6 +2050,175 @@
   border-color: rgba(61, 139, 253, 0.4);
 }
 
+.clinical-segmentation-toolbar__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.clinical-btn--active {
+  border-color: rgba(61, 139, 253, 0.55);
+  background: rgba(61, 139, 253, 0.16);
+}
+
+.clinical-segmentation-overlay {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+}
+
+.clinical-segmentation-overlay--processing,
+.clinical-segmentation-overlay--rebuilding {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, rgba(12, 16, 22, 0.28), rgba(12, 16, 22, 0.45));
+}
+
+.clinical-segmentation-overlay__hero {
+  pointer-events: none;
+  min-width: min(360px, 86vw);
+  padding: 28px 32px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(18, 24, 34, 0.92);
+  text-align: center;
+  display: grid;
+  gap: 10px;
+}
+
+.clinical-segmentation-overlay__eyebrow {
+  margin: 0;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--studio-muted);
+}
+
+.clinical-segmentation-overlay__hero h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #f2ebe3;
+}
+
+.clinical-segmentation-overlay__stage {
+  margin: 0;
+  font-size: 13px;
+  color: #c9c2b8;
+}
+
+.clinical-segmentation-overlay__bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.clinical-segmentation-overlay__bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #8aa4c0, #c4b49a);
+  transition: width 160ms ease-out;
+}
+
+.clinical-segmentation-overlay__pct {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--studio-muted);
+}
+
+.clinical-segmentation-overlay__panel {
+  pointer-events: auto;
+  position: absolute;
+  left: 12px;
+  top: 56px;
+  max-width: 300px;
+  max-height: calc(100% - 72px);
+  overflow: auto;
+  padding: 12px 14px;
+  border-radius: var(--studio-radius);
+  border: 1px solid var(--studio-border);
+  background: rgba(20, 26, 36, 0.92);
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.clinical-segmentation-overlay__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.clinical-segmentation-overlay__hint {
+  margin: 8px 0 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 10px;
+  color: var(--studio-muted);
+}
+
+.clinical-segmentation-overlay__warn {
+  color: #d2b48c;
+}
+
+.clinical-segmentation-overlay__selected {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--studio-border);
+  display: grid;
+  gap: 4px;
+}
+
+.clinical-segmentation-tooth-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.clinical-segmentation-badge {
+  display: inline-block;
+  width: 0.9em;
+  color: var(--studio-muted);
+}
+
+.clinical-segmentation-badge--warn {
+  color: #d2b48c;
+}
+
+.clinical-segmentation-badge--unknown {
+  color: #9aa3b2;
+}
+
+.clinical-segmentation-completion {
+  pointer-events: none;
+  position: absolute;
+  right: 12px;
+  top: 56px;
+  z-index: 3;
+  max-width: 280px;
+  padding: 12px 14px;
+  border-radius: var(--studio-radius);
+  border: 1px solid rgba(140, 170, 140, 0.35);
+  background: rgba(20, 26, 36, 0.92);
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.clinical-segmentation-completion strong {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: #c5d4c0;
+}
+
 @media (max-width: 1280px) {
   .clinical-workflow-step__label {
     font-size: 11px;
@@ -1805,3 +2313,383 @@
 .clinical-document-host--analyzing .clinical-analysis-toolbar {
   border-color: rgba(61, 139, 253, 0.45);
 }
+
+/* Phase 1 — Create / Open Case */
+.clinical-create-case__section {
+  margin: 0 0 16px;
+  text-align: left;
+}
+
+.clinical-create-case__section h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--studio-muted);
+}
+
+.clinical-create-case__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.clinical-create-case label {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--studio-text);
+}
+
+.clinical-create-case input[type='text'] {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--studio-border);
+  border-radius: var(--studio-radius-md);
+  background: var(--studio-surface-2);
+  color: var(--studio-text);
+  font-size: 14px;
+}
+
+.clinical-create-case__arches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.clinical-create-case__success {
+  text-align: left;
+  padding: 8px 0 16px;
+}
+
+.clinical-create-case__success-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 650;
+  color: var(--studio-success);
+}
+
+.clinical-create-case__success-list {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  color: var(--studio-text);
+}
+
+.clinical-case-validation {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--studio-border);
+  border-radius: var(--studio-radius-md);
+  background: var(--studio-surface-2);
+}
+
+.clinical-case-validation__verdict {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 8px;
+}
+
+.clinical-case-validation__verdict strong {
+  font-size: var(--studio-font-meta);
+  letter-spacing: 0.04em;
+}
+
+.clinical-case-validation__verdict--pass strong {
+  color: var(--studio-success);
+}
+
+.clinical-case-validation__verdict--warning strong {
+  color: var(--studio-warning, #c9872a);
+}
+
+.clinical-case-validation__verdict--fail strong {
+  color: var(--studio-danger, #c44);
+}
+
+.clinical-case-validation__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  max-height: 180px;
+  overflow: auto;
+}
+
+.clinical-case-validation__item {
+  display: grid;
+  gap: 2px;
+  font-size: var(--studio-font-meta);
+}
+
+.clinical-case-validation__item--error strong {
+  color: var(--studio-danger, #c44);
+}
+
+.clinical-case-validation__item--warning strong {
+  color: var(--studio-warning, #c9872a);
+}
+
+.clinical-case-validation__item--info strong {
+  color: var(--studio-muted);
+}
+
+.clinical-case-validation__info-count {
+  margin: 8px 0 0;
+}
+
+.clinical-open-case__empty,
+.clinical-open-case__loading {
+  text-align: center;
+  padding: 24px 8px;
+}
+
+.clinical-open-case__empty h3 {
+  margin: 0 0 8px;
+}
+
+.clinical-case-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-height: min(420px, 50vh);
+  overflow: auto;
+}
+
+.clinical-case-card {
+  width: 100%;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  padding: 12px 14px;
+  border: 1px solid var(--studio-border);
+  border-radius: var(--studio-radius-md);
+  background: var(--studio-surface-2);
+  color: var(--studio-text);
+  cursor: pointer;
+}
+
+.clinical-case-card:hover:not(:disabled) {
+  border-color: var(--studio-accent);
+  background: var(--studio-accent-soft);
+}
+
+.clinical-case-card__patient {
+  font-weight: 650;
+  color: var(--studio-text-strong);
+}
+
+.clinical-case-card__name {
+  font-size: 13px;
+}
+
+.clinical-case-card__meta,
+.clinical-case-card__busy {
+  font-size: var(--studio-font-meta);
+}
+
+.clinical-empty-state__card {
+  width: min(480px, calc(100% - 48px));
+}
+
+.clinical-empty-state__recent {
+  margin-top: 18px;
+  text-align: left;
+  border-top: 1px solid var(--studio-border);
+  padding-top: 14px;
+}
+
+.clinical-empty-state__recent h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--studio-muted);
+}
+
+.clinical-empty-state__recent ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.clinical-empty-state__recent-item {
+  width: 100%;
+  display: grid;
+  gap: 1px;
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--studio-radius-md);
+  background: transparent;
+  color: var(--studio-text);
+  cursor: pointer;
+}
+
+.clinical-empty-state__recent-item:hover {
+  border-color: var(--studio-border);
+  background: var(--studio-surface-2);
+}
+
+.clinical-recent-list__item {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  align-items: baseline;
+  text-align: left;
+  padding: 6px 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.clinical-recent-list__status {
+  flex-basis: 100%;
+  font-size: var(--studio-font-meta);
+}
+
+@media (max-width: 640px) {
+  .clinical-create-case__row,
+  .clinical-create-case__arches {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Phase 2 — Auto orientation */
+.clinical-orientation-toolbar__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 220px;
+  margin-right: 8px;
+  text-align: left;
+}
+
+.clinical-orientation-toolbar__arches {
+  font-size: var(--studio-font-meta);
+}
+
+.clinical-orient-btn--auto {
+  border-color: var(--studio-accent);
+  color: var(--studio-accent);
+}
+
+/* Phase 3 — Auto preparation */
+.clinical-preparation-auto-steps {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  font-size: 12px;
+}
+
+.clinical-preparation-auto-steps li.done {
+  color: var(--studio-success);
+}
+
+/* PROD-002R — process feedback + global arch bar */
+.clinical-process-feedback {
+  position: absolute;
+  left: 50%;
+  top: 72px;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-width: 280px;
+  max-width: min(420px, calc(100% - 48px));
+  padding: 12px 14px;
+  border: 1px solid var(--studio-border);
+  border-radius: var(--studio-radius-md);
+  background: rgba(20, 26, 36, 0.94);
+  box-shadow: var(--studio-shadow-md);
+  pointer-events: auto;
+}
+
+.clinical-process-feedback__spinner {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--studio-accent);
+  border-radius: 50%;
+  animation: clinical-process-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes clinical-process-spin {
+  to { transform: rotate(360deg); }
+}
+
+.clinical-process-feedback__title {
+  font-weight: 650;
+  font-size: 13px;
+  color: var(--studio-text-strong);
+}
+
+.clinical-process-feedback__stage {
+  font-size: 12px;
+  color: var(--studio-muted);
+  margin-top: 2px;
+}
+
+.clinical-process-feedback__stages {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--studio-muted);
+}
+
+.clinical-process-feedback__stage-item--active {
+  color: var(--studio-accent);
+  font-weight: 600;
+}
+
+.clinical-process-feedback__stage-item--done {
+  color: var(--studio-success);
+}
+
+.clinical-process-feedback__error {
+  margin-top: 6px;
+  color: var(--studio-danger, #f87171);
+  font-size: 12px;
+}
+
+.clinical-global-arch-bar {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--studio-border);
+  border-radius: var(--studio-radius);
+  background: rgba(20, 26, 36, 0.9);
+  pointer-events: auto;
+}
+
+.clinical-global-arch-bar__label {
+  font-size: 11px;
+  color: var(--studio-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+

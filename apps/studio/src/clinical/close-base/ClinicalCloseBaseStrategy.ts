@@ -17,27 +17,28 @@ export interface CloseBaseStrategyDefinition {
   readonly description: string;
 }
 
+/** Clinically labeled base styles (Plane / Offset / Surface). */
 export const CLOSE_BASE_STRATEGIES: readonly CloseBaseStrategyDefinition[] = Object.freeze([
   Object.freeze({
     id: 'plane' as const,
-    title: 'Plane-based',
+    title: 'Plane Base',
     family: 'offset' as const,
     geometryOperation: 'uniform',
-    description: 'Generate a base relative to a defined plane (offset.uniform)'
+    description: 'Flat base under the trimmed arch'
   }),
   Object.freeze({
     id: 'offset' as const,
-    title: 'Offset base',
+    title: 'Offset Base',
     family: 'offset' as const,
     geometryOperation: 'uniform',
-    description: 'Controlled offset base from the trimmed surface (offset.uniform)'
+    description: 'Offset walls with controlled thickness from the trimmed boundary'
   }),
   Object.freeze({
     id: 'surface' as const,
-    title: 'Surface-derived',
+    title: 'Surface Fill',
     family: 'repair' as const,
     geometryOperation: 'fill-holes',
-    description: 'Close open surface using local boundary fill (repair.fill-holes)'
+    description: 'Fill open boundaries in place without a tall pedestal'
   })
 ]);
 

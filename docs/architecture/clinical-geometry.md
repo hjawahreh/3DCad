@@ -1,4 +1,4 @@
-# Clinical Geometry Architecture (CLN-008)
+# Clinical Geometry Architecture (CLN-008 / GEO-001)
 
 ## Pipeline
 
@@ -8,15 +8,18 @@ Clinical Tool (trim / close-base)
   → Geometry Services (family policy)
   → Kernel Bridge contract
   → ClinicalGeometryKernelBridge (studio composition root)
+       ├── ClinicalGeometryEngine (GEO-001 façade)
+       │     analyze / topology / BVH / SurfacePath / trim / base / repair
        ├── MeshRegistry (source / working / preview / display)
        ├── GeometryQualityPipeline
-       ├── SpatialIndex (AABB + KD-tree)
+       ├── SpatialIndex + triangle BVH
        ├── GeometryCache
-       └── NativeReferenceBackend
-            ├── trim (boundary centroid cut)
-            ├── closeBase (plane / surface)
-            └── prepareDisplay (non-authoritative)
+       └── HybridGeometryBackend
+            ├── clinical-reference-v1
+            └── vtk-http-worker-v1 (when healthy)
 ```
+
+See `docs/architecture/GEO-001-clinical-geometry-engine-v2.md`.
 
 Platform packages (`tool-runtime`, `geometry-services`, `kernel-bridge`, …) remain unmodified.
 
@@ -31,9 +34,11 @@ Platform packages (`tool-runtime`, `geometry-services`, `kernel-bridge`, …) re
 
 ## Backend strategy
 
-CLN-008 ships a deterministic TypeScript **clinical reference kernel** behind `KernelBridge`.
+GEO-001 keeps the hybrid backend policy. The Clinical Geometry Engine selects
+backends by capability with explicit reasons — no silent unreliable fallback.
 
-Native C++ adapters (Open3D, Eigen, nanoflann, meshoptimizer, TBB) are scaffolded under `kernel/include/cadstudio/geometry/` and documented in `docs/architecture/third-party-geometry.md`. They are not production-linked in this milestone.
+Native C++ adapters remain scaffolded under `kernel/include/cadstudio/geometry/`
+and documented in `docs/architecture/third-party-geometry.md`.
 
 ## Invariants
 
@@ -45,3 +50,4 @@ Native C++ adapters (Open3D, Eigen, nanoflann, meshoptimizer, TBB) are scaffolde
 6. Display optimization never replaces clinical fidelity mesh.
 7. Stale caches cannot be committed.
 8. No undocumented native dependency.
+9. Surface path points must associate to the mesh (no fabricated hits).

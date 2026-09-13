@@ -87,11 +87,34 @@ export const ClinicalLeftPanel = ({
         {recent.length > 0 ? (
           <section className="clinical-left__section" aria-label="Recent cases">
             <h3>Recent</h3>
-            <ul className="clinical-list">
+            <ul className="clinical-list clinical-recent-list">
               {recent.map((entry) => (
                 <li key={String(entry.caseId)}>
-                  <strong>{entry.name}</strong>
-                  <span className="muted"> · {entry.patientName}</span>
+                  <button
+                    type="button"
+                    className="clinical-recent-list__item"
+                    data-testid="clinical-recent-item"
+                    onClick={() => {
+                      void workspace.cases.openCase(workspace, entry.caseId).then((result) => {
+                        if (!result.ok) {
+                          host.notifications.push('error', 'Case', result.error.message);
+                          return;
+                        }
+                        host.notifications.push(
+                          'success',
+                          'Case',
+                          `Opened ${result.value.caseMeta.name}`
+                        );
+                        session.notifyUi();
+                      });
+                    }}
+                  >
+                    <strong>{entry.name}</strong>
+                    <span className="muted"> · {entry.patientName}</span>
+                    {entry.workflowStatus !== undefined ? (
+                      <span className="clinical-recent-list__status muted">{entry.workflowStatus}</span>
+                    ) : null}
+                  </button>
                 </li>
               ))}
             </ul>

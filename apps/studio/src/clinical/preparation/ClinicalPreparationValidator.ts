@@ -136,7 +136,9 @@ export class ClinicalPreparationValidator {
 
   private checkOrientationCompleted(input: ClinicalPreparationValidationInput): ValidationCheckResult {
     const historyCount = input.orientation.history.snapshot().pushCount;
-    const passed = input.orientationValidated || historyCount > 0;
+    const metaAccepted =
+      input.session.getPublicState().activeCase?.orientationMeta?.acceptedAt !== undefined;
+    const passed = input.orientationValidated || historyCount > 0 || metaAccepted;
     return freezeCheck({
       id: 'orientation-completed',
       label: 'Orientation completed',

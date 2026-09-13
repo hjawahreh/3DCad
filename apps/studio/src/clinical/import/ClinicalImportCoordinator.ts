@@ -19,8 +19,12 @@ import type { ClinicalDocumentSnapshot } from '../document/ClinicalDocument.js';
 import {
   parseClinicalMeshBytes
 } from './ClinicalMeshParsers.js';
-import { registerParsedClinicalMesh } from './ClinicalMeshRegistration.js';
+import { registerParsedClinicalMeshWithReport } from './ClinicalMeshRegistration.js';
 import type { ParsedClinicalMesh } from './ClinicalMeshParsers.js';
+import { validateClinicalCase } from '../case/ClinicalCaseValidation.js';
+import type { ClinicalCaseValidationReport } from '../case/ClinicalCaseValidation.js';
+import { recordClinicalGeometryDevDiag } from '../diagnostics/ClinicalGeometryDevDiagnostics.js';
+import type { TriangleMesh } from '../../geometry-kernel/mesh/TriangleMesh.js';
 
 const importSuccessMessage = (
   archRole: ClinicalArchRole | undefined,
@@ -61,8 +65,20 @@ export class ClinicalImportCoordinator {
   public readonly documentBuilder = new ClinicalDocumentBuilder();
 
   private active: ClinicalImportSession | undefined;
+  private afterImportPresenter: (() => void) | undefined;
+  private lastCaseValidation: ClinicalCaseValidationReport | undefined;
 
   public constructor(private readonly session: ClinicalSession) {}
+
+  /** Most recent post-import case validation report (if any). */
+  public getLastCaseValidation(): ClinicalCaseValidationReport | undefined {
+    return this.lastCaseValidation;
+  }
+
+  /** Optional clinical camera presentation after successful scene publish. */
+  public setAfterImportPresenter(presenter: () => void): void {
+    this.afterImportPresenter = presenter;
+  }
 
   public getActiveSession(): ClinicalImportSession | undefined {
     return this.active;
@@ -295,34 +311,73 @@ export class ClinicalImportCoordinator {
       return built;
     }
 
+    let documentAfterImport = built.value;
+
     if (parsed !== undefined) {
       const registry = host.runtimes.kernel.registry;
-      const newlyAdded = built.value.objects.filter(
+      const newlyAdded = documentAfterImport.objects.filter(
         (obj) => !document.objects.some((prev) => prev.id === obj.id)
       );
       // On replace, document may keep same stable id — always rebind latest descriptors from this import.
       const targets =
         newlyAdded.length > 0
           ? newlyAdded
-          : built.value.objects.filter((obj) =>
+          : documentAfterImport.objects.filter((obj) =>
               selection.archRole !== undefined
                 ? obj.archRole === selection.archRole
                 : obj.sourceFile === selection.fileName
             );
+      const objectPatches = new Map<
+        string,
+        {
+          readonly vertexCount: number;
+          readonly faceCount: number;
+          readonly geometryFingerprint: string;
+          readonly geometryRevision: number;
+        }
+      >();
       for (const obj of targets) {
         registry.releaseObject(obj.id as string);
-        registerParsedClinicalMesh(registry, obj.id as string, parsed);
+        const registered = registerParsedClinicalMeshWithReport(
+          registry,
+          obj.id as string,
+          parsed
+        );
+        objectPatches.set(String(obj.id), {
+          vertexCount: registered.normalization.normalizedVertexCount,
+          faceCount: registered.normalization.normalizedTriangleCount,
+          geometryFingerprint: registered.working.fingerprint,
+          geometryRevision: registered.working.revision
+        });
+      }
+      if (objectPatches.size > 0) {
+        documentAfterImport = Object.freeze({
+          ...documentAfterImport,
+          objects: Object.freeze(
+            documentAfterImport.objects.map((obj) => {
+              const patch = objectPatches.get(String(obj.id));
+              if (patch === undefined) return obj;
+              return Object.freeze({
+                ...obj,
+                vertexCount: patch.vertexCount,
+                faceCount: patch.faceCount,
+                geometryFingerprint: patch.geometryFingerprint,
+                geometryRevision: patch.geometryRevision
+              });
+            })
+          )
+        });
       }
     }
 
-    const applied = this.session.applyDocument(built.value, true);
+    const applied = this.session.applyDocument(documentAfterImport, true);
     if (!applied.ok) {
       this.diagnostics.recordDocumentFailure(applied.error.message);
       this.fail(started, applied.error.message, 'document');
       return applied;
     }
 
-    this.objects.replaceAll(built.value.objects);
+    this.objects.replaceAll(documentAfterImport.objects);
 
     this.notifications.setProgress({
       phase: 'populating-scene',
@@ -332,7 +387,10 @@ export class ClinicalImportCoordinator {
     });
     clinicalImport.workflow.advance('populating-scene');
 
-    const sceneResult = this.sceneBuilder.buildAndPublish(host, built.value);
+    const sceneResult = this.sceneBuilder.buildAndPublish(host, documentAfterImport, {
+      // Clinical anterior presentation owns the post-import camera (fit + anterior).
+      fitCamera: false
+    });
     if (!sceneResult.ok) {
       this.diagnostics.recordSceneFailure(sceneResult.error.message);
       this.fail(started, sceneResult.error.message, 'scene');
@@ -347,14 +405,23 @@ export class ClinicalImportCoordinator {
     });
     clinicalImport.workflow.advance('refreshing-viewport');
 
+    // Clinical anterior bite via ClinicalViewportRuntime (Camera Runtime only).
+    try {
+      this.afterImportPresenter?.();
+    } catch {
+      // Camera presentation must never fail the import itself.
+    }
+
+    this.runPostImportCaseValidation(documentAfterImport);
+
     const durationMs = Date.now() - started;
-    const verts = built.value.objects.reduce((n, o) => n + (o.vertexCount ?? 0), 0);
-    const faces = built.value.objects.reduce((n, o) => n + (o.faceCount ?? 0), 0);
+    const verts = documentAfterImport.objects.reduce((n, o) => n + (o.vertexCount ?? 0), 0);
+    const faces = documentAfterImport.objects.reduce((n, o) => n + (o.faceCount ?? 0), 0);
     this.metrics.recordSuccess(durationMs, verts || undefined, faces || undefined);
     this.metrics.setActiveDocumentCount(1);
 
     clinicalImport.workflow.advance('completed');
-    const successMessage = importSuccessMessage(selection.archRole, built.value);
+    const successMessage = importSuccessMessage(selection.archRole, documentAfterImport);
     this.notifications.setProgress({
       phase: 'completed',
       ratio: 1,
@@ -365,7 +432,7 @@ export class ClinicalImportCoordinator {
       fileName: selection.fileName,
       format,
       importedAt: Date.now(),
-      objectCount: built.value.objects.length,
+      objectCount: documentAfterImport.objects.length,
       success: true
     });
     this.diagnostics.record(
@@ -376,7 +443,50 @@ export class ClinicalImportCoordinator {
       host.notifications.push('success', 'Import', successMessage);
     }
     this.session.notifyUi();
-    return clinicalSuccess(built.value);
+    return clinicalSuccess(documentAfterImport);
+  }
+
+  private runPostImportCaseValidation(document: ClinicalDocumentSnapshot): void {
+    const host = this.session.getHost();
+    const registry = host.runtimes.kernel.registry;
+    const meshes = new Map<string, TriangleMesh>();
+    for (const obj of document.objects) {
+      const mesh =
+        registry.getByObjectId(obj.id as string, 'working') ??
+        registry.getByObjectId(obj.id as string, 'source');
+      if (mesh !== undefined) {
+        meshes.set(obj.id as string, mesh);
+      }
+    }
+    try {
+      const report = validateClinicalCase({
+        document,
+        meshes,
+        requireDualArch: false
+      });
+      this.lastCaseValidation = report;
+      const errorCount = report.findings.filter((f) => f.severity === 'ERROR').length;
+      const warningCount = report.findings.filter((f) => f.severity === 'WARNING').length;
+      this.diagnostics.record(
+        report.verdict === 'FAIL' ? 'error' : report.verdict === 'WARNING' ? 'warning' : 'info',
+        `Case validation ${report.verdict}: ${String(report.findings.length)} finding(s) (${String(errorCount)} ERROR, ${String(warningCount)} WARNING)`
+      );
+      recordClinicalGeometryDevDiag({
+        operation: 'case-validation',
+        caseValidationVerdict: report.verdict
+      });
+      if (report.verdict === 'FAIL') {
+        host.notifications.push(
+          'warning',
+          'Case validation',
+          report.findings.find((f) => f.severity === 'ERROR')?.message ??
+            'Case validation reported errors'
+        );
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Case validation failed';
+      this.diagnostics.record('warning', `Case validation skipped: ${message}`);
+    }
   }
 
   private fail(

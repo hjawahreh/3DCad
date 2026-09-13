@@ -1,0 +1,463 @@
+{
+  "at": "2026-09-13T11:10:13.173Z",
+  "milestone": "GEO-001A",
+  "host": "http://localhost:1420/",
+  "fixtures": [
+    "apps/studio/public/clinical-fixtures/upper.stl",
+    "apps/studio/public/clinical-fixtures/lower.stl"
+  ],
+  "steps": [
+    {
+      "id": "00-vtk-health",
+      "step": "00-vtk-health",
+      "status": "PASS",
+      "at": "2026-09-13T11:06:12.136Z",
+      "timestamp": "2026-09-13T11:06:12.136Z",
+      "detail": "VTK HTTP worker available"
+    },
+    {
+      "id": "01-imported",
+      "step": "01-imported",
+      "status": "PASS",
+      "at": "2026-09-13T11:06:41.795Z",
+      "timestamp": "2026-09-13T11:06:41.795Z",
+      "screenshot": "01-imported.png"
+    },
+    {
+      "id": "02-oriented",
+      "step": "02-oriented",
+      "status": "PASS",
+      "at": "2026-09-13T11:07:14.575Z",
+      "timestamp": "2026-09-13T11:07:14.575Z",
+      "screenshot": "02-oriented.png",
+      "orientationOrigin": "auto"
+    },
+    {
+      "id": "03-mesh-baselines",
+      "step": "03-mesh-baselines",
+      "status": "PASS",
+      "at": "2026-09-13T11:07:59.783Z",
+      "timestamp": "2026-09-13T11:07:59.783Z",
+      "upperTriangles": 261287,
+      "lowerTriangles": 233562,
+      "upperFp": "geo:052a19f9",
+      "lowerFp": "geo:4f0579c1"
+    },
+    {
+      "id": "03-trim-before",
+      "step": "03-trim-before",
+      "status": "PASS",
+      "at": "2026-09-13T11:08:14.844Z",
+      "timestamp": "2026-09-13T11:08:14.844Z",
+      "screenshot": "03-trim-before.png"
+    },
+    {
+      "id": "04-trim-loop-surface-path",
+      "step": "04-trim-loop-surface-path",
+      "status": "FAIL",
+      "at": "2026-09-13T11:08:49.718Z",
+      "timestamp": "2026-09-13T11:08:49.718Z",
+      "screenshot": "04-trim-loop.png",
+      "drawn": {
+        "local": [
+          {
+            "x": 275.6740666666666,
+            "y": 417.3178333333333,
+            "worldX": -16.416978183171047,
+            "worldY": 9.060054210808069,
+            "worldZ": 16.6908727434917
+          },
+          {
+            "x": 367.1836666666666,
+            "y": 417.3178333333333,
+            "worldX": -7.197160509558886,
+            "worldY": 10.224198053111282,
+            "worldZ": 21.019855794588917
+          },
+          {
+            "x": 458.69326666666666,
+            "y": 417.3178333333333,
+            "worldX": 1.1912064471969321,
+            "worldY": 10.395627269031275,
+            "worldZ": 21.657332146920343
+          },
+          {
+            "x": 458.69326666666666,
+            "y": 480.23383333333334,
+            "worldX": 1.1605632282885092,
+            "worldY": 4.991716928901858,
+            "worldZ": 23.43982739934061
+          },
+          {
+            "x": 275.6740666666666,
+            "y": 480.23383333333334,
+            "worldX": -16.650448544885055,
+            "worldY": 2.6133950422456396,
+            "worldZ": 16.723689200202156
+          }
+        ],
+        "hitCount": 47,
+        "span": {
+          "halfU": 91.5096,
+          "halfV": 31.458000000000006,
+          "midX": 367.1836666666666,
+          "midY": 448.7758333333333
+        }
+      },
+      "pathCheck": {
+        "ok": false,
+        "validatedOk": false,
+        "validationMessage": "Trim boundary crosses disconnected scan surfaces.",
+        "meshFingerprint": "geo:052a19f9",
+        "pathFingerprint": "spath:2ba435c5",
+        "pathMeshFingerprint": "geo:052a19f9",
+        "pathLength": 49.990694997189046,
+        "sampleCount": 5,
+        "sampleChecks": [
+          {
+            "point": [
+              -21.692140507967274,
+              -6.589177259661627,
+              10.5581918376506
+            ],
+            "faceId": 245576,
+            "componentId": 245576,
+            "nearestHit": true,
+            "distance": 0,
+            "nearestFaceId": 245576
+          },
+          {
+            "point": [
+              -15.678141574226341,
+              -14.631923238017825,
+              12.618868364875613
+            ],
+            "faceId": 15334,
+            "componentId": 15334,
+            "nearestHit": true,
+            "distance": 0,
+            "nearestFaceId": 15334
+          },
+          {
+            "point": [
+              -8.650738475834396,
+              -19.23227378638569,
+              13.121679461398092
+            ],
+            "faceId": 15537,
+            "componentId": 15537,
+            "nearestHit": true,
+            "distance": 0,
+            "nearestFaceId": 15537
+          },
+          {
+            "point": [
+              -9.80212211687999,
+              -21.535487371933513,
+              8.047232209119576
+            ],
+            "faceId": 233168,
+            "componentId": 233168,
+            "nearestHit": true,
+            "distance": 0,
+            "nearestFaceId": 233168
+          },
+          {
+            "point": [
+              -22.22379525923972,
+              -7.436478843017256,
+              4.185246293180725
+            ],
+            "faceId": 81480,
+            "componentId": 81480,
+            "nearestHit": true,
+            "distance": 0,
+            "nearestFaceId": 81480
+          }
+        ],
+        "offSurfaceCount": 0,
+        "targetArch": "case-1789297572978:upper-arch",
+        "staleGeometry": false
+      }
+    },
+    {
+      "id": "04b-trim-validate",
+      "step": "04b-trim-validate",
+      "status": "PASS",
+      "at": "2026-09-13T11:08:54.812Z",
+      "timestamp": "2026-09-13T11:08:54.812Z",
+      "stats": "Points: 6 · Closed: yes · Boundary valid"
+    },
+    {
+      "id": "05-trim-preview",
+      "step": "05-trim-preview",
+      "status": "FAIL",
+      "at": "2026-09-13T11:10:10.604Z",
+      "timestamp": "2026-09-13T11:10:10.604Z",
+      "screenshot": "05-trim-preview.png",
+      "metrics": {
+        "fingerprint": null,
+        "backend": null,
+        "algorithm": null,
+        "diagnostics": []
+      },
+      "previewMs": 73843,
+      "detail": "Preview must be ClinicalGeometryEngine / kernel result with removed triangles"
+    },
+    {
+      "id": "fatal",
+      "step": "fatal",
+      "status": "FAIL",
+      "at": "2026-09-13T11:10:11.199Z",
+      "timestamp": "2026-09-13T11:10:11.199Z",
+      "detail": "Error: Trim boundary crosses disconnected scan surfaces."
+    }
+  ],
+  "evidence": {
+    "baselines": {
+      "upper": {
+        "arch": "upper",
+        "objectId": "case-1789297572978:upper-arch",
+        "fingerprint": "geo:052a19f9",
+        "revision": 1,
+        "vertexCount": 783861,
+        "triangleCount": 261287,
+        "surfaceArea": 3981.0387361233084,
+        "bounds": {
+          "min": [
+            -32.372676849365234,
+            -27.040077209472656,
+            -2.337831497192383
+          ],
+          "max": [
+            31.3145694732666,
+            32.14738845825195,
+            19.423786163330078
+          ]
+        },
+        "connectedComponents": 261287,
+        "boundaryEdgeCount": 783861,
+        "nonManifoldEdgeCount": 0,
+        "degenerateTriangleCount": 0,
+        "watertight": false,
+        "manifold": true,
+        "gate": "WARNING",
+        "selfIntersectionStatus": "none",
+        "analysisMs": 2692.399999856949,
+        "boundaryLoopCount": 261287,
+        "primaryBoundary": {
+          "perimeter": 1.833187543359244,
+          "projectedArea": 0.05218574887840077,
+          "pointCount": 3,
+          "closed": true,
+          "centroid": [
+            -14.161884307861328,
+            8.727067947387695,
+            4.445021152496338
+          ],
+          "score": 0.6755363769466959
+        }
+      },
+      "lower": {
+        "arch": "lower",
+        "objectId": "case-1789297572978:lower-arch",
+        "fingerprint": "geo:4f0579c1",
+        "revision": 1,
+        "vertexCount": 700686,
+        "triangleCount": 233562,
+        "surfaceArea": 3634.4576152467357,
+        "bounds": {
+          "min": [
+            -36.07221603393555,
+            -22.992115020751953,
+            -15.897418975830078
+          ],
+          "max": [
+            34.564208984375,
+            29.90304183959961,
+            2.111689805984497
+          ]
+        },
+        "connectedComponents": 233562,
+        "boundaryEdgeCount": 700686,
+        "nonManifoldEdgeCount": 0,
+        "degenerateTriangleCount": 0,
+        "watertight": false,
+        "manifold": true,
+        "gate": "WARNING",
+        "selfIntersectionStatus": "none",
+        "analysisMs": 1458.2999999523163,
+        "boundaryLoopCount": 233562,
+        "primaryBoundary": {
+          "perimeter": 1.8692258619960729,
+          "projectedArea": 0.022009529411661788,
+          "pointCount": 3,
+          "closed": true,
+          "centroid": [
+            29.787159601847332,
+            14.378058433532715,
+            -2.0500557820002236
+          ],
+          "score": 0.6685352458162056
+        }
+      }
+    },
+    "trim": {
+      "original": {
+        "geom": {
+          "id": "case-1789297572978:upper-arch",
+          "faceCount": 261287,
+          "vertexCount": 783861,
+          "fingerprint": null,
+          "backend": null,
+          "revision": null,
+          "dirty": true
+        },
+        "quality": {
+          "arch": "upper",
+          "objectId": "case-1789297572978:upper-arch",
+          "fingerprint": "geo:052a19f9",
+          "revision": 1,
+          "vertexCount": 783861,
+          "triangleCount": 261287,
+          "surfaceArea": 3981.0387361233084,
+          "bounds": {
+            "min": [
+              -32.372676849365234,
+              -27.040077209472656,
+              -2.337831497192383
+            ],
+            "max": [
+              31.3145694732666,
+              32.14738845825195,
+              19.423786163330078
+            ]
+          },
+          "connectedComponents": 261287,
+          "boundaryEdgeCount": 783861,
+          "nonManifoldEdgeCount": 0,
+          "degenerateTriangleCount": 0,
+          "watertight": false,
+          "manifold": true,
+          "gate": "WARNING",
+          "selfIntersectionStatus": "none",
+          "analysisMs": 1984,
+          "boundaryLoopCount": 261287,
+          "primaryBoundary": {
+            "perimeter": 1.833187543359244,
+            "projectedArea": 0.05218574887840077,
+            "pointCount": 3,
+            "closed": true,
+            "centroid": [
+              -14.161884307861328,
+              8.727067947387695,
+              4.445021152496338
+            ],
+            "score": 0.6755363769466959
+          }
+        }
+      },
+      "previewA": {
+        "metrics": {
+          "fingerprint": null,
+          "backend": null,
+          "algorithm": null,
+          "diagnostics": []
+        },
+        "previewMs": 73843,
+        "previewReady": false
+      }
+    },
+    "closeBase": {},
+    "undoRedo": {},
+    "persistence": {},
+    "performance": {
+      "importMs": 25096
+    },
+    "surfacePath": {
+      "trimA": {
+        "ok": false,
+        "validatedOk": false,
+        "validationMessage": "Trim boundary crosses disconnected scan surfaces.",
+        "meshFingerprint": "geo:052a19f9",
+        "pathFingerprint": "spath:2ba435c5",
+        "pathMeshFingerprint": "geo:052a19f9",
+        "pathLength": 49.990694997189046,
+        "sampleCount": 5,
+        "sampleChecks": [
+          {
+            "point": [
+              -21.692140507967274,
+              -6.589177259661627,
+              10.5581918376506
+            ],
+            "faceId": 245576,
+            "componentId": 245576,
+            "nearestHit": true,
+            "distance": 0,
+            "nearestFaceId": 245576
+          },
+          {
+            "point": [
+              -15.678141574226341,
+              -14.631923238017825,
+              12.618868364875613
+            ],
+            "faceId": 15334,
+            "componentId": 15334,
+            "nearestHit": true,
+            "distance": 0,
+            "nearestFaceId": 15334
+          },
+          {
+            "point": [
+              -8.650738475834396,
+              -19.23227378638569,
+              13.121679461398092
+            ],
+            "faceId": 15537,
+            "componentId": 15537,
+            "nearestHit": true,
+            "distance": 0,
+            "nearestFaceId": 15537
+          },
+          {
+            "point": [
+              -9.80212211687999,
+              -21.535487371933513,
+              8.047232209119576
+            ],
+            "faceId": 233168,
+            "componentId": 233168,
+            "nearestHit": true,
+            "distance": 0,
+            "nearestFaceId": 233168
+          },
+          {
+            "point": [
+              -22.22379525923972,
+              -7.436478843017256,
+              4.185246293180725
+            ],
+            "faceId": 81480,
+            "componentId": 81480,
+            "nearestHit": true,
+            "distance": 0,
+            "nearestFaceId": 81480
+          }
+        ],
+        "offSurfaceCount": 0,
+        "targetArch": "case-1789297572978:upper-arch",
+        "staleGeometry": false
+      }
+    }
+  },
+  "vtkCalls": [],
+  "summary": {
+    "total": 9,
+    "pass": 6,
+    "fail": 3,
+    "observe": 0,
+    "mandatoryFail": true
+  }
+}

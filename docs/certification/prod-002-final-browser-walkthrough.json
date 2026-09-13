@@ -1,0 +1,235 @@
+{
+  "at": "2026-09-12T08:31:29.162Z",
+  "host": "http://localhost:1420/",
+  "fixtures": [
+    "apps/studio/public/clinical-fixtures/upper.stl",
+    "apps/studio/public/clinical-fixtures/lower.stl"
+  ],
+  "results": [
+    {
+      "name": "Shell boot",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Worker health",
+      "status": "PASS",
+      "detail": "{\"ok\":true,\"service\":\"cad-vtk-worker\",\"port\":8765}"
+    },
+    {
+      "name": "Import representative meshes",
+      "status": "PASS",
+      "detail": "[{\"role\":\"upper\",\"faces\":261287,\"name\":\"Upper Arch\"},{\"role\":\"lower\",\"faces\":233562,\"name\":\"Lower Arch\"}]"
+    },
+    {
+      "name": "Case validation surfaced",
+      "status": "PASS",
+      "detail": "verdict=WARNING findings=10 errors=0"
+    },
+    {
+      "name": "Clinical orientation",
+      "status": "PASS",
+      "detail": "{\"accepted\":true,\"confidence\":\"high\",\"source\":\"auto\",\"algorithm\":\"clinical-auto-orient-v1\"}"
+    },
+    {
+      "name": "Preprocessing",
+      "status": "PASS",
+      "detail": "{\"ready\":true,\"algorithm\":\"clinical-auto-prep-v1\",\"fingerprint\":\"case-1789201528767:lower-arch:1:geo:4f0579c1|case-1789201528767:upper-arch:1:geo:052a19f9\",\"warnings\":6,\"uiState\":\"warning\"}"
+    },
+    {
+      "name": "Arch/anatomy analysis",
+      "status": "PASS",
+      "detail": "region=upper/high frame=moderate candidates=12"
+    },
+    {
+      "name": "Trim on clinical path (pre-seg)",
+      "status": "PASS",
+      "detail": "accept={\"ok\":true,\"error\":null} vtkOk=1 pre=261287 post=245027"
+    },
+    {
+      "name": "Close Base on clinical path (pre-seg)",
+      "status": "PASS",
+      "detail": "accept={\"ok\":true,\"error\":null} vtk=2 clinical=true prepStage=ready-for-segmentation pre=245027 post=254293"
+    },
+    {
+      "name": "Tooth segmentation (real instances)",
+      "status": "PASS",
+      "detail": "{\"presentation\":\"rebuilding\",\"phase\":\"postprocessing\",\"teeth\":32,\"needs\":19,\"runtime\":\"Segmentation validation WARNING — review uncertain teeth before accept\",\"progress\":{\"completed\":6,\"total\":6,\"message\":\"Reconstructing clinical model\"}}"
+    },
+    {
+      "name": "Segmentation validation",
+      "status": "PASS",
+      "detail": "verdict=WARNING teeth=32 needsReview=19"
+    },
+    {
+      "name": "Accept upper segmentation",
+      "status": "PASS",
+      "detail": "{\"id\":\"case-1789201528767:upper-arch\",\"faceCount\":254293,\"fingerprint\":\"geo:2fd4b625\",\"backend\":\"hybrid-vtk-reference-v1\",\"segTeeth\":32,\"segProvider\":\"reference-heuristic\",\"dirty\":true}"
+    },
+    {
+      "name": "Tooth IDs + confidence state",
+      "status": "PASS",
+      "detail": "{\"count\":32,\"ids\":[\"inst-001\",\"inst-002\",\"inst-003\",\"inst-004\",\"inst-005\",\"inst-006\",\"inst-007\",\"inst-008\",\"inst-009\",\"inst-010\",\"inst-011\",\"inst-012\",\"inst-013\",\"inst-014\",\"inst-015\",\"inst-016\",\"inst-017\",\"inst-018\",\"inst-019\",\"inst-020\",\"inst-021\",\"inst-022\",\"inst-023\",\"inst-024\",\"inst-025\",\"inst-026\",\"inst-027\",\"inst-028\",\"inst-029\",\"inst-030\",\"inst-031\",\"inst-032\"],\"unique\":32,\"confidences\":[0.826,0.861,0.901,0.948,0.926],\"verdict\":\"WARNING\",\"caseBand\":\"moderate\",\"hasCentroid\":true,\"hasFrame\":true}"
+    },
+    {
+      "name": "Accept lower segmentation",
+      "status": "PASS",
+      "detail": "seg={\"presentation\":\"rebuilding\",\"phase\":\"postprocessing\",\"teeth\":32,\"needs\":32,\"runtime\":\"Segmentation validation WARNING — review uncertain teeth before accept\",\"progress\":{\"completed\":6,\"total\":6,\"message\":\"Reconstructing clinical model\"}} meta={\"id\":\"case-1789201528767:lower-arch\",\"faceCount\":233562,\"fingerprint\":\"geo:4f0579c1\",\"backend\":null,\"segTeeth\":32,\"segProvider\":\"reference-heuristic\",\"dirty\":true}"
+    },
+    {
+      "name": "Trim accepts segmented geometry",
+      "status": "PASS",
+      "detail": "trim.enter + overlay visible on post-seg lower arch"
+    },
+    {
+      "name": "Trim preview after segmentation",
+      "status": "PASS",
+      "detail": "overlay=true stats=Points: 5 · Closed: yes · Valid"
+    },
+    {
+      "name": "Trim after segmentation (PROD-001T regression)",
+      "status": "PASS",
+      "detail": "accept={\"ok\":true,\"error\":null} pre=233562 post=181736 vtkTrimOkCalls=2 loopHits=31"
+    },
+    {
+      "name": "PROD-001T loop3d + VTK HTTP on segmented case",
+      "status": "PASS",
+      "detail": "{\"hasLoop\":true,\"loopLen\":4,\"operation_version\":\"PROD-001T\",\"keep_mode\":\"KEEP_OUTSIDE\",\"sampleLoopPoint\":[-27.110768737522967,1.5643941629227252,-4.164264699530279],\"localHitCount\":31,\"sampleLocal\":{\"x\":-30.13642375048629,\"y\":13.910271544562367,\"z\":-2.3880404556357466},\"loopNearLocal\":true}"
+    },
+    {
+      "name": "Mesh-local pick coordinates present",
+      "status": "PASS",
+      "detail": "{\"localHitCount\":31,\"sampleLocal\":{\"x\":-30.13642375048629,\"y\":13.910271544562367,\"z\":-2.3880404556357466}}"
+    },
+    {
+      "name": "Trim undo after segmentation",
+      "status": "PASS",
+      "detail": "pre={\"id\":\"case-1789201528767:lower-arch\",\"faceCount\":233562,\"fingerprint\":\"geo:4f0579c1\",\"backend\":null,\"segTeeth\":32,\"segProvider\":\"reference-heuristic\",\"dirty\":true} undone={\"id\":\"case-1789201528767:lower-arch\",\"faceCount\":233562,\"fingerprint\":\"geo:4f0579c1\",\"backend\":null,\"segTeeth\":32,\"segProvider\":\"reference-heuristic\",\"dirty\":true}"
+    },
+    {
+      "name": "Trim redo after segmentation",
+      "status": "PASS",
+      "detail": "post={\"id\":\"case-1789201528767:lower-arch\",\"faceCount\":181736,\"fingerprint\":\"geo:b68a623f\",\"backend\":\"hybrid-vtk-reference-v1\",\"segTeeth\":32,\"segProvider\":\"reference-heuristic\",\"dirty\":true} redone={\"id\":\"case-1789201528767:lower-arch\",\"faceCount\":181736,\"fingerprint\":\"geo:b68a623f\",\"backend\":\"hybrid-vtk-reference-v1\",\"segTeeth\":32,\"segProvider\":\"reference-heuristic\",\"dirty\":true}"
+    },
+    {
+      "name": "Clinical orientation preserved through Trim undo/redo",
+      "status": "PASS",
+      "detail": "{\"before\":{\"acceptedAt\":1789201564115,\"confidence\":\"high\",\"algorithm\":\"clinical-auto-orient-v1\"},\"after\":{\"acceptedAt\":1789201564115,\"confidence\":\"high\",\"algorithm\":\"clinical-auto-orient-v1\"}}"
+    },
+    {
+      "name": "Close Base after segmentation (PROD-001T regression)",
+      "status": "PASS",
+      "detail": "accept={\"ok\":true,\"error\":null} pre=254293 post=263559"
+    },
+    {
+      "name": "Close Base clinical direction_source after segmentation",
+      "status": "PASS",
+      "detail": "[{\"ok\":true,\"direction_source\":\"clinical:xz\",\"operation_version\":\"PROD-001T\"},{\"ok\":true,\"direction_source\":\"clinical:xz\",\"operation_version\":\"PROD-001T\"},{\"ok\":true,\"direction_source\":\"clinical:xz\",\"operation_version\":\"PROD-001T\"},{\"ok\":true,\"direction_source\":\"clinical:xz\",\"operation_version\":\"PROD-001T\"}]"
+    },
+    {
+      "name": "ClinicalHandoffSnapshot",
+      "status": "PASS",
+      "detail": "version=clinical-handoff-v2 readyForMovement=true consumers=trim,close-base,tooth-movement,treatment-planning,manufacturing arches=upper:32,lower:32"
+    },
+    {
+      "name": "Save/reopen",
+      "status": "PASS",
+      "detail": "{\"before\":[{\"role\":\"upper\",\"fp\":\"geo:32f657eb\",\"seg\":32,\"provider\":\"reference-heuristic\"},{\"role\":\"lower\",\"fp\":\"geo:b68a623f\",\"seg\":32,\"provider\":\"reference-heuristic\"}],\"after\":{\"objects\":[{\"role\":\"upper\",\"fp\":\"geo:32f657eb\",\"seg\":32,\"provider\":\"reference-heuristic\",\"toothIds\":[\"inst-001\",\"inst-002\",\"inst-003\"],\"verdict\":\"WARNING\"},{\"role\":\"lower\",\"fp\":\"geo:b68a623f\",\"seg\":32,\"provider\":\"reference-heuristic\",\"toothIds\":[\"inst-001\",\"inst-002\",\"inst-003\"],\"verdict\":\"WARNING\"}],\"handoffVersion\":\"clinical-handoff-v2\",\"readyForMovement\":true}}"
+    },
+    {
+      "name": "Evidence screenshots",
+      "status": "PASS",
+      "detail": "18: 00-boot.png, 01-import-dual.png, 02-case-validation.png, 03-orient-accepted.png, 04-preprocessing.png, 05-anatomy-analysis.png, 06-trim-committed.png, 07-close-base.png, 08-segmentation-review.png, 09-segmentation-validation.png, 10-dual-arch-segmented.png, 11-handoff.png, 12-reopened.png, 13-trim-after-seg.png, 13b-trim-preview-after-seg.png, 14-close-base-after-seg.png, 15-trim-undo-after-seg.png, 16-trim-redo-after-seg.png"
+    },
+    {
+      "name": "Console errors",
+      "status": "PASS",
+      "detail": "0"
+    }
+  ],
+  "vtkCalls": [
+    {
+      "cmd": "trim",
+      "ok": true,
+      "phase": "response",
+      "removed": 16260,
+      "hasLoop": true,
+      "loopLen": 5,
+      "sampleLoopPoint": [
+        -5.201280921105031,
+        -20.513161495442763,
+        13.77655639266916
+      ],
+      "operation_version": "PROD-001T",
+      "keep_mode": "KEEP_OUTSIDE",
+      "hasNormal": true
+    },
+    {
+      "cmd": "close_base",
+      "ok": true,
+      "phase": "response",
+      "direction_source": "clinical:xz",
+      "hasLoop": false,
+      "loopLen": 0,
+      "sampleLoopPoint": null,
+      "operation_version": "PROD-001T",
+      "hasNormal": false
+    },
+    {
+      "cmd": "close_base",
+      "ok": true,
+      "phase": "response",
+      "direction_source": "clinical:xz",
+      "hasLoop": false,
+      "loopLen": 0,
+      "sampleLoopPoint": null,
+      "operation_version": "PROD-001T",
+      "hasNormal": false
+    },
+    {
+      "cmd": "trim",
+      "ok": true,
+      "phase": "response",
+      "removed": 51826,
+      "hasLoop": true,
+      "loopLen": 4,
+      "sampleLoopPoint": [
+        -27.110768737522967,
+        1.5643941629227252,
+        -4.164264699530279
+      ],
+      "operation_version": "PROD-001T",
+      "keep_mode": "KEEP_OUTSIDE",
+      "hasNormal": true
+    },
+    {
+      "cmd": "close_base",
+      "ok": true,
+      "phase": "response",
+      "direction_source": "clinical:xz",
+      "hasLoop": false,
+      "loopLen": 0,
+      "sampleLoopPoint": null,
+      "operation_version": "PROD-001T",
+      "hasNormal": false
+    },
+    {
+      "cmd": "close_base",
+      "ok": true,
+      "phase": "response",
+      "direction_source": "clinical:xz",
+      "hasLoop": false,
+      "loopLen": 0,
+      "sampleLoopPoint": null,
+      "operation_version": "PROD-001T",
+      "hasNormal": false
+    }
+  ],
+  "consoleErrors": [],
+  "summary": {
+    "total": 28,
+    "fail": 0,
+    "pass": 28,
+    "observe": 0
+  }
+}

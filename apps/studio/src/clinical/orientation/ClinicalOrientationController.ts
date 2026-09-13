@@ -7,12 +7,19 @@ import { asInteractionTargetId } from '@cad-studio/interaction-runtime';
 import type { ClinicalSession } from '../runtime/session.js';
 import type { ClinicalSceneBuilder } from '../import/ClinicalSceneBuilder.js';
 import type { ClinicalObjectId, ClinicalTransform } from '../import/ClinicalMeshDescriptor.js';
+import type { ClinicalOrientationMeta } from '../document/ClinicalDocument.js';
+import { withOrientationMeta } from '../document/ClinicalDocument.js';
 import {
   asClinicalToolId,
   clinicalFailure,
   clinicalSuccess,
   type ClinicalResult
 } from '../runtime/types.js';
+import {
+  estimateClinicalOrientation,
+  type ClinicalArchSample,
+  type ClinicalOrientationEstimate
+} from './ClinicalAutoOrientationEstimator.js';
 import { ClinicalOrientationGizmo } from './ClinicalOrientationGizmo.js';
 import { ClinicalOrientationHistory } from './ClinicalOrientationHistory.js';
 import { ClinicalOrientationManager } from './ClinicalOrientationManager.js';
@@ -45,6 +52,9 @@ export class ClinicalOrientationController {
 
   private interactionUnsub: (() => void) | undefined;
   private dragBaseline: ClinicalTransform = IDENTITY_MAT4;
+  private lastEstimate: ClinicalOrientationEstimate | undefined;
+  private afterAcceptPresenter: (() => void) | undefined;
+  private onEnterPresenter: (() => void) | undefined;
 
   public constructor(
     private readonly clinicalSession: ClinicalSession,
@@ -58,27 +68,55 @@ export class ClinicalOrientationController {
     this.metrics = new ClinicalOrientationMetrics();
   }
 
+  public setAfterAcceptPresenter(fn: (() => void) | undefined): void {
+    this.afterAcceptPresenter = fn;
+  }
+
+  /** BOTH + clinical presentation setup before auto-orient (wired by ClinicalWorkspace). */
+  public setOnEnterPresenter(fn: (() => void) | undefined): void {
+    this.onEnterPresenter = fn;
+  }
+
   public enter(preferredId?: ClinicalObjectId): ClinicalResult<void> {
     const target = this.manager.resolveTarget(this.clinicalSession, preferredId);
     if (!target.ok) {
       this.diagnostics.recordValidationFailure(target.error.message);
       return target;
     }
+    // Default Orientation presentation is BOTH before any camera/transform work.
+    this.onEnterPresenter?.();
     const activated = this.clinicalSession.activateTool(asClinicalToolId('orient'));
     if (!activated.ok) {
       this.diagnostics.recordValidationFailure(activated.error.message);
       return activated;
     }
+    const doc = this.clinicalSession.getPublicState().activeCase;
+    const baselines: Record<string, ClinicalTransform> = {};
+    if (doc !== undefined) {
+      for (const obj of doc.objects) {
+        baselines[obj.id as string] = cloneTransform(obj.transform);
+      }
+    }
     const now = Date.now();
     this.session.begin({
       objectId: target.value.objectId,
       baseline: target.value.transform,
-      now
+      now,
+      caseLevel: true,
+      objectBaselines: baselines
     });
     this.diagnostics.recordSessionStart();
     this.bindInteraction();
     this.publishPreview();
     this.clinicalSession.notifyUi();
+
+    // Auto-run when no accepted orientation exists yet.
+    const meta = doc?.orientationMeta;
+    const alreadyAccepted = meta?.acceptedAt !== undefined;
+    if (!alreadyAccepted) {
+      void this.autoOrient({ force: false });
+    }
+
     return clinicalSuccess(undefined);
   }
 
@@ -111,7 +149,8 @@ export class ClinicalOrientationController {
     const axis = axisOverride ?? state.activeAxis;
     const delta = rotateAroundAxis(axis, degrees);
     const next = applyRotationDelta(state.preview, delta);
-    this.session.setPreview(next);
+    this.session.setPreview(next, { origin: 'manual', caseLevel: true });
+    this.session.markManualOverride();
     this.metrics.recordAxis(axis);
     this.publishPreview();
     this.clinicalSession.notifyUi();
@@ -129,7 +168,8 @@ export class ClinicalOrientationController {
     }
     const snapped = snapToWorldAxes(this.session.getState().preview);
     this.session.setMode('snap');
-    this.session.setPreview(snapped, { snapPreview: true });
+    this.session.setPreview(snapped, { snapPreview: true, origin: 'manual', caseLevel: true });
+    this.session.markManualOverride();
     this.metrics.recordSnap();
     this.publishPreview();
     this.clinicalSession.notifyUi();
@@ -145,11 +185,120 @@ export class ClinicalOrientationController {
       return clinicalFailure('validation', 'No target object');
     }
     // Reset preview to identity (world axes); baseline kept for cancel restore.
-    this.session.setPreview(IDENTITY_MAT4);
+    this.session.setPreview(IDENTITY_MAT4, {
+      origin: 'none',
+      caseLevel: true,
+      statusMessage: 'Orientation reset'
+    });
     this.metrics.recordReset();
     this.publishPreview();
     this.clinicalSession.notifyUi();
     return clinicalSuccess(undefined);
+  }
+
+  /**
+   * Estimate and preview automatic clinical orientation (case-level).
+   * Does not commit until accept(). Won't overwrite manual unless force=true.
+   */
+  public autoOrient(options?: { readonly force?: boolean }): ClinicalResult<ClinicalOrientationEstimate> {
+    if (!this.isActive()) {
+      return clinicalFailure('lifecycle', 'Orientation not active');
+    }
+    const state = this.session.getState();
+    if (state.orientationOrigin === 'manual' && options?.force !== true) {
+      return clinicalFailure(
+        'conflict',
+        'Manual orientation is active. Use Re-Orient to run automatic orientation again.'
+      );
+    }
+
+    const host = this.clinicalSession.getHost();
+    const process = host.processFeedback;
+    process.begin({
+      kind: 'orientation',
+      title: 'Orientation',
+      stages: [
+        { id: 'analyze', label: 'Establishing clinical orientation' },
+        { id: 'axes', label: 'Finding dental axes' },
+        { id: 'establish', label: 'Preparing clinical view' },
+        { id: 'fit', label: 'Fitting model' }
+      ],
+      initialStageId: 'analyze'
+    });
+    host.notifications.push('progress', 'Orientation', 'Establishing clinical orientation…');
+
+    const samples = this.collectArchSamples();
+    if (samples.length === 0) {
+      const failed = estimateClinicalOrientation([]);
+      this.lastEstimate = failed;
+      this.session.setPreview(state.preview, {
+        origin: 'auto',
+        confidence: 'unavailable',
+        autoMessage: failed.message,
+        caseLevel: true,
+        statusMessage: failed.message
+      });
+      process.fail(failed.message);
+      process.complete();
+      host.notifications.clearProgress('Orientation');
+      host.notifications.push('warning', 'Orientation', failed.message);
+      this.clinicalSession.notifyUi();
+      return clinicalSuccess(failed);
+    }
+
+    process.setStage('axes');
+    host.notifications.push('progress', 'Orientation', 'Finding dental axes…');
+    const estimate = estimateClinicalOrientation(samples);
+    this.lastEstimate = estimate;
+
+    if (!estimate.ok) {
+      this.session.setPreview(state.baseline, {
+        origin: 'auto',
+        confidence: 'unavailable',
+        autoMessage: estimate.message,
+        caseLevel: true,
+        statusMessage: estimate.message
+      });
+      this.publishPreview();
+      process.fail(estimate.message);
+      process.complete();
+      host.notifications.clearProgress('Orientation');
+      host.notifications.push('warning', 'Orientation', estimate.message);
+      this.clinicalSession.notifyUi();
+      return clinicalSuccess(estimate);
+    }
+
+    process.setStage('establish');
+    host.notifications.push('progress', 'Orientation', 'Preparing clinical view…');
+    this.session.setMode('auto');
+    this.session.setPreview(estimate.transform, {
+      origin: 'auto',
+      confidence: estimate.confidence,
+      autoMessage: estimate.message,
+      caseLevel: true,
+      statusMessage:
+        estimate.confidence === 'low'
+          ? 'Orientation needs review.'
+          : 'We positioned your scans for clinical review.'
+    });
+    this.publishPreview();
+    // Camera presentation — same pipeline as Re-run Auto Orient / Home.
+    process.setStage('fit');
+    host.notifications.push('progress', 'Orientation', 'Fitting model…');
+    this.afterAcceptPresenter?.();
+    process.complete();
+    host.notifications.clearProgress('Orientation');
+    host.notifications.push(
+      estimate.confidence === 'low' ? 'warning' : 'info',
+      'Orientation',
+      estimate.message
+    );
+    this.clinicalSession.notifyUi();
+    return clinicalSuccess(estimate);
+  }
+
+  public getLastEstimate(): ClinicalOrientationEstimate | undefined {
+    return this.lastEstimate;
   }
 
   public accept(): ClinicalResult<void> {
@@ -159,21 +308,53 @@ export class ClinicalOrientationController {
     }
     this.session.getWorkflow().transition('committing');
     const now = Date.now();
-    const applied = this.manager.applyTransform(
-      this.clinicalSession,
-      state.targetObjectId,
-      state.preview,
-      now
-    );
+    const source: 'auto' | 'manual' =
+      state.orientationOrigin === 'manual' ? 'manual' : 'auto';
+    const meta: ClinicalOrientationMeta = Object.freeze({
+      algorithmVersion: this.lastEstimate?.algorithmVersion ?? 'manual',
+      confidence: state.confidence ?? this.lastEstimate?.confidence ?? 'medium',
+      source,
+      method: this.lastEstimate?.method ?? 'manual',
+      hasUpper: this.lastEstimate?.hasUpper ?? false,
+      hasLower: this.lastEstimate?.hasLower ?? false,
+      warnings: Object.freeze([...(this.lastEstimate?.warnings ?? [])]),
+      estimatedAt: this.lastEstimate ? now : now,
+      acceptedAt: now
+    });
+
+    const applied =
+      state.caseLevel === true
+        ? this.manager.applyCaseTransform(
+            this.clinicalSession,
+            state.preview,
+            now,
+            meta
+          )
+        : this.manager.applyTransform(
+            this.clinicalSession,
+            state.targetObjectId,
+            state.preview,
+            now
+          );
+
     if (!applied.ok) {
       this.diagnostics.recordValidationFailure(applied.error.message);
       return applied;
     }
+
+    // If single-object path, still attach orientation meta.
+    if (state.caseLevel !== true) {
+      const doc = this.clinicalSession.getPublicState().activeCase;
+      if (doc !== undefined) {
+        this.clinicalSession.applyDocument(withOrientationMeta(doc, meta, now), true);
+      }
+    }
+
     this.history.push({
-      label: 'Orient model',
+      label: state.caseLevel ? 'Orient case' : 'Orient model',
       objectId: state.targetObjectId,
       previous: applied.value.previous,
-      next: applied.value.next,
+      next: this.clinicalSession.getPublicState().activeCase ?? applied.value.next,
       createdAt: now
     });
     const duration = now - (state.sessionStartedAt ?? now);
@@ -183,6 +364,8 @@ export class ClinicalOrientationController {
     this.unbindInteraction();
     this.clinicalSession.getTools().deactivate();
     this.republishDocument('orientation-commit');
+    // Present anterior view once after commit (fit already handled by presenter).
+    this.afterAcceptPresenter?.();
     this.session.clear();
     this.clinicalSession.notifyUi();
     this.clinicalSession.getHost().notifications.push(
@@ -267,7 +450,8 @@ export class ClinicalOrientationController {
     const axis = this.gizmo.axisForHandle(drag.handle);
     const delta = rotateAroundAxis(axis, degrees);
     const next = applyRotationDelta(this.dragBaseline, delta);
-    this.session.setPreview(next);
+    this.session.setPreview(next, { origin: 'manual', caseLevel: true });
+    this.session.markManualOverride();
     this.publishPreview();
     this.clinicalSession.notifyUi();
   }
@@ -305,13 +489,36 @@ export class ClinicalOrientationController {
     this.session.clear();
   }
 
+  private collectArchSamples(): ClinicalArchSample[] {
+    const doc = this.clinicalSession.getPublicState().activeCase;
+    if (doc === undefined) return [];
+    const registry = this.clinicalSession.getHost().runtimes.kernel.registry;
+    const samples: ClinicalArchSample[] = [];
+    for (const obj of doc.objects) {
+      const mesh =
+        registry.getByObjectId(obj.id as string, 'source') ??
+        registry.getByObjectId(obj.id as string, 'working');
+      if (mesh === undefined) continue;
+      samples.push({
+        objectId: obj.id as string,
+        archRole: obj.archRole,
+        positions: mesh.positions,
+        indices: mesh.indices
+      });
+    }
+    return samples;
+  }
+
   private publishPreview(): void {
     const state = this.session.getState();
     const doc = this.clinicalSession.getPublicState().activeCase;
     if (doc === undefined || state.targetObjectId === undefined) {
       return;
     }
-    const previewDoc = this.manager.previewDocument(doc, state.targetObjectId, state.preview);
+    const previewDoc =
+      state.caseLevel === true
+        ? this.manager.previewCaseDocument(doc, state.preview)
+        : this.manager.previewDocument(doc, state.targetObjectId, state.preview);
     const host = this.clinicalSession.getHost();
     this.sceneBuilder.buildAndPublish(host, previewDoc, {
       fitCamera: false,

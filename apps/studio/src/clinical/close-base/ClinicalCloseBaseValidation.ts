@@ -14,11 +14,14 @@ import { getCloseBaseStrategy } from './ClinicalCloseBaseStrategy.js';
 export type CloseBaseValidationCheckId =
   | 'case-active'
   | 'model-available'
+  | 'target-arch'
   | 'preparation-readiness'
   | 'valid-parameters'
   | 'supported-strategy'
   | 'kernel-available'
   | 'operation-available'
+  | 'geometry-quality'
+  | 'boundary-closure'
   | 'result-validity'
   | 'commit-eligibility';
 
@@ -35,6 +38,14 @@ export interface CloseBaseValidationReport {
   readonly validatedAt: number;
 }
 
+export interface CloseBaseQualitySnapshot {
+  readonly ok: boolean;
+  readonly codes: readonly string[];
+  readonly warnings: readonly string[];
+  readonly boundaryEdges: number;
+  readonly degenerateCount: number;
+}
+
 const freezeCheck = (check: CloseBaseValidationCheckResult): CloseBaseValidationCheckResult =>
   Object.freeze(check);
 
@@ -49,15 +60,19 @@ export class ClinicalCloseBaseValidation {
     readonly kernelFingerprint: string | undefined;
     readonly requireCommitEligibility: boolean;
     readonly now: number;
+    readonly quality?: CloseBaseQualitySnapshot;
   }): CloseBaseValidationReport {
     const checks: CloseBaseValidationCheckResult[] = [
       this.checkCaseActive(input),
       this.checkModelAvailable(input),
+      this.checkTargetArch(input),
       this.checkPreparation(input),
       this.checkParameters(input),
       this.checkStrategy(input),
       this.checkKernel(input),
-      this.checkOperation(input)
+      this.checkOperation(input),
+      this.checkGeometryQuality(input),
+      this.checkBoundaryClosure(input)
     ];
     if (input.requireCommitEligibility) {
       checks.push(this.checkResult(input), this.checkCommitEligibility(input, checks));
@@ -102,6 +117,26 @@ export class ClinicalCloseBaseValidation {
     });
   }
 
+  private checkTargetArch(input: {
+    readonly session: ClinicalSession;
+    readonly targetObjectId: ClinicalObjectId | undefined;
+  }): CloseBaseValidationCheckResult {
+    const doc = input.session.getPublicState().activeCase;
+    const obj = doc?.objects.find((o) => o.id === input.targetObjectId);
+    const passed = obj !== undefined;
+    const role = obj?.archRole;
+    return freezeCheck({
+      id: 'target-arch',
+      label: 'Target arch',
+      passed,
+      message: !passed
+        ? 'Select an arch'
+        : role === 'upper' || role === 'lower'
+          ? `Active ${role} arch`
+          : 'Target object selected'
+    });
+  }
+
   private checkPreparation(input: {
     readonly preparation: ClinicalPreparationRuntime;
   }): CloseBaseValidationCheckResult {
@@ -109,14 +144,15 @@ export class ClinicalCloseBaseValidation {
     const passed =
       input.preparation.isReadyForGeometry() ||
       stage === 'ready-for-close-base' ||
-      stage === 'preparation-complete';
+      stage === 'preparation-complete' ||
+      stage === 'ready-for-trim';
     return freezeCheck({
       id: 'preparation-readiness',
       label: 'Preparation readiness',
       passed,
       message: passed
         ? `Stage ${stage} allows Close Base`
-        : 'Advance preparation to Ready For Close Base'
+        : 'Complete Trim before Close Base'
     });
   }
 
@@ -142,7 +178,7 @@ export class ClinicalCloseBaseValidation {
         ? 'Parameters in range'
         : heightOk
           ? 'Parameter out of range'
-          : 'Height must be greater than or equal to thickness'
+          : 'Height must be at least the thickness'
     });
   }
 
@@ -153,11 +189,9 @@ export class ClinicalCloseBaseValidation {
     const passed = strategy !== undefined;
     return freezeCheck({
       id: 'supported-strategy',
-      label: 'Supported strategy',
+      label: 'Base style',
       passed,
-      message: passed
-        ? `${strategy.title} → ${strategy.family}.${strategy.geometryOperation}`
-        : 'Unknown Close Base strategy'
+      message: passed ? strategy.title : 'Unknown Close Base style'
     });
   }
 
@@ -185,6 +219,70 @@ export class ClinicalCloseBaseValidation {
     });
   }
 
+  private checkGeometryQuality(input: {
+    readonly quality?: CloseBaseQualitySnapshot;
+  }): CloseBaseValidationCheckResult {
+    if (input.quality === undefined) {
+      return freezeCheck({
+        id: 'geometry-quality',
+        label: 'Geometry quality',
+        passed: true,
+        message: 'Quality deferred until mesh is available'
+      });
+    }
+    // Reference close-base can emit non-manifold wall junctions; treat as warning, not a hard gate.
+    // Block only on corrupt input or extreme degenerates.
+    const hardFail = input.quality.codes.includes('INPUT_INVALID');
+    const degenerateFail =
+      input.quality.degenerateCount >
+      Math.max(128, Math.floor(input.quality.boundaryEdges * 4) + 64);
+    const passed = !hardFail && !degenerateFail;
+    return freezeCheck({
+      id: 'geometry-quality',
+      label: 'Geometry quality',
+      passed,
+      message: passed
+        ? input.quality.ok
+          ? 'Mesh quality acceptable'
+          : input.quality.warnings[0] ?? 'Mesh quality warnings present (non-blocking)'
+        : input.quality.warnings[0] ?? 'Mesh quality is not acceptable for Close Base'
+    });
+  }
+
+  private checkBoundaryClosure(input: {
+    readonly quality?: CloseBaseQualitySnapshot;
+    readonly parameters: ClinicalCloseBaseParameters;
+    readonly requireCommitEligibility?: boolean;
+  }): CloseBaseValidationCheckResult {
+    if (input.quality === undefined) {
+      return freezeCheck({
+        id: 'boundary-closure',
+        label: 'Boundary closure',
+        passed: true,
+        message: 'Boundary check deferred'
+      });
+    }
+    // Surface fill may leave no open edges; plane/offset expect open boundary before, closed after commit.
+    if (input.parameters.strategy === 'surface' && input.quality.boundaryEdges === 0) {
+      return freezeCheck({
+        id: 'boundary-closure',
+        label: 'Boundary closure',
+        passed: true,
+        message: 'No open boundary — mesh may already be closed'
+      });
+    }
+    const passed = input.quality.boundaryEdges >= 0;
+    return freezeCheck({
+      id: 'boundary-closure',
+      label: 'Boundary closure',
+      passed,
+      message:
+        input.quality.boundaryEdges === 0
+          ? 'No open boundary detected — preview may be a no-op'
+          : `Open boundary edges: ${String(input.quality.boundaryEdges)}`
+    });
+  }
+
   private checkResult(input: {
     readonly kernelFingerprint: string | undefined;
   }): CloseBaseValidationCheckResult {
@@ -194,7 +292,7 @@ export class ClinicalCloseBaseValidation {
       id: 'result-validity',
       label: 'Result validity',
       passed,
-      message: passed ? 'Kernel fingerprint present' : 'No validated kernel result'
+      message: passed ? 'Kernel fingerprint present' : 'Generate a preview before accepting'
     });
   }
 

@@ -1,0 +1,98 @@
+{
+  "at": "2026-09-13T14:45:29.888Z",
+  "upper": {
+    "before": {
+      "triangleCount": 261287,
+      "vertexCount": 783861,
+      "componentCount": 261287,
+      "boundaryEdges": 783861,
+      "nonManifoldEdges": 0,
+      "fingerprint": "geo:052a19f9"
+    },
+    "after": {
+      "triangleCount": 261287,
+      "vertexCount": 131779,
+      "componentCount": 1,
+      "boundaryEdges": 2273,
+      "nonManifoldEdges": 0,
+      "fingerprint": "geo:c828c055",
+      "primaryBoundary": {
+        "pointCount": 2273,
+        "perimeter": 350.70929452304205,
+        "projectedArea": 1369.5064608498683
+      }
+    },
+    "report": {
+      "rawVertexCount": 783861,
+      "rawTriangleCount": 261287,
+      "normalizedVertexCount": 131779,
+      "normalizedTriangleCount": 261287,
+      "exactDuplicatesRemoved": 652082,
+      "nearDuplicatesMerged": 0,
+      "degenerateTrianglesRemoved": 0,
+      "duplicateTrianglesRemoved": 0,
+      "connectedComponentsBefore": 261287,
+      "connectedComponentsAfter": 1,
+      "boundaryEdges": 2273,
+      "nonManifoldEdges": 0,
+      "weldTolerance": 0,
+      "geometryFingerprintBefore": "geo:052a19f9",
+      "geometryFingerprintAfter": "geo:c828c055",
+      "durationMs": 25572.915394000003,
+      "orientationChanged": false,
+      "maxDeviation": 0,
+      "meanDeviation": 0,
+      "p95Deviation": 0,
+      "policy": {
+        "mode": "EXACT",
+        "absoluteTolerance": 0
+      },
+      "alreadyIndexed": false
+    }
+  },
+  "lower": {
+    "before": {
+      "triangleCount": 233562,
+      "vertexCount": 700686,
+      "componentCount": 233562,
+      "boundaryEdges": 700686,
+      "nonManifoldEdges": 0,
+      "fingerprint": "geo:4f0579c1"
+    },
+    "after": {
+      "triangleCount": 233562,
+      "vertexCount": 118085,
+      "componentCount": 2,
+      "boundaryEdges": 2604,
+      "nonManifoldEdges": 0,
+      "fingerprint": "geo:856046ee"
+    },
+    "report": {
+      "rawVertexCount": 700686,
+      "rawTriangleCount": 233562,
+      "normalizedVertexCount": 118085,
+      "normalizedTriangleCount": 233562,
+      "exactDuplicatesRemoved": 582601,
+      "nearDuplicatesMerged": 0,
+      "degenerateTrianglesRemoved": 0,
+      "duplicateTrianglesRemoved": 0,
+      "connectedComponentsBefore": 233562,
+      "connectedComponentsAfter": 2,
+      "boundaryEdges": 2604,
+      "nonManifoldEdges": 0,
+      "weldTolerance": 0,
+      "geometryFingerprintBefore": "geo:4f0579c1",
+      "geometryFingerprintAfter": "geo:856046ee",
+      "durationMs": 55877.35393900001,
+      "orientationChanged": false,
+      "maxDeviation": 0,
+      "meanDeviation": 0,
+      "p95Deviation": 0,
+      "policy": {
+        "mode": "EXACT",
+        "absoluteTolerance": 0
+      },
+      "alreadyIndexed": false
+    }
+  }
+}

@@ -33,7 +33,14 @@ const ALLOWED: Readonly<Record<PreparationWorkflowPhase, readonly PreparationWor
     idle: ['case-ready', 'cancelled'],
     'case-ready': ['orientation-validation', 'cancelled', 'idle'],
     'orientation-validation': ['preparation-ready', 'cancelled', 'idle'],
-    'preparation-ready': ['tool-selection', 'cancelled', 'idle'],
+    // Auto-prep may skip tool selection and go straight into session / validation.
+    'preparation-ready': [
+      'tool-selection',
+      'preparation-session',
+      'validation',
+      'cancelled',
+      'idle'
+    ],
     'tool-selection': ['preparation-session', 'tool-selection', 'cancelled', 'idle'],
     'preparation-session': ['tool-activation', 'validation', 'cancelled', 'idle'],
     'tool-activation': ['validation', 'tool-selection', 'cancelled', 'idle'],
@@ -60,6 +67,11 @@ export class ClinicalPreparationWorkflow {
     }
     this.phase = next;
     return true;
+  }
+
+  /** Sync workflow phase after recovery / complete when machine hops are blocked. */
+  public forcePhase(next: PreparationWorkflowPhase): void {
+    this.phase = next;
   }
 
   public cancel(): boolean {

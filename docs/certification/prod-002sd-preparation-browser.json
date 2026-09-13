@@ -1,0 +1,78 @@
+{
+  "milestone": "PROD-002SD",
+  "overall": "PASS",
+  "steps": [
+    {
+      "id": "01-orientation-complete",
+      "step": "01-orientation-complete",
+      "status": "PASS",
+      "at": "2026-09-13T04:23:01.296Z",
+      "screenshot": "01-orientation-complete.png",
+      "ready": true,
+      "lifecycle": "completed",
+      "workflow": "ready-for-geometry",
+      "autoUi": "warning",
+      "statusMessage": "Ready with warnings. Some scan regions may require review.",
+      "sessionId": "prep-case-1789273333163-1789273362133",
+      "caseId": "case-1789273333163",
+      "archMode": "both",
+      "geometryRevision": 8,
+      "geometryFingerprint": "case-1789273333163:lower-arch:1:geo:4f0579c1|case-1789273333163:upper-arch:1:geo:052a19f9",
+      "lastFailure": null,
+      "orientationAccepted": true,
+      "docRevision": 9
+    },
+    {
+      "id": "02-prepare-start",
+      "step": "02-prepare-start",
+      "status": "PASS",
+      "at": "2026-09-13T04:23:05.048Z",
+      "screenshot": "02-prepare-start.png"
+    },
+    {
+      "id": "03-preparation-session-created",
+      "step": "03-preparation-session-created",
+      "status": "PASS",
+      "at": "2026-09-13T04:23:11.934Z",
+      "screenshot": "03-preparation-session-created.png",
+      "ready": true,
+      "lifecycle": "completed",
+      "workflow": "ready-for-geometry",
+      "autoUi": "warning",
+      "statusMessage": "Ready with warnings. Some scan regions may require review.",
+      "sessionId": "prep-case-1789273333163-1789273362133",
+      "caseId": "case-1789273333163",
+      "archMode": "both",
+      "geometryRevision": 8,
+      "geometryFingerprint": "case-1789273333163:lower-arch:1:geo:4f0579c1|case-1789273333163:upper-arch:1:geo:052a19f9",
+      "lastFailure": null,
+      "orientationAccepted": true,
+      "docRevision": 10
+    },
+    {
+      "id": "04-continue-to-trim",
+      "step": "04-continue-to-trim",
+      "status": "PASS",
+      "at": "2026-09-13T04:23:15.743Z",
+      "screenshot": "04-continue-to-trim.png",
+      "continueVisible": true
+    },
+    {
+      "id": "05-trim-opened",
+      "step": "05-trim-opened",
+      "status": "PASS",
+      "at": "2026-09-13T04:23:21.074Z",
+      "screenshot": "05-trim-opened.png",
+      "trimActive": true
+    },
+    {
+      "id": "06-save",
+      "step": "06-save",
+      "status": "PASS",
+      "at": "2026-09-13T04:23:23.706Z",
+      "ok": true
+    }
+  ],
+  "screenshotsDir": "docs/certification/prod-002sd-browser-shots",
+  "at": "2026-09-13T04:23:23.706Z"
+}

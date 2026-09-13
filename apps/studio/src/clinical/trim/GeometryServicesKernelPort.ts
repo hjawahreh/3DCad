@@ -101,6 +101,21 @@ export class GeometryServicesKernelPort implements KernelPort {
       (metaFromDiagnostics(kernel.diagnostics, 'faceCount') !== undefined
         ? Number(metaFromDiagnostics(kernel.diagnostics, 'faceCount'))
         : undefined);
+    const removedTriangles =
+      metricNumber(kernel.metrics, 'removedTriangles') ??
+      (metaFromDiagnostics(kernel.diagnostics, 'removedTriangles') !== undefined
+        ? Number(metaFromDiagnostics(kernel.diagnostics, 'removedTriangles'))
+        : undefined);
+    const addedTriangles =
+      metricNumber(kernel.metrics, 'addedTriangles') ??
+      (metaFromDiagnostics(kernel.diagnostics, 'addedTriangles') !== undefined
+        ? Number(metaFromDiagnostics(kernel.diagnostics, 'addedTriangles'))
+        : undefined);
+    const inputFaceCount =
+      metricNumber(kernel.metrics, 'inputFaceCount') ??
+      (metaFromDiagnostics(kernel.diagnostics, 'inputFaceCount') !== undefined
+        ? Number(metaFromDiagnostics(kernel.diagnostics, 'inputFaceCount'))
+        : undefined);
     const backend = metaFromDiagnostics(kernel.diagnostics, 'backend') ?? 'clinical-reference-v1';
     const algorithm =
       metaFromDiagnostics(kernel.diagnostics, 'algorithm') ?? result.value.algorithm;
@@ -117,9 +132,17 @@ export class GeometryServicesKernelPort implements KernelPort {
         diagnostics: kernel.diagnostics,
         timingMs: kernel.timingMs,
         warnings: kernel.warnings,
-        metrics: kernel.metrics,
+        metrics: {
+          ...kernel.metrics,
+          ...(removedTriangles !== undefined ? { removedTriangles } : {}),
+          ...(addedTriangles !== undefined ? { addedTriangles } : {}),
+          ...(inputFaceCount !== undefined ? { inputFaceCount } : {})
+        },
         vertexCount,
         faceCount,
+        removedTriangles,
+        addedTriangles,
+        inputFaceCount,
         geometryFingerprint: kernel.fingerprint,
         geometryRevision: kernel.revision,
         boundaryPoints: request.payload.boundary,

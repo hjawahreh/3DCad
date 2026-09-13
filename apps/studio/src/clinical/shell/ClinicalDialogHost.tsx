@@ -2,10 +2,12 @@ import { useSyncExternalStore } from 'react';
 import { ModalHostView } from '../../shell/ModalHost.js';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
 import { ClinicalImportDialog } from './ClinicalImportDialog.js';
+import { ClinicalCreateCaseDialog } from './ClinicalCreateCaseDialog.js';
+import { ClinicalOpenCaseDialog } from './ClinicalOpenCaseDialog.js';
 import { PLATFORM_PACKAGES } from '../../application/diagnostics.js';
 
 /**
- * Clinical dialog host — overrides Import with ClinicalImportDialog; reuses settings/about/diagnostics.
+ * Clinical dialog host — Create/Open Case, Import, settings/about/diagnostics.
  */
 export const ClinicalDialogHost = ({
   workspace
@@ -19,13 +21,19 @@ export const ClinicalDialogHost = ({
     () => host.dialogs.get()
   );
 
+  const wide =
+    dialog?.kind === 'import' ||
+    dialog?.kind === 'new-case' ||
+    dialog?.kind === 'open-case' ||
+    dialog?.kind === 'open-project';
+
   return (
     <>
       <ModalHostView root={host} />
       {dialog === undefined ? null : (
         <div className="overlay-backdrop" role="presentation" onClick={() => host.dialogs.close()}>
           <div
-            className="overlay-card overlay-card--wide"
+            className={wide ? 'overlay-card overlay-card--wide' : 'overlay-card'}
             role="dialog"
             aria-label={dialog.title}
             onClick={(e) => e.stopPropagation()}
@@ -40,6 +48,18 @@ export const ClinicalDialogHost = ({
               {dialog.kind === 'import' ? (
                 <ClinicalImportDialog workspace={workspace} onClose={() => host.dialogs.close()} />
               ) : null}
+              {dialog.kind === 'new-case' ? (
+                <ClinicalCreateCaseDialog
+                  workspace={workspace}
+                  onClose={() => host.dialogs.close()}
+                />
+              ) : null}
+              {dialog.kind === 'open-case' || dialog.kind === 'open-project' ? (
+                <ClinicalOpenCaseDialog
+                  workspace={workspace}
+                  onClose={() => host.dialogs.close()}
+                />
+              ) : null}
               {dialog.kind === 'settings' ? <SettingsBody workspace={workspace} /> : null}
               {dialog.kind === 'diagnostics' ? <DiagnosticsBody workspace={workspace} /> : null}
               {dialog.kind === 'about' ? (
@@ -47,9 +67,6 @@ export const ClinicalDialogHost = ({
                   CAD Studio — Clinical Orthodontic CAD. Guided workflow from import through
                   segmentation. Use Diagnostics for technical details.
                 </p>
-              ) : null}
-              {dialog.kind === 'open-project' ? (
-                <p className="muted">Open Case remains a persistence placeholder.</p>
               ) : null}
             </div>
           </div>

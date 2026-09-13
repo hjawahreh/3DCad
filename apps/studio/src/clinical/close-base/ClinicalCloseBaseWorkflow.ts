@@ -27,9 +27,9 @@ const ALLOWED: Readonly<Record<CloseBaseWorkflowPhase, readonly CloseBaseWorkflo
     previewing: ['configuring', 'validating', 'previewing', 'cancelled', 'idle'],
     validating: ['submitting', 'previewing', 'configuring', 'cancelled', 'idle', 'failed'],
     submitting: ['executing', 'cancelled', 'idle', 'failed'],
-    executing: ['committing', 'cancelled', 'idle', 'failed'],
-    committing: ['completed', 'cancelled', 'idle', 'failed'],
-    completed: ['idle'],
+    executing: ['committing', 'cancelled', 'idle', 'failed', 'previewing'],
+    committing: ['completed', 'cancelled', 'idle', 'failed', 'previewing'],
+    completed: ['idle', 'activating', 'previewing'],
     cancelled: ['idle'],
     failed: ['idle', 'configuring', 'previewing']
   });

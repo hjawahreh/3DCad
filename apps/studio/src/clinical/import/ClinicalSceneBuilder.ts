@@ -11,11 +11,12 @@ import {
   type SceneProjectionEngine
 } from '@cad-studio/scene';
 import type { StudioCompositionRoot } from '../../application/composition-root.js';
-import { unionBounds, type ClinicalDocumentSnapshot } from '../document/ClinicalDocument.js';
+import { unionBounds, unionOrientedBounds, type ClinicalDocumentSnapshot } from '../document/ClinicalDocument.js';
 import type { ClinicalMeshDescriptor } from './ClinicalMeshDescriptor.js';
 import { clinicalFailure, clinicalSuccess, type ClinicalResult } from '../runtime/types.js';
 
 export interface ClinicalScenePublishOptions {
+  /** Opt-in camera fit. Default false — clinical anterior presentation owns framing. */
   readonly fitCamera?: boolean;
   readonly clearSelection?: boolean;
   readonly invalidateReason?: string;
@@ -28,7 +29,7 @@ export class ClinicalSceneBuilder {
     document: ClinicalDocumentSnapshot,
     options: ClinicalScenePublishOptions = {}
   ): ClinicalResult<void> {
-    const fitCamera = options.fitCamera !== false;
+    const fitCamera = options.fitCamera === true;
     const clearSelection = options.clearSelection !== false;
     const invalidateReason = options.invalidateReason ?? 'clinical-import';
     const displayMode = options.displayMode;
@@ -64,7 +65,8 @@ export class ClinicalSceneBuilder {
     }
 
     if (fitCamera) {
-      const bounds = unionBounds(document.objects.filter((o) => o.visible));
+      const visible = document.objects.filter((o) => o.visible);
+      const bounds = unionOrientedBounds(visible) ?? unionBounds(visible);
       if (bounds !== undefined && camera !== undefined) {
         camera.fitAll(
           {

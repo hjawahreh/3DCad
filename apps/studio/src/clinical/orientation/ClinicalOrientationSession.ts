@@ -4,6 +4,7 @@
 
 import { IDENTITY_MAT4 } from '@cad-studio/scene';
 import type { ClinicalObjectId, ClinicalTransform } from '../import/ClinicalMeshDescriptor.js';
+import type { OrientationConfidence } from './ClinicalAutoOrientationEstimator.js';
 import {
   DEFAULT_ORIENTATION_STATE,
   type ClinicalOrientationState,
@@ -11,6 +12,7 @@ import {
   type OrientationHandle,
   type OrientationIncrement,
   type OrientationMode,
+  type OrientationOrigin,
   type OrientationPhase
 } from './ClinicalOrientationState.js';
 import { ClinicalOrientationWorkflow } from './ClinicalOrientationWorkflow.js';
@@ -40,15 +42,25 @@ export class ClinicalOrientationSession {
     readonly objectId: ClinicalObjectId;
     readonly baseline: ClinicalTransform;
     readonly now: number;
+    readonly caseLevel?: boolean;
+    readonly objectBaselines?: Readonly<Record<string, ClinicalTransform>>;
   }): void {
     this.workflow.reset();
     this.workflow.transition('entering');
     this.workflow.transition('active');
+    const baselines = input.objectBaselines ?? {
+      [input.objectId as string]: cloneTransform(input.baseline)
+    };
     this.patch({
       phase: 'active',
       targetObjectId: input.objectId,
       baseline: cloneTransform(input.baseline),
       preview: cloneTransform(input.baseline),
+      caseLevel: input.caseLevel === true,
+      objectBaselines: Object.freeze({ ...baselines }),
+      orientationOrigin: 'none',
+      confidence: undefined,
+      autoMessage: undefined,
       dirtyPreview: false,
       snapPreview: false,
       sessionStartedAt: input.now,
@@ -85,7 +97,17 @@ export class ClinicalOrientationSession {
     this.patch({ incrementDegrees: degrees, mode: 'incremental' });
   }
 
-  public setPreview(preview: ClinicalTransform, options?: { readonly snapPreview?: boolean }): void {
+  public setPreview(
+    preview: ClinicalTransform,
+    options?: {
+      readonly snapPreview?: boolean;
+      readonly origin?: OrientationOrigin;
+      readonly confidence?: OrientationConfidence;
+      readonly autoMessage?: string;
+      readonly caseLevel?: boolean;
+      readonly statusMessage?: string;
+    }
+  ): void {
     if (this.state.phase === 'active') {
       this.workflow.transition('previewing');
     }
@@ -94,7 +116,25 @@ export class ClinicalOrientationSession {
       preview: cloneTransform(preview),
       dirtyPreview: true,
       snapPreview: options?.snapPreview === true,
-      statusMessage: options?.snapPreview === true ? 'Snap preview' : 'Live preview'
+      ...(options?.origin !== undefined ? { orientationOrigin: options.origin } : {}),
+      ...(options?.confidence !== undefined ? { confidence: options.confidence } : {}),
+      ...(options?.autoMessage !== undefined ? { autoMessage: options.autoMessage } : {}),
+      ...(options?.caseLevel !== undefined ? { caseLevel: options.caseLevel } : {}),
+      statusMessage:
+        options?.statusMessage ??
+        (options?.snapPreview === true
+          ? 'Snap preview'
+          : options?.origin === 'auto'
+            ? 'Automatic orientation preview'
+            : 'Live preview')
+    });
+  }
+
+  public markManualOverride(): void {
+    this.patch({
+      orientationOrigin: 'manual',
+      mode: this.state.mode === 'auto' ? 'free' : this.state.mode,
+      statusMessage: 'Manual orientation adjustment'
     });
   }
 
@@ -111,6 +151,9 @@ export class ClinicalOrientationSession {
       preview: cloneTransform(this.state.baseline),
       dirtyPreview: false,
       snapPreview: false,
+      orientationOrigin: 'none',
+      confidence: undefined,
+      autoMessage: undefined,
       statusMessage: 'Orientation reset to baseline'
     });
   }
@@ -145,6 +188,7 @@ export class ClinicalOrientationSession {
       ...DEFAULT_ORIENTATION_STATE,
       baseline: IDENTITY_MAT4,
       preview: IDENTITY_MAT4,
+      objectBaselines: Object.freeze({}),
       revision: this.state.revision + 1
     });
     this.emit();

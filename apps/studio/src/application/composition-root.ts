@@ -22,6 +22,9 @@ import { OperationHost } from '@cad-studio/tool-runtime';
 import { GeometryServicesKernelPort } from '../clinical/trim/GeometryServicesKernelPort.js';
 import { ClinicalGeometryKernelBridge } from '../geometry-kernel/ClinicalGeometryKernelBridge.js';
 import {
+  HybridGeometryBackend
+} from '../geometry-kernel/index.js';
+import {
   ViewportRuntime,
   type ViewportCanvasElement,
   type ViewportSession
@@ -36,6 +39,7 @@ import { LayoutPersistence } from './layout-persistence.js';
 import { ApplicationMetrics } from './metrics.js';
 import { NotificationHost } from './notifications.js';
 import { DialogHost, ModalHost } from './overlays.js';
+import { ClinicalProcessFeedbackHost } from '../clinical/shell/ClinicalProcessFeedback.js';
 import { CommandRegistry } from './commands.js';
 import { HotkeyRegistration } from './hotkeys.js';
 import { ApplicationSettingsStore, DEFAULT_APPLICATION_SETTINGS } from './settings.js';
@@ -81,6 +85,7 @@ export class StudioCompositionRoot {
   public readonly diagnostics: ApplicationDiagnostics;
   public readonly metrics: ApplicationMetrics;
   public readonly notifications: NotificationHost;
+  public readonly processFeedback: ClinicalProcessFeedbackHost;
   public readonly modals: ModalHost;
   public readonly dialogs: DialogHost;
   public readonly commands: CommandRegistry;
@@ -124,6 +129,7 @@ export class StudioCompositionRoot {
     this.diagnostics = new ApplicationDiagnostics();
     this.metrics = new ApplicationMetrics();
     this.notifications = new NotificationHost();
+    this.processFeedback = new ClinicalProcessFeedbackHost();
     this.modals = new ModalHost();
     this.dialogs = new DialogHost();
     this.commands = new CommandRegistry();
@@ -137,7 +143,22 @@ export class StudioCompositionRoot {
       this.settings.get().viewport.preferredBackend === 'mock';
 
     const platform = new RuntimeBuilder(systemClock).build();
-    const kernel = new ClinicalGeometryKernelBridge();
+    const hybrid = new HybridGeometryBackend();
+    const kernel = new ClinicalGeometryKernelBridge(undefined, undefined, undefined, hybrid);
+    // Non-blocking health probe — enables VTK when sidecar is up.
+    void hybrid.refreshVtkHealth().then((ok) => {
+      if (ok) {
+        console.info('[geometry] VTK HTTP worker available — hybrid backend enabled');
+      } else {
+        console.info('[geometry] VTK HTTP worker unavailable — clinical-reference-v1 active');
+      }
+    });
+    // Re-probe periodically in DEV so starting the sidecar later still works.
+    if (typeof window !== 'undefined') {
+      window.setInterval(() => {
+        void hybrid.refreshVtkHealth();
+      }, 10_000);
+    }
     const geometry = new GeometryServices(kernel);
     const tools = new OperationHost({ kernel: new GeometryServicesKernelPort(geometry) });
     const project = new ProjectRuntime({
@@ -349,7 +370,11 @@ export class StudioCompositionRoot {
   ): void {
     this.interactionUnsub = interaction.getEvents().subscribe((event) => {
       if (event.kind === 'wheel') {
-        camera.zoom(event.deltaY > 0 ? 0.15 : -0.15);
+        // Camera Runtime zoom multiplies eye–target radius by factor (>0).
+        // Wheel down (deltaY > 0) → zoom out (factor > 1); wheel up → zoom in.
+        // Never pass ≤0 — ZoomController treats that as identity (no-op).
+        const step = 1.1;
+        camera.zoom(event.deltaY > 0 ? step : 1 / step);
         this.sessions.viewportSession?.invalidate('camera');
         return;
       }

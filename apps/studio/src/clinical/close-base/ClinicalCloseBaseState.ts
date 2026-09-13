@@ -8,6 +8,7 @@ import type { ClinicalCloseBaseParameters } from './ClinicalCloseBaseParameters.
 import { DEFAULT_CLOSE_BASE_PARAMETERS } from './ClinicalCloseBaseParameters.js';
 import type { CloseBaseValidationReport } from './ClinicalCloseBaseValidation.js';
 import type { CloseBaseWorkflowPhase } from './ClinicalCloseBaseWorkflow.js';
+import type { ClinicalAutoCloseBaseEstimate } from './ClinicalAutoCloseBaseEstimator.js';
 
 export type CloseBaseToolStatus =
   | 'not-ready'
@@ -18,6 +19,9 @@ export type CloseBaseToolStatus =
   | 'committed'
   | 'cancelled'
   | 'failed';
+
+/** Interaction mode for Close Base UI. */
+export type CloseBaseInteractionMode = 'auto' | 'manual';
 
 export interface ClinicalCloseBaseState {
   readonly phase: CloseBaseWorkflowPhase;
@@ -36,6 +40,8 @@ export interface ClinicalCloseBaseState {
   readonly statusMessage: string;
   readonly sessionStartedAt: number | undefined;
   readonly previewStartedAt: number | undefined;
+  readonly interactionMode: CloseBaseInteractionMode;
+  readonly autoEstimate: ClinicalAutoCloseBaseEstimate | undefined;
   readonly revision: number;
 }
 
@@ -56,5 +62,7 @@ export const DEFAULT_CLOSE_BASE_STATE: ClinicalCloseBaseState = Object.freeze({
   statusMessage: 'Close Base idle',
   sessionStartedAt: undefined,
   previewStartedAt: undefined,
+  interactionMode: 'auto',
+  autoEstimate: undefined,
   revision: 0
 });

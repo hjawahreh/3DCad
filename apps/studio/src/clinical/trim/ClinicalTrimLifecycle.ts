@@ -18,8 +18,8 @@ const ALLOWED: Readonly<Record<TrimSessionLifecycle, readonly TrimSessionLifecyc
     created: ['active', 'cancelled', 'disposed'],
     active: ['previewing', 'committing', 'cancelled', 'disposed'],
     previewing: ['active', 'committing', 'cancelled', 'disposed'],
-    committing: ['completed', 'cancelled', 'disposed'],
-    completed: ['none', 'disposed'],
+    committing: ['completed', 'cancelled', 'disposed', 'active'],
+    completed: ['none', 'disposed', 'created', 'active'],
     cancelled: ['none', 'disposed'],
     disposed: []
   });

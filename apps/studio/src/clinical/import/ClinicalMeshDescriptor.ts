@@ -49,7 +49,11 @@ export interface ClinicalMeshDescriptor {
   readonly geometryFingerprint?: string;
   /** Geometry backend id that produced the current working revision. */
   readonly geometryBackend?: string;
-  /** Compact accepted segmentation metadata (no mesh / tensor payloads). */
+  /**
+   * Compact accepted segmentation metadata.
+   * Face membership is mesh-local indices (face-membership-v1), not VTK/renderer ids.
+   * Giant mesh vertex buffers must never be stored here.
+   */
   readonly segmentationMeta?: {
     readonly predictionId: string;
     readonly providerId: string;
@@ -57,8 +61,50 @@ export interface ClinicalMeshDescriptor {
     readonly modelVersion: string;
     readonly instanceCount: number;
     readonly caseBand: string;
+    /** Geometry fingerprint membership was computed against. */
     readonly geometryFingerprint: string;
+    /** Geometry revision membership was computed against. */
     readonly sourceRevision: number;
+    readonly needsReviewCount?: number;
+    readonly validationVerdict?: 'PASS' | 'WARNING' | 'FAIL';
+    /** Explicit integrity status — CURRENT until geometry mutation / mismatch. */
+    readonly status?: 'CURRENT' | 'STALE' | 'INVALID' | 'NOT_AVAILABLE';
+    readonly staleReason?: string;
+    readonly acceptedAt?: number;
+    readonly invalidatedAt?: number;
+    /** Persisted face membership bound to geometryFingerprint/sourceRevision. */
+    readonly faceMembership?: {
+      readonly version: 'face-membership-v1';
+      readonly meshFaceCount: number;
+      readonly instances: readonly {
+        readonly instanceId: string;
+        readonly faceIndices: readonly number[];
+      }[];
+      readonly membershipFingerprint: string;
+    };
+    readonly teeth?: readonly {
+      readonly instanceId: string;
+      readonly fdi: number | undefined;
+      readonly status: string;
+      readonly confidence: number;
+      readonly needsReview: boolean;
+      readonly faceCount?: number;
+      readonly centroid?: readonly [number, number, number];
+      readonly localFrame?: {
+        readonly origin: readonly [number, number, number];
+        readonly xAxis: readonly [number, number, number];
+        readonly yAxis: readonly [number, number, number];
+        readonly zAxis: readonly [number, number, number];
+        readonly confidence: string;
+      };
+      /** Arch-order neighbors only — not contact geometry. Optional for ONNX. */
+      readonly neighbors?: {
+        readonly archPreviousId: string | undefined;
+        readonly archNextId: string | undefined;
+        readonly confidence: string;
+        readonly basis: string;
+      };
+    }[];
   };
 }
 
@@ -76,3 +122,10 @@ export const inferMeshFormat = (extension: string): ClinicalMeshFormat => {
 };
 
 export const CLINICAL_IMPORT_FORMATS = Object.freeze(['stl', 'obj', 'ply'] as const);
+
+/** Operator-facing format copy — PLY is ASCII-only in this import path. */
+export const CLINICAL_IMPORT_FORMAT_LABELS = Object.freeze({
+  stl: 'STL',
+  obj: 'OBJ',
+  ply: 'PLY (ASCII)'
+} as const);

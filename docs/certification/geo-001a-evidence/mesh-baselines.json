@@ -1,0 +1,102 @@
+{
+  "at": "2026-09-13T14:45:57.131Z",
+  "fixtures": [
+    "apps/studio/public/clinical-fixtures/upper.stl",
+    "apps/studio/public/clinical-fixtures/lower.stl"
+  ],
+  "note": "Open dental scans are expected non-watertight. Synthetic meshes are not used as primary evidence.",
+  "meshes": [
+    {
+      "arch": "UPPER",
+      "geometryFingerprint": "geo:052a19f9",
+      "vertexCount": 783861,
+      "triangleCount": 261287,
+      "surfaceArea": 3981.0387361233084,
+      "bounds": {
+        "min": [
+          -32.372676849365234,
+          -27.040077209472656,
+          -2.337831497192383
+        ],
+        "max": [
+          31.3145694732666,
+          32.14738845825195,
+          19.423786163330078
+        ]
+      },
+      "connectedComponents": 261287,
+      "boundaryEdgeCount": 783861,
+      "nonManifoldEdgeCount": 0,
+      "degenerateTriangleCount": 0,
+      "watertight": false,
+      "manifold": true,
+      "gate": "WARNING",
+      "selfIntersectionStatus": "none",
+      "analysisDurationMs": 7678.039400999998,
+      "topologyBuildMs": 6837.092690000001,
+      "spatialIndexMs": 67185.535771,
+      "analysisWallMs": 7723.359937000001,
+      "boundaryLoopCount": 261287,
+      "primaryBoundary": {
+        "perimeter": 1.833187543359244,
+        "projectedArea": 0.05218574887840077,
+        "pointCount": 3,
+        "closed": true,
+        "score": 0.6755363769466959
+      }
+    },
+    {
+      "arch": "LOWER",
+      "geometryFingerprint": "geo:4f0579c1",
+      "vertexCount": 700686,
+      "triangleCount": 233562,
+      "surfaceArea": 3634.4576152467357,
+      "bounds": {
+        "min": [
+          -36.07221603393555,
+          -22.992115020751953,
+          -15.897418975830078
+        ],
+        "max": [
+          34.564208984375,
+          29.90304183959961,
+          2.111689805984497
+        ]
+      },
+      "connectedComponents": 233562,
+      "boundaryEdgeCount": 700686,
+      "nonManifoldEdgeCount": 0,
+      "degenerateTriangleCount": 0,
+      "watertight": false,
+      "manifold": true,
+      "gate": "WARNING",
+      "selfIntersectionStatus": "none",
+      "analysisDurationMs": 5056.787708,
+      "topologyBuildMs": 5086.096257999998,
+      "spatialIndexMs": 21562.741628999996,
+      "analysisWallMs": 5056.815287000001,
+      "boundaryLoopCount": 233562,
+      "primaryBoundary": {
+        "perimeter": 1.8692258619960729,
+        "projectedArea": 0.022009529411661788,
+        "pointCount": 3,
+        "closed": true,
+        "score": 0.6685352458162056
+      }
+    }
+  ],
+  "performance": {
+    "upper": {
+      "analysisMs": 7723.359937000001,
+      "topologyBuildMs": 6837.092690000001,
+      "spatialIndexMs": 67185.535771,
+      "triangleCount": 261287
+    },
+    "lower": {
+      "analysisMs": 5056.815287000001,
+      "topologyBuildMs": 5086.096257999998,
+      "spatialIndexMs": 21562.741628999996,
+      "triangleCount": 233562
+    }
+  }
+}

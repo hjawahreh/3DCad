@@ -3,7 +3,9 @@ import { useClinicalUiRevision } from '../shell/useClinicalUi.js';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
 
 /**
- * Close Base overlay — non-destructive preview of base slab / margin.
+ * Close Base overlay — status chrome only.
+ * GEO-001D: do NOT draw a conceptual AABB/slab rectangle. Preview geometry is the
+ * live kernel mesh in the viewport (badge notes "live mesh" when fingerprint set).
  */
 export const ClinicalCloseBaseOverlay = ({
   workspace
@@ -23,30 +25,24 @@ export const ClinicalCloseBaseOverlay = ({
     return null;
   }
 
-  const heightPct = Math.min(40, Math.max(8, state.parameters.height * 4));
-  const marginPct = Math.min(18, state.parameters.margin * 8);
   const preview = state.previewActive;
+  const liveMesh = state.kernelFingerprint !== undefined;
 
   return (
     <div
-      className={`clinical-close-base-overlay${preview ? ' clinical-close-base-overlay--preview' : ''}${state.toolStatus === 'processing' ? ' clinical-close-base-overlay--processing' : ''}`}
+      className={`clinical-close-base-overlay${preview ? ' clinical-close-base-overlay--preview' : ''}${state.toolStatus === 'processing' ? ' clinical-close-base-overlay--processing' : ''}${liveMesh ? ' clinical-close-base-overlay--live-mesh' : ''}`}
       data-testid="clinical-close-base-overlay"
       data-status={state.toolStatus}
+      data-live-mesh={liveMesh ? 'true' : 'false'}
     >
-      <div
-        className={`clinical-close-base-slab clinical-close-base-slab--${state.parameters.orientation}`}
-        style={{ height: `${String(heightPct)}%` }}
-        aria-hidden="true"
-      >
-        <div
-          className="clinical-close-base-margin"
-          style={{ inset: `${String(marginPct)}px` }}
-        />
-        <div className="clinical-close-base-thickness" />
-      </div>
       <div className="clinical-close-base-badge">
-        {preview ? 'PREVIEW' : 'COMMITTED'} · {state.parameters.strategy} ·{' '}
-        {state.parameters.orientation.toUpperCase()}
+        {state.interactionMode === 'auto' && liveMesh
+          ? 'AUTO BASE PREVIEW'
+          : preview
+            ? 'PREVIEW'
+            : 'COMMITTED'}{' '}
+        · {state.parameters.strategy}
+        {liveMesh ? ' · live mesh' : ''}
       </div>
       <div className="clinical-close-base-status">{state.statusMessage}</div>
     </div>

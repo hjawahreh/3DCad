@@ -28,6 +28,11 @@ export {
   type ClinicalTrimState,
   type TrimDrawMode
 } from './ClinicalTrimState.js';
+export {
+  deriveTrimInteractionState,
+  trimInteractionStatusMessage,
+  type TrimInteractionState
+} from './ClinicalTrimInteractionState.js';
 export type {
   TrimValidationReport,
   TrimValidationCheckResult,

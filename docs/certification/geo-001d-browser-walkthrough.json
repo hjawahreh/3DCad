@@ -1,0 +1,335 @@
+{
+  "generatedAt": "2026-09-13T15:21:20.236Z",
+  "summary": {
+    "pass": 13,
+    "fail": 0,
+    "observe": 1
+  },
+  "steps": [
+    {
+      "id": "00-create-import",
+      "status": "PASS",
+      "at": "2026-09-13T15:16:15.290Z"
+    },
+    {
+      "id": "00-auto-orientation",
+      "status": "PASS",
+      "at": "2026-09-13T15:16:37.672Z"
+    },
+    {
+      "id": "00-trim-preview",
+      "status": "PASS",
+      "at": "2026-09-13T15:19:27.641Z",
+      "detail": "trimPreviewMs=100681"
+    },
+    {
+      "id": "01-trimmed-model",
+      "status": "OBSERVE",
+      "at": "2026-09-13T15:19:57.666Z",
+      "preTrimAccept": {
+        "id": "case-1789312513461:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "revision": 1
+      },
+      "postTrim": {
+        "id": "case-1789312513461:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "revision": 1
+      },
+      "acceptTrim": {
+        "ok": false,
+        "message": "Commit denied in phase cancelled; operation must be validated first",
+        "before": {
+          "fingerprint": "geo:c828c055",
+          "faceCount": 261287,
+          "revision": 1
+        },
+        "after": {
+          "fingerprint": "geo:c828c055",
+          "faceCount": 261287,
+          "revision": 1
+        },
+        "previewReady": false
+      },
+      "boundaryOk": {
+        "loopCount": 1,
+        "primaryVerts": 2273,
+        "primaryPerim": 350.70929452304205
+      },
+      "detail": "Trim Accept did not change fingerprint; proceeding with existing open clinical rim for Close Base V2"
+    },
+    {
+      "id": "02-auto-create-preview",
+      "status": "PASS",
+      "at": "2026-09-13T15:20:12.045Z",
+      "preview1": {
+        "ok": true,
+        "toolStatus": "previewing",
+        "fingerprint": "geo:d0389452",
+        "statusMessage": "Auto Base Preview — Accept, Adjust, or Cancel",
+        "previewActive": true
+      },
+      "detail": "Preview requires boundary + quality gate pass"
+    },
+    {
+      "id": "02-07-preview-views",
+      "status": "PASS",
+      "at": "2026-09-13T15:20:28.824Z",
+      "detail": "Anterior/posterior/left/right/occlusal/bottom captured",
+      "quality": {
+        "fingerprint": "geo:d0389452",
+        "faceCount": 272652,
+        "boundaryEdges": 0,
+        "nonManifold": 0,
+        "components": 1,
+        "gate": "WARNING",
+        "loopCount": 0,
+        "kernelFingerprint": "geo:d0389452",
+        "statusMessage": "Auto Base Preview — Accept, Adjust, or Cancel",
+        "toolStatus": "previewing"
+      }
+    },
+    {
+      "id": "08-cancel-restore",
+      "status": "PASS",
+      "at": "2026-09-13T15:20:32.811Z",
+      "preBase": {
+        "id": "case-1789312513461:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "revision": 1
+      },
+      "afterCancel": {
+        "id": "case-1789312513461:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "revision": 1
+      },
+      "detail": "Cancel must restore exact pre-base working geometry"
+    },
+    {
+      "id": "09-auto-create-preview-2",
+      "status": "PASS",
+      "at": "2026-09-13T15:20:50.846Z",
+      "preview2": {
+        "ok": true,
+        "toolStatus": "previewing",
+        "fingerprint": "geo:d0389452",
+        "statusMessage": "Auto Base Preview — Accept, Adjust, or Cancel",
+        "previewActive": true
+      }
+    },
+    {
+      "id": "10-accept",
+      "status": "PASS",
+      "at": "2026-09-13T15:21:04.723Z",
+      "accept": {
+        "ok": true,
+        "message": null
+      },
+      "postAccept": {
+        "id": "case-1789312513461:upper-arch",
+        "fingerprint": "geo:d0389452",
+        "faceCount": 272652,
+        "revision": 17
+      },
+      "quality": {
+        "fingerprint": "geo:d0389452",
+        "faceCount": 272652,
+        "boundaryEdges": 0,
+        "nonManifold": 0,
+        "components": 1,
+        "gate": "WARNING",
+        "loopCount": 0,
+        "statusMessage": "Base accepted — adjust parameters or switch arch",
+        "toolStatus": "previewing"
+      },
+      "detail": "Accept commits validated preview mesh only"
+    },
+    {
+      "id": "11-undo",
+      "status": "PASS",
+      "at": "2026-09-13T15:21:08.899Z",
+      "undo": {
+        "ok": true,
+        "message": null
+      },
+      "afterUndo": {
+        "id": "case-1789312513461:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "revision": 1
+      },
+      "preBase": {
+        "id": "case-1789312513461:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "revision": 1
+      }
+    },
+    {
+      "id": "12-redo",
+      "status": "PASS",
+      "at": "2026-09-13T15:21:13.354Z",
+      "redo": {
+        "ok": true,
+        "message": null
+      },
+      "afterRedo": {
+        "id": "case-1789312513461:upper-arch",
+        "fingerprint": "geo:d0389452",
+        "faceCount": 272652,
+        "revision": 17
+      },
+      "postAccept": {
+        "id": "case-1789312513461:upper-arch",
+        "fingerprint": "geo:d0389452",
+        "faceCount": 272652,
+        "revision": 17
+      }
+    },
+    {
+      "id": "13-save",
+      "status": "PASS",
+      "at": "2026-09-13T15:21:15.000Z",
+      "saveRes": {
+        "ok": true,
+        "via": "cases.saveActiveCase"
+      }
+    },
+    {
+      "id": "14-reopen",
+      "status": "PASS",
+      "at": "2026-09-13T15:21:20.236Z",
+      "evidence": {
+        "reopened": {
+          "id": "case-1789312513461:upper-arch",
+          "fingerprint": "geo:d0389452",
+          "faceCount": 272652,
+          "revision": 17
+        },
+        "postAccept": {
+          "id": "case-1789312513461:upper-arch",
+          "fingerprint": "geo:d0389452",
+          "faceCount": 272652,
+          "revision": 17
+        }
+      }
+    },
+    {
+      "id": "15-performance",
+      "status": "PASS",
+      "at": "2026-09-13T15:21:20.236Z",
+      "detail": "trimPreviewMs=100681ms, basePreview1Ms=12589ms, basePreview2Ms=15216ms",
+      "performance": {
+        "trimPreviewMs": 100681,
+        "basePreview1Ms": 12589,
+        "basePreview2Ms": 15216
+      }
+    }
+  ],
+  "evidence": {
+    "performance": {
+      "trimPreviewMs": 100681,
+      "basePreview1Ms": 12589,
+      "basePreview2Ms": 15216
+    },
+    "trimPreview": {
+      "trimPreview": {
+        "ok": true,
+        "message": null,
+        "elapsedMs": 100681,
+        "ready": true
+      },
+      "trimReadyPoll": {
+        "ok": true,
+        "ready": true,
+        "statusMessage": "Preview ready — review clipped mesh, then Accept Trim or Cancel Preview"
+      }
+    },
+    "acceptTrim": {
+      "ok": false,
+      "message": "Commit denied in phase cancelled; operation must be validated first",
+      "before": {
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "revision": 1
+      },
+      "after": {
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "revision": 1
+      },
+      "previewReady": false
+    },
+    "boundaryAfterTrim": {
+      "loopCount": 1,
+      "primaryVerts": 2273,
+      "primaryPerim": 350.70929452304205
+    },
+    "preview1": {
+      "ok": true,
+      "toolStatus": "previewing",
+      "fingerprint": "geo:d0389452",
+      "statusMessage": "Auto Base Preview — Accept, Adjust, or Cancel",
+      "previewActive": true
+    },
+    "qualityPreview1": {
+      "fingerprint": "geo:d0389452",
+      "faceCount": 272652,
+      "boundaryEdges": 0,
+      "nonManifold": 0,
+      "components": 1,
+      "gate": "WARNING",
+      "loopCount": 0,
+      "kernelFingerprint": "geo:d0389452",
+      "statusMessage": "Auto Base Preview — Accept, Adjust, or Cancel",
+      "toolStatus": "previewing"
+    },
+    "accept": {
+      "accept": {
+        "ok": true,
+        "message": null
+      },
+      "preBase": {
+        "id": "case-1789312513461:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "revision": 1
+      },
+      "postAccept": {
+        "id": "case-1789312513461:upper-arch",
+        "fingerprint": "geo:d0389452",
+        "faceCount": 272652,
+        "revision": 17
+      },
+      "quality": {
+        "fingerprint": "geo:d0389452",
+        "faceCount": 272652,
+        "boundaryEdges": 0,
+        "nonManifold": 0,
+        "components": 1,
+        "gate": "WARNING",
+        "loopCount": 0,
+        "statusMessage": "Base accepted — adjust parameters or switch arch",
+        "toolStatus": "previewing"
+      }
+    },
+    "reopen": {
+      "reopened": {
+        "id": "case-1789312513461:upper-arch",
+        "fingerprint": "geo:d0389452",
+        "faceCount": 272652,
+        "revision": 17
+      },
+      "postAccept": {
+        "id": "case-1789312513461:upper-arch",
+        "fingerprint": "geo:d0389452",
+        "faceCount": 272652,
+        "revision": 17
+      }
+    }
+  }
+}

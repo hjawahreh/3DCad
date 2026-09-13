@@ -7,6 +7,10 @@ import type { ClinicalPreparationStage } from '../preparation/ClinicalPreparatio
 import type { ClinicalPreparationState } from '../preparation/ClinicalPreparationState.js';
 import type { ClinicalDocumentSnapshot } from '../document/ClinicalDocument.js';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
+import {
+  isCaseSegmentationComplete,
+  summarizeCaseSegmentation
+} from '../case/ClinicalPipelineStatus.js';
 
 export type ClinicalWorkflowStepId =
   | 'import'
@@ -88,14 +92,16 @@ const STAGE_INDEX: Readonly<Record<ClinicalPreparationStage, number>> = Object.f
 
 const USER_STATUS: Readonly<Record<string, string>> = Object.freeze({
   'Preparation idle': 'Ready to prepare your model',
-  'Preparation session created': 'Preparation started',
-  'Preparation session active': 'Preparing model…',
+  'Preparation session created': 'Preparation awaiting confirmation',
+  'Preparation session active': 'Confirm readiness for Trim',
   'Preparation session suspended': 'Preparation paused',
   'Preparation session resumed': 'Preparation resumed',
   'Preparation cancelled': 'Preparation cancelled',
-  'Preparation complete — ready for geometry tools': 'Preparation complete — ready for Trim',
-  'Orientation validated': 'Orientation complete',
-  'Preparation ready': 'Model ready for preparation',
+  'Preparation complete — ready for geometry tools': 'Preparation confirmed — ready for Trim',
+  'Preparation complete — ready for Trim': 'Preparation confirmed — ready for Trim',
+  'Orientation validated': 'Orientation complete — confirm preparation',
+  'Preparation ready': 'Awaiting confirmation',
+  'Your scans are oriented and ready.': 'Scans oriented — confirm preparation to continue',
   'Validation passed': 'Checks passed',
   'Validation failed': 'Some checks need attention'
 });
@@ -139,13 +145,17 @@ const resolveCurrentStep = (input: {
   const stage = input.prep.currentStage;
   const phase = input.prep.workflowPhase;
 
+  if (stage === 'ready-for-movement' || STAGE_INDEX[stage] >= STAGE_INDEX['ready-for-movement']) {
+    return 'segment';
+  }
   if (stage === 'ready-for-segmentation' || STAGE_INDEX[stage] >= STAGE_INDEX['ready-for-segmentation']) {
     return 'segment';
   }
   if (stage === 'ready-for-close-base') return 'close-base';
-  if (stage === 'ready-for-trim' || phase === 'ready-for-geometry') return 'trim';
-
+  // Stay on Prepare until Trim is entered — ready-for-geometry means Continue to Trim is available.
   if (
+    stage === 'ready-for-trim' ||
+    phase === 'ready-for-geometry' ||
     phase === 'preparation-ready' ||
     phase === 'tool-selection' ||
     phase === 'preparation-session' ||
@@ -164,7 +174,8 @@ const buildSteps = (
   current: ClinicalWorkflowStepId,
   prep: ClinicalPreparationState,
   models: boolean,
-  oriented: boolean
+  oriented: boolean,
+  documentSegmentationComplete: boolean
 ): readonly ClinicalWorkflowStepView[] => {
   const currentIndex = STEP_META.findIndex((s) => s.id === current);
 
@@ -190,9 +201,15 @@ const buildSteps = (
         hint = 'Orient your model';
       }
     } else if (meta.id === 'prepare') {
-      if (stageReached(prep, 'ready-for-trim') || prep.workflowPhase === 'ready-for-geometry') {
+      if (current === 'trim' || current === 'close-base' || STAGE_INDEX[prep.currentStage] > STAGE_INDEX['ready-for-trim']) {
         status = 'completed';
-        hint = 'Preparation complete';
+        hint = 'Preparation confirmed';
+      } else if (
+        stageReached(prep, 'ready-for-trim') ||
+        prep.workflowPhase === 'ready-for-geometry'
+      ) {
+        status = current === 'prepare' ? 'current' : 'completed';
+        hint = 'Confirmed — continue to Trim';
       } else if (!oriented && !models) {
         status = 'locked';
         hint = 'Import a case to continue';
@@ -201,10 +218,10 @@ const buildSteps = (
         hint = 'Complete Orient first';
       } else if (current === 'prepare') {
         status = 'current';
-        hint = 'Prepare the model for geometry tools';
+        hint = 'Confirm readiness for Trim';
       } else if (oriented || models) {
         status = 'available';
-        hint = 'Prepare your model';
+        hint = 'Confirm preparation';
       }
     } else if (meta.id === 'trim') {
       if (stageReached(prep, 'ready-for-close-base') && prep.currentStage !== 'ready-for-trim') {
@@ -224,7 +241,10 @@ const buildSteps = (
       if (stageReached(prep, 'ready-for-segmentation') && prep.currentStage !== 'ready-for-close-base') {
         status = 'completed';
         hint = 'Base created';
-      } else if (!stageReached(prep, 'ready-for-close-base')) {
+      } else if (
+        !stageReached(prep, 'ready-for-close-base') &&
+        !stageReached(prep, 'ready-for-trim')
+      ) {
         status = 'locked';
         hint = 'Complete Trim first';
       } else if (current === 'close-base') {
@@ -235,7 +255,10 @@ const buildSteps = (
         hint = 'Create base';
       }
     } else if (meta.id === 'segment') {
-      if (stageReached(prep, 'ready-for-movement') && prep.currentStage !== 'ready-for-segmentation') {
+      const segDone =
+        (stageReached(prep, 'ready-for-movement') && prep.currentStage !== 'ready-for-segmentation') ||
+        documentSegmentationComplete;
+      if (segDone) {
         status = 'completed';
         hint = 'Segmentation complete';
       } else if (!stageReached(prep, 'ready-for-segmentation')) {
@@ -252,7 +275,10 @@ const buildSteps = (
       if (current === 'identify') {
         status = 'current';
         hint = 'Review tooth identities';
-      } else if (stageReached(prep, 'ready-for-movement')) {
+      } else if (documentSegmentationComplete || stageReached(prep, 'ready-for-movement')) {
+        status = 'completed';
+        hint = 'Identities reviewed';
+      } else if (stageReached(prep, 'ready-for-segmentation')) {
         status = 'available';
         hint = 'Review tooth identities';
       } else {
@@ -264,11 +290,12 @@ const buildSteps = (
         status = 'current';
         hint = 'Measure distances, tooth geometry, and arch relationships';
       } else if (
+        documentSegmentationComplete ||
         stageReached(prep, 'ready-for-segmentation') ||
         stageReached(prep, 'ready-for-movement')
       ) {
-        status = 'available';
-        hint = 'Clinical analysis tools';
+        status = 'locked';
+        hint = 'Available in a later milestone';
       } else {
         status = 'locked';
         hint = 'Available after segmentation';
@@ -307,21 +334,22 @@ const contentFor = (
   switch (step) {
     case 'import':
       return {
-        title: 'Start a Case',
-        description: 'Bring in a dental scan to begin.',
-        next: 'Orient your model after import.'
+        title: 'Create or Open a Case',
+        description:
+          'Create a patient case, import Upper and Lower Arch scans, and review validation results.',
+        next: 'Continue to Orientation when validation allows; preparation follows after orientation is accepted.'
       };
     case 'orient':
       return {
         title: 'Orient',
-        description: 'Align your dental model with the workspace axes.',
-        next: 'Prepare the model for geometry tools.'
+        description: 'We positioned your scans for clinical review. Accept when the bite looks correct.',
+        next: 'Confirm preparation when orientation is accepted.'
       };
     case 'prepare':
       return {
         title: 'Prepare',
-        description: 'Confirm the model is ready for geometry operations.',
-        next: 'Trim the scan boundary.'
+        description: 'Preparing your scans for trimming.',
+        next: 'Continue to Trim when preparation is complete.'
       };
     case 'trim':
       return {
@@ -331,9 +359,9 @@ const contentFor = (
       };
     case 'close-base':
       return {
-        title: 'Close Base',
-        description: 'Your model is trimmed. Create a stable base.',
-        next: 'Segment teeth.'
+        title: 'Create Base',
+        description: 'Your trimmed model is ready.',
+        next: 'Accept the auto base preview, or adjust manually.'
       };
     case 'segment':
       return {
@@ -364,48 +392,88 @@ const contentFor = (
 
 const primaryFor = (
   step: ClinicalWorkflowStepId,
-  context: { readonly trimming: boolean; readonly closingBase: boolean; readonly segmenting: boolean }
+  context: {
+    readonly trimming: boolean;
+    readonly closingBase: boolean;
+    readonly segmenting: boolean;
+    readonly prepReadyForTrim: boolean;
+    readonly trimComplete: boolean;
+    readonly closeBasePreviewReady: boolean;
+    readonly closeBaseInteractionMode: 'auto' | 'manual';
+  }
 ): { primary: ClinicalPrimaryAction; secondary: readonly ClinicalPrimaryAction[] } => {
   switch (step) {
     case 'import':
       return {
         primary: Object.freeze({
-          id: 'import-scan',
-          label: 'Import Scan',
-          commandId: 'clinical.tool.import'
+          id: 'new-case',
+          label: 'New Case',
+          commandId: 'clinical.case.new'
         }),
         secondary: Object.freeze([
           Object.freeze({ id: 'open-case', label: 'Open Case', commandId: 'clinical.case.open' }),
-          Object.freeze({ id: 'new-case', label: 'New Case', commandId: 'clinical.case.new' })
+          Object.freeze({ id: 'import-scan', label: 'Import Scan', commandId: 'clinical.tool.import' })
         ])
       };
     case 'orient':
       return {
         primary: Object.freeze({
-          id: 'orient-model',
-          label: context.trimming ? 'Orient Model' : 'Start Orientation',
-          commandId: 'clinical.tool.orient'
-        }),
-        secondary: Object.freeze([
-          Object.freeze({ id: 'skip-orient', label: 'Skip for now', commandId: 'clinical.preparation.start' })
-        ])
-      };
-    case 'prepare':
-      return {
-        primary: Object.freeze({
-          id: 'start-prep',
-          label: 'Start Preparation',
-          commandId: 'clinical.preparation.start'
+          id: 'auto-orient',
+          label: 'Auto Orient',
+          commandId: 'clinical.orientation.auto'
         }),
         secondary: Object.freeze([
           Object.freeze({
+            id: 'accept-orient',
+            label: 'Accept Orientation',
+            commandId: 'clinical.orientation.accept'
+          }),
+          Object.freeze({ id: 'review-orient', label: 'Review', commandId: 'clinical.tool.orient' })
+        ])
+      };
+    case 'prepare':
+      if (context.prepReadyForTrim) {
+        return {
+          primary: Object.freeze({
             id: 'continue-trim',
             label: 'Continue to Trim',
             commandId: 'clinical.tool.trim'
-          })
-        ])
+          }),
+          secondary: Object.freeze([
+            Object.freeze({
+              id: 'review-prep',
+              label: 'Review',
+              commandId: 'clinical.preparation.openPanel'
+            })
+          ])
+        };
+      }
+      return {
+        primary: Object.freeze({
+          id: 'auto-prep',
+          label: 'Prepare Case',
+          commandId: 'clinical.preparation.start'
+        }),
+        secondary: Object.freeze([])
       };
     case 'trim':
+      if (context.trimComplete) {
+        return {
+          primary: Object.freeze({
+            id: 'continue-close-base',
+            label: 'Continue to Close Base',
+            commandId: 'clinical.tool.closeBase'
+          }),
+          secondary: Object.freeze([
+            Object.freeze({
+              id: 'draw-trim',
+              label: context.trimming ? 'Accept Trim' : 'Draw Trim Boundary',
+              commandId: context.trimming ? 'clinical.trim.accept' : 'clinical.tool.trim'
+            }),
+            Object.freeze({ id: 'cancel-trim', label: 'Cancel', commandId: 'clinical.trim.cancel' })
+          ])
+        };
+      }
       return {
         primary: Object.freeze({
           id: 'draw-trim',
@@ -416,22 +484,80 @@ const primaryFor = (
           Object.freeze({ id: 'cancel-trim', label: 'Cancel', commandId: 'clinical.trim.cancel' })
         ])
       };
-    case 'close-base':
+    case 'close-base': {
+      const autoPreview =
+        context.closingBase &&
+        context.closeBasePreviewReady &&
+        context.closeBaseInteractionMode === 'auto';
+      if (autoPreview) {
+        return {
+          primary: Object.freeze({
+            id: 'accept-base',
+            label: 'Accept',
+            commandId: 'clinical.closeBase.accept'
+          }),
+          secondary: Object.freeze([
+            Object.freeze({
+              id: 'adjust-base',
+              label: 'Adjust',
+              commandId: 'clinical.closeBase.manual'
+            }),
+            Object.freeze({
+              id: 'cancel-base',
+              label: 'Cancel',
+              commandId: 'clinical.closeBase.cancel'
+            })
+          ])
+        };
+      }
+      if (context.closingBase && context.closeBasePreviewReady) {
+        return {
+          primary: Object.freeze({
+            id: 'accept-base',
+            label: 'Accept Base',
+            commandId: 'clinical.closeBase.accept'
+          }),
+          secondary: Object.freeze([
+            Object.freeze({
+              id: 'preview-base',
+              label: 'Preview',
+              commandId: 'clinical.closeBase.preview'
+            }),
+            Object.freeze({
+              id: 'cancel-base',
+              label: 'Cancel',
+              commandId: 'clinical.closeBase.cancel'
+            })
+          ])
+        };
+      }
       return {
         primary: Object.freeze({
-          id: 'create-base',
-          label: context.closingBase ? 'Accept Base' : 'Create Base',
-          commandId: context.closingBase ? 'clinical.closeBase.accept' : 'clinical.tool.closeBase'
+          id: 'auto-create-base',
+          label: 'Auto Create Base',
+          commandId: 'clinical.closeBase.auto'
         }),
         secondary: Object.freeze([
-          Object.freeze({ id: 'cancel-base', label: 'Cancel', commandId: 'clinical.closeBase.cancel' })
+          Object.freeze({
+            id: 'adjust-manually',
+            label: 'Adjust Manually',
+            commandId: context.closingBase
+              ? 'clinical.closeBase.manual'
+              : 'clinical.tool.closeBase'
+          }),
+          Object.freeze({
+            id: 'cancel-base',
+            label: 'Cancel',
+            commandId: 'clinical.closeBase.cancel'
+          })
         ])
       };
+    }
     case 'segment':
       return {
         primary: Object.freeze({
           id: 'run-seg',
-          label: context.segmenting ? 'Run Segmentation' : 'Segment Teeth',
+          label: 'Segment Teeth',
           commandId: context.segmenting ? 'clinical.segmentation.run' : 'clinical.tool.segmentation'
         }),
         secondary: Object.freeze([])
@@ -483,7 +609,24 @@ export const buildClinicalWorkflowPresentation = (
   const closingBase = workspace.closeBase.isActive();
   const segmenting = workspace.segmentation.isActive();
   const segmentPhase = workspace.segmentation.session.getState().phase;
-  const oriented = prep.orientationValidated || stageReached(prep, 'ready-for-trim');
+  const documentSegmentationComplete = doc !== undefined && isCaseSegmentationComplete(doc);
+  const oriented =
+    prep.orientationValidated ||
+    stageReached(prep, 'ready-for-trim') ||
+    doc?.orientationMeta?.acceptedAt !== undefined;
+  const prepReadyForTrim =
+    workspace.preparation.isReadyForGeometry() ||
+    stageReached(prep, 'ready-for-trim') ||
+    prep.workflowPhase === 'ready-for-geometry';
+  const trimComplete =
+    workspace.trim.history.canUndo() ||
+    stageReached(prep, 'ready-for-close-base');
+  const closeBaseState = workspace.closeBase.session.getState();
+  const closeBasePreviewReady =
+    closeBaseState.kernelFingerprint !== undefined &&
+    closeBaseState.previewActive &&
+    !closeBaseState.previewInvalidated;
+  const closeBaseInteractionMode = closeBaseState.interactionMode;
 
   const currentStepId = resolveCurrentStep({
     hasModels: models,
@@ -495,10 +638,28 @@ export const buildClinicalWorkflowPresentation = (
     segmentPhase
   });
 
-  const steps = buildSteps(currentStepId, prep, models, oriented);
+  const steps = buildSteps(
+    currentStepId,
+    prep,
+    models,
+    oriented,
+    documentSegmentationComplete
+  );
   const copy = contentFor(currentStepId);
-  const actions = primaryFor(currentStepId, { trimming, closingBase, segmenting });
+  const actions = primaryFor(currentStepId, {
+    trimming,
+    closingBase,
+    segmenting,
+    prepReadyForTrim,
+    trimComplete,
+    closeBasePreviewReady,
+    closeBaseInteractionMode
+  });
   const activeTool = session.getTools().getActive();
+
+  const hasUpper = doc?.objects.some((o) => o.archRole === 'upper') === true;
+  const hasLower = doc?.objects.some((o) => o.archRole === 'lower') === true;
+  const meshOk = prep.validationReport?.passed === true || models;
 
   const statusLine = (() => {
     if (!models) return 'Ready — Import a dental scan to begin.';
@@ -507,25 +668,55 @@ export const buildClinicalWorkflowPresentation = (
       if (trimState.phase === 'preview-boundary' || trimState.closed) {
         return 'Boundary ready — accept the trim when ready.';
       }
+      if (trimState.drawMode === 'idle') {
+        return 'Ready — Choose Polyline or Freehand, then draw on the scan.';
+      }
       return 'Ready — Draw a trim boundary.';
     }
-    if (closingBase) return 'Ready — Choose a base strategy and create the base.';
+    if (closingBase) {
+      const cb = workspace.closeBase.session.getState();
+      if (cb.kernelFingerprint !== undefined && cb.previewActive) {
+        return cb.interactionMode === 'auto'
+          ? 'Auto Base Preview — Accept, Adjust, or Cancel.'
+          : 'Base preview ready — Accept when the base looks correct.';
+      }
+      if (cb.autoEstimate !== undefined && !cb.autoEstimate.ok) {
+        return 'Automatic base generation needs review — Adjust Manually.';
+      }
+      return 'Ready — Auto Create Base, or Adjust Manually.';
+    }
     if (segmenting) {
-      if (segmentPhase === 'ready-for-review' || segmentPhase === 'complete') {
+      const segPresentation = workspace.segmentation.session.getState().presentation;
+      if (segPresentation === 'failed' || segmentPhase === 'failed') {
+        return 'Segmentation could not be completed — retry or review diagnostics.';
+      }
+      if (segPresentation === 'rebuilding') {
+        return 'Rebuilding… Reconstructing teeth and gingiva.';
+      }
+      if (segmentPhase === 'ready-for-review' || segmentPhase === 'complete' || segPresentation === 'review') {
         return 'Segmentation complete — review detected teeth.';
       }
       if (
+        segPresentation === 'segmenting' ||
         segmentPhase === 'preparing' ||
         segmentPhase === 'inferencing' ||
         segmentPhase === 'postprocessing' ||
         segmentPhase === 'validating'
       ) {
-        return 'Segmenting teeth…';
+        return 'Segmenting case…';
       }
-      return 'Ready — Run segmentation.';
+      return 'Ready — Segment Teeth.';
+    }
+    if (documentSegmentationComplete) {
+      const summary = summarizeCaseSegmentation(doc!);
+      return `Segmentation complete · ${String(summary.totalTeeth)} teeth · Needs review ${String(summary.totalNeedsReview)}`;
     }
     if (orienting) return 'Ready — Align the model, then accept orientation.';
-    if (currentStepId === 'prepare') return 'Ready — Start preparation, then continue to Trim.';
+    if (currentStepId === 'prepare') {
+      return prepReadyForTrim
+        ? 'Preparation confirmed — continue to Trim.'
+        : 'Awaiting confirmation — review checks, then Confirm Preparation.';
+    }
     if (currentStepId === 'orient') return 'Ready — Orient your model.';
     return toUserFacingStatus(prep.statusMessage);
   })();
@@ -540,13 +731,26 @@ export const buildClinicalWorkflowPresentation = (
     primaryAction: actions.primary,
     secondaryActions: actions.secondary,
     checklist: Object.freeze([
-      Object.freeze({ id: 'case', label: 'Case loaded', done: doc !== undefined }),
-      Object.freeze({ id: 'scan', label: 'Scan imported', done: models }),
+      Object.freeze({
+        id: 'upper',
+        label: 'Upper scan valid',
+        done: hasUpper || (models && !hasLower)
+      }),
+      Object.freeze({
+        id: 'lower',
+        label: 'Lower scan valid',
+        done: hasLower || (models && !hasUpper)
+      }),
       Object.freeze({ id: 'orient', label: 'Orientation complete', done: oriented }),
       Object.freeze({
         id: 'mesh',
-        label: 'Mesh valid',
-        done: prep.validationReport?.passed === true || models
+        label: 'Mesh quality acceptable',
+        done: meshOk
+      }),
+      Object.freeze({
+        id: 'segment',
+        label: 'Segmentation accepted',
+        done: documentSegmentationComplete
       })
     ]),
     emptyWorkspace: !models,

@@ -6,8 +6,16 @@ import type { ClinicalObjectId } from '../import/ClinicalMeshDescriptor.js';
 import type { SegmentationPrediction } from './prediction/types.js';
 import type { ReviewActionMeta } from './review/ClinicalSegmentationReview.js';
 import { ClinicalSegmentationWorkflow, type SegmentationPhase } from './ClinicalSegmentationWorkflow.js';
+import type { SegmentationPresentationStatus } from './display/ClinicalSegmentationPresentation.js';
+import type { ClinicalSegmentationValidationReport } from './ClinicalSegmentationValidation.js';
 
-export type SegmentationViewMode = 'semantic' | 'instance' | 'fdi' | 'confidence';
+export type SegmentationViewMode =
+  | 'semantic'
+  | 'instance'
+  | 'fdi'
+  | 'confidence'
+  | 'review'
+  | 'boundary';
 
 export interface SegmentationSessionState {
   readonly phase: SegmentationPhase;
@@ -17,7 +25,11 @@ export interface SegmentationSessionState {
   readonly prediction: SegmentationPrediction | undefined;
   readonly selectedInstanceId: string | undefined;
   readonly viewMode: SegmentationViewMode;
+  readonly presentation: SegmentationPresentationStatus;
+  readonly reviewAcknowledged: boolean;
+  readonly validationReport: ClinicalSegmentationValidationReport | undefined;
   readonly progress?: { readonly completed: number; readonly total: number; readonly message?: string };
+  readonly runtimeMessage: string | undefined;
   readonly errorMessage: string | undefined;
   readonly lastReviewMeta: ReviewActionMeta | undefined;
   readonly sessionStartedAt: number | undefined;
@@ -31,7 +43,11 @@ export class ClinicalSegmentationSession {
   private prediction: SegmentationPrediction | undefined;
   private selectedInstanceId: string | undefined;
   private viewMode: SegmentationViewMode = 'instance';
+  private presentation: SegmentationPresentationStatus = 'idle';
+  private reviewAcknowledged = false;
+  private validationReport: ClinicalSegmentationValidationReport | undefined;
   private progress: SegmentationSessionState['progress'];
+  private runtimeMessage: string | undefined;
   private errorMessage: string | undefined;
   private lastReviewMeta: ReviewActionMeta | undefined;
   private sessionStartedAt: number | undefined;
@@ -55,6 +71,21 @@ export class ClinicalSegmentationSession {
     this.providerId = input.providerId;
     this.sessionStartedAt = input.now;
     this.abort = new AbortController();
+    this.presentation = 'idle';
+    this.viewMode = 'instance';
+    this.workflow.transition('activating');
+  }
+
+  public retarget(objectId: ClinicalObjectId): void {
+    this.targetObjectId = objectId;
+    this.prediction = undefined;
+    this.selectedInstanceId = undefined;
+    this.progress = undefined;
+    this.errorMessage = undefined;
+    this.presentation = 'idle';
+    this.abort?.abort();
+    this.abort = new AbortController();
+    this.workflow.reset();
     this.workflow.transition('activating');
   }
 
@@ -78,8 +109,24 @@ export class ClinicalSegmentationSession {
     this.viewMode = mode;
   }
 
+  public setPresentation(status: SegmentationPresentationStatus): void {
+    this.presentation = status;
+  }
+
+  public setReviewAcknowledged(value: boolean): void {
+    this.reviewAcknowledged = value;
+  }
+
+  public setValidationReport(report: ClinicalSegmentationValidationReport | undefined): void {
+    this.validationReport = report;
+  }
+
   public setProgress(progress: SegmentationSessionState['progress']): void {
     this.progress = progress;
+  }
+
+  public setRuntimeMessage(message: string | undefined): void {
+    this.runtimeMessage = message;
   }
 
   public setError(message: string | undefined): void {
@@ -99,7 +146,11 @@ export class ClinicalSegmentationSession {
       prediction: this.prediction,
       selectedInstanceId: this.selectedInstanceId,
       viewMode: this.viewMode,
+      presentation: this.presentation,
+      reviewAcknowledged: this.reviewAcknowledged,
+      validationReport: this.validationReport,
       ...(this.progress !== undefined ? { progress: this.progress } : {}),
+      runtimeMessage: this.runtimeMessage,
       errorMessage: this.errorMessage,
       lastReviewMeta: this.lastReviewMeta,
       sessionStartedAt: this.sessionStartedAt
@@ -113,9 +164,14 @@ export class ClinicalSegmentationSession {
     this.prediction = undefined;
     this.selectedInstanceId = undefined;
     this.progress = undefined;
+    this.runtimeMessage = undefined;
     this.errorMessage = undefined;
     this.lastReviewMeta = undefined;
     this.sessionStartedAt = undefined;
+    this.validationReport = undefined;
+    this.presentation = 'idle';
+    this.reviewAcknowledged = false;
+    this.viewMode = 'instance';
     this.workflow.reset();
   }
 }

@@ -1,8 +1,10 @@
 /**
- * ClinicalTrimHistory — trim operation undo/redo (clinical document snapshots).
+ * ClinicalTrimHistory — trim operation undo/redo (document + mesh buffer snapshots).
  */
 
 import type { ClinicalDocumentSnapshot } from '../document/ClinicalDocument.js';
+import type { TriangleMesh } from '../../geometry-kernel/mesh/TriangleMesh.js';
+import { cloneMesh } from '../../geometry-kernel/mesh/TriangleMesh.js';
 import { clinicalFailure, clinicalSuccess, type ClinicalResult } from '../runtime/types.js';
 
 export interface ClinicalTrimHistoryEntry {
@@ -13,6 +15,10 @@ export interface ClinicalTrimHistoryEntry {
   readonly fingerprint: string;
   readonly previous: ClinicalDocumentSnapshot;
   readonly next: ClinicalDocumentSnapshot;
+  /** Working-mesh buffer before the trim (for registry rollback). */
+  readonly previousMesh: TriangleMesh;
+  /** Working-mesh buffer after the trim. */
+  readonly nextMesh: TriangleMesh;
   readonly createdAt: number;
 }
 
@@ -27,6 +33,8 @@ export class ClinicalTrimHistory {
     readonly fingerprint: string;
     readonly previous: ClinicalDocumentSnapshot;
     readonly next: ClinicalDocumentSnapshot;
+    readonly previousMesh: TriangleMesh;
+    readonly nextMesh: TriangleMesh;
     readonly createdAt: number;
   }): ClinicalTrimHistoryEntry {
     this.serial += 1;
@@ -38,6 +46,8 @@ export class ClinicalTrimHistory {
       fingerprint: input.fingerprint,
       previous: input.previous,
       next: input.next,
+      previousMesh: cloneMesh(input.previousMesh),
+      nextMesh: cloneMesh(input.nextMesh),
       createdAt: input.createdAt
     });
     this.undoStack.push(entry);

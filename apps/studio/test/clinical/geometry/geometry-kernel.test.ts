@@ -64,9 +64,41 @@ describe('trim', () => {
     const a = trimMesh(m, { boundary, role: 'working', revision: 1, viewport });
     const b = trimMesh(m, { boundary, role: 'working', revision: 1, viewport });
     expect(a.mesh.fingerprint).toBe(b.mesh.fingerprint);
+    expect(a.algorithm).toBe('exact-edge-clip');
     expect(a.retainedTriangles).toBeLessThan(Math.floor(m.indices.length / 3));
     expect(a.removedTriangles).toBeGreaterThan(0);
     expect(a.quality.ok).toBe(true);
+  });
+
+  it('exact clip removes more boundary-straddling area than centroid fallback', () => {
+    const m = mesh('trim-exact', 24);
+    const boundary = [
+      { x: 180, y: 140 },
+      { x: 460, y: 140 },
+      { x: 460, y: 340 },
+      { x: 180, y: 340 }
+    ];
+    const viewport = { width: 640, height: 480 };
+    const exact = trimMesh(m, {
+      boundary,
+      role: 'working',
+      revision: 1,
+      viewport,
+      algorithm: 'exact-edge-clip'
+    });
+    const centroid = trimMesh(m, {
+      boundary,
+      role: 'working',
+      revision: 1,
+      viewport,
+      algorithm: 'centroid-polygon'
+    });
+    expect(exact.algorithm).toBe('exact-edge-clip');
+    expect(centroid.algorithm).toBe('centroid-polygon');
+    expect(exact.retainedTriangles).toBeLessThan(Math.floor(m.indices.length / 3));
+    // Exact may emit more fragments along the cut; both must change the mesh.
+    expect(exact.mesh.fingerprint).not.toBe(m.fingerprint);
+    expect(centroid.mesh.fingerprint).not.toBe(m.fingerprint);
   });
 });
 

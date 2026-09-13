@@ -70,7 +70,9 @@ export const createClinicalCloseBaseOperationHandler = (): OperationHandler => (
         margin,
         smoothing: session.params.smoothing === true,
         orientation,
-        planeNormal: planeNormalForOrientation(orientation)
+        planeNormal: planeNormalForOrientation(orientation),
+        preferRequestedOrientation: true,
+        preview: session.params.preview === true
       })
     });
   },
@@ -83,6 +85,35 @@ export const createClinicalCloseBaseOperationHandler = (): OperationHandler => (
     }
     if (typeof session.params.targetObjectId !== 'string') {
       return opFailure('validation', 'Invalid Close Base target');
+    }
+    const metrics = kernel.payload.metrics as Readonly<Record<string, number>> | undefined;
+    const added =
+      typeof metrics?.addedTriangles === 'number' ? metrics.addedTriangles : undefined;
+    if (added !== undefined && added <= 0) {
+      return opFailure('validation', 'Close Base produced no geometry change.');
+    }
+    // GEO-001D preview quality gate — reject slab / bridge / match failures.
+    const warningList = [
+      ...(Array.isArray(kernel.payload.warnings)
+        ? (kernel.payload.warnings as readonly unknown[]).map(String)
+        : []),
+      ...(Array.isArray(kernel.payload.diagnostics)
+        ? (kernel.payload.diagnostics as readonly unknown[]).map(String)
+        : [])
+    ];
+    const blocked = warningList.find(
+      (w) =>
+        w.includes('baseV2:slab=true') ||
+        w.includes('baseV2:boundaryMatch=false') ||
+        w.includes('baseV2:bridgeRejected=true') ||
+        w.includes('meta:baseSlab=true') ||
+        w.includes('meta:baseBoundaryMatch=false')
+    );
+    if (blocked !== undefined) {
+      return opFailure(
+        'validation',
+        `Close Base preview quality gate failed (${blocked}). Preview unavailable.`
+      );
     }
     return opSuccess(undefined);
   },

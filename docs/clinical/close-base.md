@@ -1,29 +1,74 @@
-# Clinical Close Base (CLN-008)
+# Clinical Close Base (Phase 5 — Production)
 
 ## Purpose
 
-Create a clinically useful base-supported model from a trimmed open dental surface. Deterministic, measurable, and committed only through Operation Runtime.
+Transform a trimmed clinical arch into a base-supported model without damaging dental anatomy. Preview is non-destructive until Accept.
+
+## Workflow
+
+```
+TRIM → CLOSE BASE → AUTO CLOSE BASE
+```
+
+1. Enter Close Base (shared arch context)
+2. Isolate active Upper/Lower (visibility only)
+3. Choose Base Style: Plane Base · Offset Base · Surface Fill
+4. Set Height / Thickness / Offset
+5. Preview → real proposed mesh (working/source unchanged)
+6. Accept → CommitToken → Document → History → Scene
+7. Stay in tool for repeated editing or the other arch
+8. Or run **Auto Close Base** for clinical defaults + preview
+
+## Architecture
+
+```
+Preview/Accept
+  → ClinicalCloseBaseOperation
+  → GeometryServicesKernelPort
+  → Geometry Services (offset.uniform | repair.fill-holes)
+  → Kernel Bridge → closeBaseMesh
+  → CommitToken → Clinical Document → History → Scene (fitCamera: false)
+```
+
+Do not call KernelBridge from Close Base UI modules.
+
+## Arch switcher
+
+Reuses `ClinicalArchSwitcher` (same control as Trim).
 
 ## Strategies
 
-| Id | Geometry Services | Behavior |
-|----|-------------------|----------|
-| `plane` | `offset.uniform` | Extrude walls from open boundary to a plane; triangulate base |
-| `offset` | `offset.uniform` | Same kernel path; controlled offset parameters |
-| `surface` | `repair.fill-holes` | Fan/ear-clip fill of boundary loops in place |
+| Style | Kernel | Behavior |
+|-------|--------|----------|
+| Plane Base | `closeBase.plane` | Extruded walls + flat base; original dental triangles preserved |
+| Offset Base | `closeBase.offset` | Stronger thickness/inset walls; dental triangles preserved |
+| Surface Fill | `closeBase.surface` | In-place hole fill (ear-clip); no tall pedestal |
 
-Future solid/printable strategies remain extensible without changing the Operation Runtime contract.
+Open3D scaffold remains unlinked. No GPL dependencies.
 
-## Pipeline
+## Preview vs Accept
 
-Trimmed / working mesh → boundary detection → strategy + parameter validation → preview geometry → topology/quality validation → accept → CommitToken → history → document revision → scene republish.
+- **Preview** (`preview: true`): registry preview + display only; document revision unchanged
+- **Accept** (`preview: false`): commit working mesh + descriptor + history; source role preserved
+- Fit active arch **once** after the first successful preview (not continuously)
 
-## Quality checks
+## Parameters (clinical)
 
-Post-generation quality pipeline reports boundary edges, components, degenerates, normals-related warnings, and fingerprints. Automatic destructive repair is not performed without explicit user intent.
+- Base Style
+- Height (mm)
+- Thickness (mm)
+- Offset (mm) — kernel `margin`
+- Plane orientation (default `xz` for clinical Y-up / inferior base)
+
+## Validation
+
+Case, model, arch, preparation, parameters, strategy, kernel/operation availability, geometry quality, boundary diagnostics, commit eligibility (fingerprint).
+
+## Persistence
+
+Accepted working meshes persist through the existing case save/load path (`ClinicalCaseService` / IndexedDB).
 
 ## Limitations
 
-- Smoothing remains a payload flag (no global remesh of protected clinical surfaces).
-- Watertightness is strategy-dependent; plane base aims for closure via walls + base.
-- GPL CGAL algorithms are not integrated.
+- Undo restores document descriptors; mesh registry follows republish/display refresh
+- Segmentation is out of scope for Phase 5

@@ -10,10 +10,14 @@ import {
   sanitizeCloseBaseParameters,
   type ClinicalCloseBaseParameters
 } from './ClinicalCloseBaseParameters.js';
+import type { ClinicalAutoCloseBaseEstimate } from './ClinicalAutoCloseBaseEstimator.js';
+import type {
+  ClinicalCloseBaseState,
+  CloseBaseInteractionMode,
+  CloseBaseToolStatus
+} from './ClinicalCloseBaseState.js';
 import {
-  DEFAULT_CLOSE_BASE_STATE,
-  type ClinicalCloseBaseState,
-  type CloseBaseToolStatus
+  DEFAULT_CLOSE_BASE_STATE
 } from './ClinicalCloseBaseState.js';
 import type { CloseBaseValidationReport } from './ClinicalCloseBaseValidation.js';
 import { ClinicalCloseBaseWorkflow } from './ClinicalCloseBaseWorkflow.js';
@@ -72,7 +76,9 @@ export class ClinicalCloseBaseSession {
       operationId: undefined,
       sessionStartedAt: input.now,
       previewStartedAt: input.now,
-      statusMessage: 'Previewing Close Base — adjust parameters then accept'
+      interactionMode: 'auto',
+      autoEstimate: undefined,
+      statusMessage: 'Your trimmed model is ready — Auto Create Base or Adjust Manually'
     });
   }
 
@@ -157,6 +163,117 @@ export class ClinicalCloseBaseSession {
       previewActive: false,
       previewInvalidated: false,
       statusMessage: 'Close Base committed'
+    });
+  }
+
+  /**
+   * After accept, stay in Close Base for another arch / parameter edit.
+   */
+  public continueAfterCommit(input: {
+    readonly objectId: ClinicalObjectId;
+    readonly parameters: ClinicalCloseBaseParameters;
+    readonly now: number;
+  }): void {
+    this.workflow.reset();
+    this.lifecycle.reset();
+    this.lifecycle.transition('created');
+    this.lifecycle.transition('active');
+    this.lifecycle.transition('previewing');
+    this.workflow.transition('activating');
+    this.workflow.transition('validating-case');
+    this.workflow.transition('selecting-strategy');
+    this.workflow.transition('configuring');
+    this.workflow.transition('previewing');
+    this.patch({
+      phase: 'previewing',
+      lifecycle: 'previewing',
+      toolStatus: 'previewing',
+      targetObjectId: input.objectId,
+      parameters: input.parameters,
+      previewActive: true,
+      previewInvalidated: true,
+      validationReport: undefined,
+      kernelFingerprint: undefined,
+      operationId: undefined,
+      sessionStartedAt: input.now,
+      previewStartedAt: input.now,
+      interactionMode: 'manual',
+      autoEstimate: undefined,
+      statusMessage: 'Base accepted — adjust parameters or switch arch'
+    });
+  }
+
+  public retarget(objectId: ClinicalObjectId): void {
+    this.workflow.transition('previewing');
+    this.patch({
+      phase: 'previewing',
+      targetObjectId: objectId,
+      previewActive: true,
+      previewInvalidated: true,
+      kernelFingerprint: undefined,
+      operationId: undefined,
+      validationReport: undefined,
+      toolStatus: 'previewing',
+      statusMessage: 'Arch switched — preview the base'
+    });
+  }
+
+  public setStatusMessage(message: string): void {
+    this.patch({ statusMessage: message, progressMessage: undefined });
+  }
+
+  public setInteractionMode(mode: CloseBaseInteractionMode): void {
+    this.patch({
+      interactionMode: mode,
+      statusMessage:
+        mode === 'manual'
+          ? 'Manual Close Base — adjust parameters, then Preview'
+          : 'Auto Close Base — one-click create'
+    });
+  }
+
+  public setAutoEstimate(estimate: ClinicalAutoCloseBaseEstimate | undefined): void {
+    this.patch({
+      autoEstimate: estimate,
+      ...(estimate === undefined
+        ? {}
+        : {
+            statusMessage: estimate.message,
+            parameters: estimate.parameters
+          })
+    });
+  }
+
+  public setProgress(input: {
+    readonly message: string;
+    readonly completed: number;
+    readonly total: number;
+  }): void {
+    this.patch({
+      progressMessage: input.message,
+      progressCompleted: input.completed,
+      progressTotal: input.total,
+      toolStatus: 'processing',
+      statusMessage: input.message
+    });
+  }
+
+  public markPreviewReady(fingerprint: string | undefined, operationId: string): void {
+    this.workflow.transition('previewing');
+    this.lifecycle.transition('previewing');
+    this.patch({
+      phase: 'previewing',
+      lifecycle: 'previewing',
+      kernelFingerprint: fingerprint,
+      operationId,
+      previewActive: true,
+      previewInvalidated: false,
+      toolStatus: 'previewing',
+      progressMessage: undefined,
+      statusMessage:
+        this.state.interactionMode === 'auto'
+          ? 'Auto Base Preview — Accept, Adjust, or Cancel'
+          : 'Preview ready — Accept to commit'
     });
   }
 

@@ -12,7 +12,7 @@ const STAGE_USER_LABELS: Readonly<Record<string, string>> = Object.freeze({
   'Ready For Trim': 'Ready to trim',
   'Ready For Close Base': 'Ready to close base',
   'Ready For Segmentation': 'Ready to segment',
-  'Ready For Movement': 'Ready for movement',
+  'Ready For Movement': 'Not Ready for Movement',
   'Preparation Complete': 'Preparation complete'
 });
 
@@ -50,21 +50,123 @@ export const ClinicalPreparationPanel = ({
         >
           {toUserFacingStatus(state.statusMessage)}
         </span>
+        <span
+          className="muted"
+          data-testid="clinical-preparation-auto-ui"
+        >
+          {state.autoUiState === 'ready'
+            ? 'Ready'
+            : state.autoUiState === 'warning'
+              ? 'Ready with warnings'
+              : state.autoUiState === 'failed'
+                ? 'Failed'
+                : state.autoUiState === 'preparing' || state.autoUiState === 'analyzing'
+                  ? 'Preparing…'
+                  : 'Not started'}
+        </span>
       </header>
+
+      {session.getPublicState().activeCase?.orientationMeta?.acceptedAt !== undefined ? (
+        <p className="muted" data-testid="clinical-preparation-orient-meta">
+          Clinical orientation accepted
+          {session.getPublicState().activeCase?.orientationMeta?.confidence
+            ? ` · ${session.getPublicState().activeCase?.orientationMeta?.confidence ?? ''} confidence`
+            : ''}
+          . Source geometry unchanged; working meshes prepared for trim.
+        </p>
+      ) : null}
+
+      {state.autoReport?.arches.some((a) => a.anatomy !== undefined) === true ? (
+        <section
+          className="clinical-preparation-section"
+          aria-label="Arch anatomy"
+          data-testid="clinical-arch-anatomy"
+        >
+          <h3>Arch anatomy</h3>
+          <p className="muted">
+            Geometry-driven cues only — not clinical tooth identity.
+          </p>
+          <ul className="clinical-arch-anatomy__list">
+            {state.autoReport.arches.map((arch) => {
+              const a = arch.anatomy;
+              if (a === undefined) return null;
+              return (
+                <li key={arch.objectId} data-testid={`clinical-arch-anatomy-${arch.objectId}`}>
+                  <strong>
+                    {arch.archRole === 'upper'
+                      ? 'Upper Arch'
+                      : arch.archRole === 'lower'
+                        ? 'Lower Arch'
+                        : arch.displayName}
+                  </strong>
+                  <span className="muted">
+                    {' '}
+                    · role {a.archRole}/{a.archConfidence}
+                    {' · '}frame {a.frameConfidence}
+                    {' · '}occlusal {a.occlusalConfidence}
+                    {' · '}
+                    {String(a.candidateCount)} tooth-region candidate(s)
+                    {' · '}
+                    {String(a.dentalRegionCount)} dental region(s)
+                  </span>
+                  {arch.anatomyReport?.warnings.length ? (
+                    <ul className="clinical-arch-anatomy__warnings">
+                      {arch.anatomyReport.warnings.map((w) => (
+                        <li key={w}>{w}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="clinical-preparation-section">
         <h3>Progress</h3>
-        <div className="clinical-preparation-progress" data-testid="clinical-preparation-progress">
-          <div
-            className="clinical-preparation-progress__bar"
-            style={{
-              width: `${String(Math.round((state.completedStages.length / PREPARATION_STAGE_ORDER.length) * 100))}%`
-            }}
-          />
-        </div>
+        {state.autoSteps.length > 0 ? (
+          <ul className="clinical-preparation-auto-steps" data-testid="clinical-preparation-auto-steps">
+            {state.autoSteps.map((step) => (
+              <li key={step.id} className={step.done ? 'done' : undefined}>
+                {step.done ? '✓ ' : '○ '}
+                {step.label}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="clinical-preparation-progress" data-testid="clinical-preparation-progress">
+            <div
+              className="clinical-preparation-progress__bar"
+              style={{
+                width: `${String(Math.round((state.completedStages.length / PREPARATION_STAGE_ORDER.length) * 100))}%`
+              }}
+            />
+          </div>
+        )}
         <p className="clinical-preparation-next muted" data-testid="clinical-preparation-next">
-          Next: {toUserFacingStatus(state.nextStep)}
+          {state.autoUiState === 'ready' || state.autoUiState === 'warning'
+            ? state.autoReport?.message ?? toUserFacingStatus(state.nextStep)
+            : `Next: ${toUserFacingStatus(state.nextStep)}`}
         </p>
+        {state.autoUiState === 'failed' ? (
+          <p className="clinical-import-dialog__error" data-testid="clinical-preparation-error">
+            {state.statusMessage}
+          </p>
+        ) : null}
+        {state.lastFailure !== undefined && import.meta.env.DEV ? (
+          <pre
+            className="clinical-preparation-failure-diag"
+            data-testid="clinical-preparation-failure-diag"
+          >
+            {`Preparation Session Creation Failed
+stage: ${state.lastFailure.stage}
+reason: ${state.lastFailure.reason}
+caseId: ${state.lastFailure.caseId ?? '—'}
+arch: ${state.lastFailure.arch ?? '—'}
+geometryRevision: ${state.lastFailure.geometryRevision ?? '—'}`}
+          </pre>
+        ) : null}
       </section>
 
       <section className="clinical-preparation-section">
@@ -112,23 +214,29 @@ export const ClinicalPreparationPanel = ({
         <button
           type="button"
           className="clinical-preparation-btn clinical-preparation-btn--accept"
-          onClick={run(() => prep.start())}
+          onClick={run(() => {
+            const result = prep.autoPrepare();
+            if (!result.ok) {
+              session.getHost().notifications.push('warning', 'Preparation', result.error.message);
+            }
+          })}
         >
-          Start Preparation
-        </button>
-        <button
-          type="button"
-          className="clinical-preparation-btn"
-          onClick={run(() => prep.validate())}
-        >
-          Validate
+          Prepare Case
         </button>
         <button
           type="button"
           className="clinical-preparation-btn clinical-preparation-btn--accept"
-          onClick={run(() => prep.complete())}
+          disabled={!prep.isReadyForGeometry()}
+          title={
+            prep.isReadyForGeometry()
+              ? 'Continue to Trim'
+              : 'Prepare the case first'
+          }
+          onClick={run(() => {
+            void session.getHost().commands.invoke('clinical.tool.trim');
+          })}
         >
-          Complete
+          Continue to Trim
         </button>
         <button
           type="button"
@@ -142,7 +250,9 @@ export const ClinicalPreparationPanel = ({
       <button
         type="button"
         className="clinical-link"
-        onClick={() => setShowDev((v) => !v)}
+        onClick={() => {
+          setShowDev((v) => !v);
+        }}
       >
         {showDev ? 'Hide developer controls' : 'Show developer controls'}
       </button>

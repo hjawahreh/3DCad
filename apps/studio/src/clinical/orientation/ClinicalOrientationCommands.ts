@@ -8,6 +8,7 @@ export const CLINICAL_ORIENTATION_COMMANDS = Object.freeze({
   cancel: 'clinical.orientation.cancel',
   reset: 'clinical.orientation.reset',
   snap: 'clinical.orientation.snap',
+  auto: 'clinical.orientation.auto',
   rotatePos: 'clinical.orientation.rotatePositive',
   rotateNeg: 'clinical.orientation.rotateNegative',
   modeFree: 'clinical.orientation.mode.free',

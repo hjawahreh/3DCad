@@ -57,12 +57,13 @@ export const mergeClinicalGeometryMetadata = (
 /** Immutable descriptor patch: counts + optional revision fingerprint fields. */
 export const applyClinicalGeometryCommitToDescriptor = (
   descriptor: ClinicalMeshDescriptor,
-  commit: ClinicalGeometryKernelCommitResult
+  commit: ClinicalGeometryKernelCommitResult,
+  options?: { readonly invalidateSegmentationReason?: string }
 ): ClinicalMeshDescriptor => {
   if ((descriptor.id as string) !== commit.objectId) {
     return descriptor;
   }
-  return Object.freeze({
+  let next: ClinicalMeshDescriptor = Object.freeze({
     ...descriptor,
     vertexCount: commit.vertexCount,
     faceCount: commit.faceCount,
@@ -70,6 +71,21 @@ export const applyClinicalGeometryCommitToDescriptor = (
     geometryFingerprint: commit.fingerprint,
     ...(commit.backend !== undefined ? { geometryBackend: commit.backend } : {})
   });
+  const reason =
+    options?.invalidateSegmentationReason ??
+    'Segmentation Outdated — Geometry Changed';
+  if (next.segmentationMeta !== undefined) {
+    next = Object.freeze({
+      ...next,
+      segmentationMeta: Object.freeze({
+        ...next.segmentationMeta,
+        status: 'STALE' as const,
+        staleReason: reason,
+        invalidatedAt: Date.now()
+      })
+    });
+  }
+  return next;
 };
 
 export const applyClinicalGeometryCommitToObjects = (

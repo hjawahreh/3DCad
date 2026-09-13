@@ -7,11 +7,14 @@ import {
   withClinicalObjects,
   type ClinicalDocumentSnapshot
 } from '../document/ClinicalDocument.js';
-import type { ClinicalObjectId, ClinicalMeshDescriptor } from '../import/ClinicalMeshDescriptor.js';
+import type { ClinicalObjectId, ClinicalArchRole, ClinicalMeshDescriptor } from '../import/ClinicalMeshDescriptor.js';
 import type { ClinicalSceneBuilder } from '../import/ClinicalSceneBuilder.js';
 import type { ClinicalSession } from '../runtime/session.js';
 import { clinicalFailure, clinicalSuccess, type ClinicalResult } from '../runtime/types.js';
 import type { SegmentationPrediction } from './prediction/types.js';
+import { computeToothLocalFrame } from './ClinicalToothLocalFrame.js';
+import type { ClinicalSegmentationValidationReport } from './ClinicalSegmentationValidation.js';
+import { buildFaceMembershipFromPrediction } from './ClinicalSegmentationIntegrity.js';
 
 export class ClinicalSegmentationManager {
   public resolveTarget(
@@ -44,10 +47,29 @@ export class ClinicalSegmentationManager {
     return clinicalSuccess({ objectId: obj.id });
   }
 
+  public resolveTargetByArch(
+    session: ClinicalSession,
+    arch: ClinicalArchRole
+  ): ClinicalResult<{ readonly objectId: ClinicalObjectId }> {
+    const doc = session.getPublicState().activeCase;
+    if (doc === undefined) {
+      return clinicalFailure('not-found', 'No active case');
+    }
+    const obj = doc.objects.find((o) => o.archRole === arch);
+    if (obj === undefined) {
+      return clinicalFailure(
+        'not-found',
+        arch === 'upper' ? 'Upper arch is not in the case' : 'Lower arch is not in the case'
+      );
+    }
+    return clinicalSuccess({ objectId: obj.id });
+  }
+
   public applyAcceptCommit(input: {
     readonly session: ClinicalSession;
     readonly objectId: ClinicalObjectId;
     readonly prediction: SegmentationPrediction;
+    readonly validationVerdict?: ClinicalSegmentationValidationReport['verdict'];
     readonly now: number;
   }): ClinicalResult<{
     readonly previous: ClinicalDocumentSnapshot;
@@ -60,11 +82,16 @@ export class ClinicalSegmentationManager {
     const previous = doc;
     const objects = doc.objects.map((obj) => {
       if (obj.id !== input.objectId) return obj;
+      const faceMembership = buildFaceMembershipFromPrediction(
+        input.prediction,
+        obj.faceCount
+      );
       const nextObj: ClinicalMeshDescriptor = Object.freeze({
         ...obj,
         geometryFingerprint: input.prediction.geometryFingerprint,
         geometryRevision: input.prediction.sourceRevision,
-        geometryBackend: input.prediction.providerId,
+        // Do not overwrite geometryBackend with segmentation providerId —
+        // provider identity lives only under segmentationMeta (clinical contract).
         segmentationMeta: Object.freeze({
           predictionId: input.prediction.predictionId,
           providerId: input.prediction.providerId,
@@ -73,7 +100,56 @@ export class ClinicalSegmentationManager {
           instanceCount: input.prediction.instances.length,
           caseBand: input.prediction.confidence.caseBand,
           geometryFingerprint: input.prediction.geometryFingerprint,
-          sourceRevision: input.prediction.sourceRevision
+          sourceRevision: input.prediction.sourceRevision,
+          needsReviewCount: input.prediction.confidence.needsReviewCount,
+          status: 'CURRENT' as const,
+          acceptedAt: input.now,
+          faceMembership,
+          ...(input.validationVerdict !== undefined
+            ? { validationVerdict: input.validationVerdict }
+            : {}),
+          teeth: Object.freeze(
+            input.prediction.instances.map((inst) => {
+              const frame = computeToothLocalFrame(inst);
+              return Object.freeze({
+                instanceId: inst.instanceId,
+                fdi: inst.identification.fdi,
+                status: inst.identification.status,
+                confidence: Number(inst.confidence.toFixed(3)),
+                needsReview:
+                  inst.identification.status === 'UNCERTAIN' ||
+                  inst.identification.status === 'UNKNOWN' ||
+                  inst.confidence < 0.5,
+                faceCount: inst.faceCount,
+                centroid: Object.freeze([
+                  inst.centroid[0],
+                  inst.centroid[1],
+                  inst.centroid[2]
+                ] as const),
+                localFrame: Object.freeze({
+                  origin: Object.freeze([
+                    frame.origin[0],
+                    frame.origin[1],
+                    frame.origin[2]
+                  ] as const),
+                  xAxis: Object.freeze([frame.xAxis.x, frame.xAxis.y, frame.xAxis.z] as const),
+                  yAxis: Object.freeze([frame.yAxis.x, frame.yAxis.y, frame.yAxis.z] as const),
+                  zAxis: Object.freeze([frame.zAxis.x, frame.zAxis.y, frame.zAxis.z] as const),
+                  confidence: frame.confidence
+                }),
+                ...(inst.neighbors !== undefined
+                  ? {
+                      neighbors: Object.freeze({
+                        archPreviousId: inst.neighbors.archPreviousId,
+                        archNextId: inst.neighbors.archNextId,
+                        confidence: inst.neighbors.confidence,
+                        basis: inst.neighbors.basis
+                      })
+                    }
+                  : {})
+              });
+            })
+          )
         })
       });
       return nextObj;

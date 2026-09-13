@@ -21,8 +21,8 @@ const ALLOWED: Readonly<Record<CloseBaseSessionLifecycle, readonly CloseBaseSess
     active: ['previewing', 'processing', 'cancelled', 'disposed', 'failed'],
     previewing: ['active', 'processing', 'committing', 'cancelled', 'disposed', 'failed'],
     processing: ['committing', 'previewing', 'cancelled', 'disposed', 'failed'],
-    committing: ['completed', 'cancelled', 'disposed', 'failed'],
-    completed: ['none', 'disposed'],
+    committing: ['completed', 'cancelled', 'disposed', 'failed', 'previewing', 'active'],
+    completed: ['none', 'disposed', 'created', 'active', 'previewing'],
     cancelled: ['none', 'disposed'],
     failed: ['none', 'previewing', 'disposed'],
     disposed: []

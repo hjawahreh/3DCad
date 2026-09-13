@@ -25,6 +25,14 @@ export interface SegmentationProviderInfo {
   readonly capabilities: readonly SegmentationProviderCapability[];
 }
 
+export interface SegmentationProviderRuntimeInfo {
+  readonly preferredExecutionProvider: 'webgpu' | 'wasm' | 'cpu';
+  readonly availableExecutionProviders: readonly ('webgpu' | 'wasm' | 'cpu')[];
+  readonly message: string;
+  readonly gpuAvailable: boolean;
+  readonly cpuFallback: boolean;
+}
+
 export interface SegmentationInferRequest {
   readonly objectId: string;
   readonly sourceRevision: number;
@@ -32,6 +40,8 @@ export interface SegmentationInferRequest {
   readonly mesh: TriangleMesh;
   readonly preprocess: PreprocessResult;
   readonly identificationThreshold: number;
+  /** Clinical arch when known — identification only; optional for model-neutral providers. */
+  readonly archRole?: 'upper' | 'lower';
   readonly signal: AbortSignal;
   readonly report: (progress: {
     readonly completed: number;
@@ -44,8 +54,15 @@ export interface SegmentationProvider {
   readonly info: SegmentationProviderInfo;
   initialize(): Promise<void>;
   capabilities(): readonly SegmentationProviderCapability[];
+  modelInformation(): SegmentationProviderInfo;
+  runtimeInformation(): SegmentationProviderRuntimeInfo;
   validateInput(mesh: TriangleMesh): { readonly ok: boolean; readonly message?: string };
   preprocess(mesh: TriangleMesh, signal: AbortSignal): Promise<PreprocessResult>;
+  /**
+   * Providers that need dense features may call postprocess helpers after infer;
+   * clinical layer only consumes model-neutral SegmentationPrediction.
+   */
+  postprocess?(prediction: SegmentationPrediction): Promise<SegmentationPrediction>;
   infer(request: SegmentationInferRequest): Promise<SegmentationPrediction>;
   cancel(): void;
   dispose(): void;

@@ -4,18 +4,20 @@
 
 import type { ClinicalDocumentSnapshot } from '../document/ClinicalDocument.js';
 import type { ClinicalCaseId } from '../runtime/types.js';
+import { deriveClinicalCaseWorkflowStatus } from './ClinicalCaseWorkflowStatus.js';
+export type {
+  CasePersistenceContract,
+  PersistedClinicalCase,
+  PersistedMeshGeometry
+} from './ClinicalCasePersistence.js';
 
 export interface RecentCaseEntry {
   readonly caseId: ClinicalCaseId;
   readonly name: string;
   readonly patientName: string;
   readonly lastOpenedAt: number;
-}
-
-/** Host-owned persistence port — no file I/O in clinical module. */
-export interface CasePersistenceContract {
-  readonly save: (document: ClinicalDocumentSnapshot) => Promise<void> | void;
-  readonly load: (caseId: ClinicalCaseId) => Promise<ClinicalDocumentSnapshot | undefined> | ClinicalDocumentSnapshot | undefined;
+  readonly updatedAt?: number;
+  readonly workflowStatus?: string;
 }
 
 export class RecentCasesRegistry {
@@ -38,7 +40,9 @@ export class RecentCasesRegistry {
         caseId: doc.caseId,
         name: doc.caseMeta.name,
         patientName: doc.patient.displayName,
-        lastOpenedAt: openedAt
+        lastOpenedAt: openedAt,
+        updatedAt: doc.updatedAt,
+        workflowStatus: deriveClinicalCaseWorkflowStatus(doc)
       })
     );
     this.entries.push(...filtered);

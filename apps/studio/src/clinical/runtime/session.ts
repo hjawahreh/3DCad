@@ -119,7 +119,15 @@ export class ClinicalSession {
     });
   }
 
-  public newCase(input?: { readonly name?: string; readonly patientName?: string }): ClinicalResult<ClinicalDocumentSnapshot> {
+  public newCase(input?: {
+    readonly name?: string;
+    readonly patientName?: string;
+    readonly firstName?: string;
+    readonly lastName?: string;
+    readonly patientId?: string;
+    readonly chartNumber?: string;
+    readonly notes?: string;
+  }): ClinicalResult<ClinicalDocumentSnapshot> {
     if (this.disposed) {
       return clinicalFailure('unavailable', 'Session disposed');
     }
@@ -130,7 +138,12 @@ export class ClinicalSession {
     this.document = createEmptyClinicalDocument({
       now,
       ...(input?.name !== undefined ? { name: input.name } : {}),
-      ...(input?.patientName !== undefined ? { patientName: input.patientName } : {})
+      ...(input?.patientName !== undefined ? { patientName: input.patientName } : {}),
+      ...(input?.firstName !== undefined ? { firstName: input.firstName } : {}),
+      ...(input?.lastName !== undefined ? { lastName: input.lastName } : {}),
+      ...(input?.patientId !== undefined ? { patientId: input.patientId } : {}),
+      ...(input?.chartNumber !== undefined ? { chartNumber: input.chartNumber } : {}),
+      ...(input?.notes !== undefined ? { notes: input.notes } : {})
     });
     this.lifecycle.force('case-active');
     this.recent.register(this.document, now);
@@ -149,7 +162,7 @@ export class ClinicalSession {
     return clinicalSuccess(this.document);
   }
 
-  /** Placeholder open — host supplies metadata; no file parse. */
+  /** Open a case from a host-supplied document snapshot (persistence loads meshes separately). */
   public openCase(document: ClinicalDocumentSnapshot): ClinicalResult<ClinicalDocumentSnapshot> {
     if (this.disposed) {
       return clinicalFailure('unavailable', 'Session disposed');
