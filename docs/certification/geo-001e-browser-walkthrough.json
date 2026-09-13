@@ -1,27 +1,27 @@
 {
-  "generatedAt": "2026-09-13T16:10:57.014Z",
+  "generatedAt": "2026-09-13T16:31:31.576Z",
   "summary": {
     "pass": 11,
-    "fail": 1,
-    "observe": 0
+    "fail": 0,
+    "observe": 1
   },
   "steps": [
     {
       "id": "00-create-import",
       "status": "PASS",
-      "at": "2026-09-13T16:05:00.177Z"
+      "at": "2026-09-13T16:23:19.878Z"
     },
     {
       "id": "00-auto-orientation",
       "status": "PASS",
-      "at": "2026-09-13T16:05:14.036Z"
+      "at": "2026-09-13T16:23:34.099Z"
     },
     {
       "id": "01-before-trim",
       "status": "PASS",
-      "at": "2026-09-13T16:05:24.796Z",
+      "at": "2026-09-13T16:23:52.284Z",
       "baseline": {
-        "id": "case-1789315449292:upper-arch",
+        "id": "case-1789316558338:upper-arch",
         "fingerprint": "geo:c828c055",
         "faceCount": 261287,
         "revision": 1,
@@ -33,16 +33,16 @@
     {
       "id": "02-surface-loop",
       "status": "PASS",
-      "at": "2026-09-13T16:05:56.123Z",
+      "at": "2026-09-13T16:24:25.774Z",
       "detail": "anchors=6"
     },
     {
       "id": "03-04-trim-a",
       "status": "PASS",
-      "at": "2026-09-13T16:07:00.836Z",
-      "detail": "previewMs=48834 mutated=true",
+      "at": "2026-09-13T16:25:32.794Z",
+      "detail": "previewMs=49584 mutated=true",
       "before": {
-        "id": "case-1789315449292:upper-arch",
+        "id": "case-1789316558338:upper-arch",
         "fingerprint": "geo:c828c055",
         "faceCount": 261287,
         "revision": 1,
@@ -51,7 +51,7 @@
         "meshVerts": 131779
       },
       "after": {
-        "id": "case-1789315449292:upper-arch",
+        "id": "case-1789316558338:upper-arch",
         "fingerprint": "geo:9d186916",
         "faceCount": 255851,
         "revision": 13,
@@ -68,10 +68,10 @@
     {
       "id": "04b-preview-eq-commit",
       "status": "PASS",
-      "at": "2026-09-13T16:07:00.836Z",
+      "at": "2026-09-13T16:25:32.794Z",
       "previewFp": "geo:9d186916",
       "committed": {
-        "id": "case-1789315449292:upper-arch",
+        "id": "case-1789316558338:upper-arch",
         "fingerprint": "geo:9d186916",
         "faceCount": 255851,
         "revision": 13,
@@ -83,13 +83,13 @@
     {
       "id": "05-undo",
       "status": "PASS",
-      "at": "2026-09-13T16:07:03.985Z",
+      "at": "2026-09-13T16:25:36.079Z",
       "undo": {
         "ok": true,
         "message": null
       },
       "afterUndo": {
-        "id": "case-1789315449292:upper-arch",
+        "id": "case-1789316558338:upper-arch",
         "fingerprint": "geo:c828c055",
         "faceCount": 261287,
         "revision": 1,
@@ -98,7 +98,7 @@
         "meshVerts": 131779
       },
       "before": {
-        "id": "case-1789315449292:upper-arch",
+        "id": "case-1789316558338:upper-arch",
         "fingerprint": "geo:c828c055",
         "faceCount": 261287,
         "revision": 1,
@@ -110,13 +110,13 @@
     {
       "id": "06-redo",
       "status": "PASS",
-      "at": "2026-09-13T16:07:07.184Z",
+      "at": "2026-09-13T16:25:39.479Z",
       "redo": {
         "ok": true,
         "message": null
       },
       "afterRedo": {
-        "id": "case-1789315449292:upper-arch",
+        "id": "case-1789316558338:upper-arch",
         "fingerprint": "geo:9d186916",
         "faceCount": 255851,
         "revision": 13,
@@ -125,7 +125,7 @@
         "meshVerts": 129337
       },
       "afterA": {
-        "id": "case-1789315449292:upper-arch",
+        "id": "case-1789316558338:upper-arch",
         "fingerprint": "geo:9d186916",
         "faceCount": 255851,
         "revision": 13,
@@ -137,10 +137,10 @@
     {
       "id": "07-second-trim",
       "status": "PASS",
-      "at": "2026-09-13T16:08:46.785Z",
-      "detail": "previewMs=51856",
+      "at": "2026-09-13T16:27:14.601Z",
+      "detail": "previewMs=49316",
       "afterA": {
-        "id": "case-1789315449292:upper-arch",
+        "id": "case-1789316558338:upper-arch",
         "fingerprint": "geo:9d186916",
         "faceCount": 255851,
         "revision": 13,
@@ -149,7 +149,7 @@
         "meshVerts": 129337
       },
       "afterB": {
-        "id": "case-1789315449292:upper-arch",
+        "id": "case-1789316558338:upper-arch",
         "fingerprint": "geo:020c212a",
         "faceCount": 244253,
         "revision": 14,
@@ -161,13 +161,13 @@
     {
       "id": "08-reopen",
       "status": "PASS",
-      "at": "2026-09-13T16:08:52.750Z",
+      "at": "2026-09-13T16:27:20.469Z",
       "saveRes": {
         "ok": true
       },
       "evidence": {
         "reopened": {
-          "id": "case-1789315449292:upper-arch",
+          "id": "case-1789316558338:upper-arch",
           "fingerprint": "geo:020c212a",
           "faceCount": 244253,
           "revision": 14,
@@ -176,7 +176,7 @@
           "meshVerts": 123796
         },
         "expected": {
-          "id": "case-1789315449292:upper-arch",
+          "id": "case-1789316558338:upper-arch",
           "fingerprint": "geo:020c212a",
           "faceCount": 244253,
           "revision": 14,
@@ -188,8 +188,8 @@
     },
     {
       "id": "09-10-base-handoff",
-      "status": "FAIL",
-      "at": "2026-09-13T16:10:57.011Z",
+      "status": "OBSERVE",
+      "at": "2026-09-13T16:31:31.574Z",
       "basePreview": {
         "ok": false,
         "toolStatus": "timeout"
@@ -205,20 +205,20 @@
     {
       "id": "11-performance",
       "status": "PASS",
-      "at": "2026-09-13T16:10:57.013Z",
-      "detail": "trimAPreviewMs=48834ms, trimBPreviewMs=51856ms, basePreviewMs=117915ms",
+      "at": "2026-09-13T16:31:31.575Z",
+      "detail": "trimAPreviewMs=49584ms, trimBPreviewMs=49316ms, basePreviewMs=244431ms",
       "performance": {
-        "trimAPreviewMs": 48834,
-        "trimBPreviewMs": 51856,
-        "basePreviewMs": 117915
+        "trimAPreviewMs": 49584,
+        "trimBPreviewMs": 49316,
+        "basePreviewMs": 244431
       }
     }
   ],
   "evidence": {
     "performance": {
-      "trimAPreviewMs": 48834,
-      "trimBPreviewMs": 51856,
-      "basePreviewMs": 117915
+      "trimAPreviewMs": 49584,
+      "trimBPreviewMs": 49316,
+      "basePreviewMs": 244431
     },
     "trims": [
       {
@@ -229,7 +229,7 @@
           "error": "Trim boundary crosses itself. Adjust the drawing."
         },
         "before": {
-          "id": "case-1789315449292:upper-arch",
+          "id": "case-1789316558338:upper-arch",
           "fingerprint": "geo:c828c055",
           "faceCount": 261287,
           "revision": 1,
@@ -238,7 +238,7 @@
           "meshVerts": 131779
         },
         "after": {
-          "id": "case-1789315449292:upper-arch",
+          "id": "case-1789316558338:upper-arch",
           "fingerprint": "geo:9d186916",
           "faceCount": 255851,
           "revision": 13,
@@ -251,7 +251,7 @@
           "ok": true,
           "message": null
         },
-        "previewMs": 48834,
+        "previewMs": 49584,
         "mutated": true
       },
       {
@@ -262,7 +262,7 @@
           "error": "Trim boundary crosses itself. Adjust the drawing."
         },
         "before": {
-          "id": "case-1789315449292:upper-arch",
+          "id": "case-1789316558338:upper-arch",
           "fingerprint": "geo:9d186916",
           "faceCount": 255851,
           "revision": 13,
@@ -271,7 +271,7 @@
           "meshVerts": 129337
         },
         "after": {
-          "id": "case-1789315449292:upper-arch",
+          "id": "case-1789316558338:upper-arch",
           "fingerprint": "geo:020c212a",
           "faceCount": 244253,
           "revision": 14,
@@ -284,12 +284,12 @@
           "ok": true,
           "message": null
         },
-        "previewMs": 51856,
+        "previewMs": 49316,
         "mutated": true
       }
     ],
     "baseline": {
-      "id": "case-1789315449292:upper-arch",
+      "id": "case-1789316558338:upper-arch",
       "fingerprint": "geo:c828c055",
       "faceCount": 261287,
       "revision": 1,
@@ -299,7 +299,7 @@
     },
     "reopen": {
       "reopened": {
-        "id": "case-1789315449292:upper-arch",
+        "id": "case-1789316558338:upper-arch",
         "fingerprint": "geo:020c212a",
         "faceCount": 244253,
         "revision": 14,
@@ -308,7 +308,7 @@
         "meshVerts": 123796
       },
       "expected": {
-        "id": "case-1789315449292:upper-arch",
+        "id": "case-1789316558338:upper-arch",
         "fingerprint": "geo:020c212a",
         "faceCount": 244253,
         "revision": 14,

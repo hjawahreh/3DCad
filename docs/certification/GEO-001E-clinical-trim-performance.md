@@ -116,9 +116,9 @@ Measured on the same 261k-triangle upper mesh.
 
 | Stage | Duration |
 | --- | --- |
-| Trim A preview (end-to-end UI → VTK → preview ready) | **48834 ms** |
-| Trim B preview | **51856 ms** |
-| Close Base preview wait (wall) | **117915 ms** (wait helper; see observations) |
+| Trim A preview (end-to-end UI → VTK → preview ready) | **49584 ms** |
+| Trim B preview | **49316 ms** |
+| Close Base preview wait (wall) | **244431 ms** (wait helper; see observations) |
 
 Prior GEO-001D full-arch hull Trim preview was ≈**101 s** and Accept was a
 NO_OP. GEO-001E peripheral real region Accept mutates geometry; wall preview
@@ -215,13 +215,17 @@ Shots: `docs/certification/geo-001e-browser-shots/`
 
 JSON: `docs/certification/geo-001e-browser-walkthrough.json`
 
+Latest walkthrough summary: **11 PASS / 0 FAIL / 1 OBSERVE**
+(base handoff fingerprint matched; Close Base preview readiness wait observed).
+
 ## Remaining Observations
 
-1. **Preview latency still high (~49–52 s)** for a localized real dental
+1. **Preview latency still high (~49–50 s)** for a localized real dental
    Trim despite ~2–3 s VTK core clip. Bottleneck is measured as transfer +
    SurfacePath densify + surrounding analysis — not “progress UI”.
-2. **Close Base preview wait** can exceed the walkthrough helper budget even
-   when `baseInputFingerprint == trimmedFingerprint` (handoff proven).
+2. **Close Base preview wait** remains slow in the walkthrough helper even
+   when `baseInputFingerprint == trimmedFingerprint` (handoff proven;
+   recorded as OBSERVE).
 3. Walkthrough diagnostic SurfacePath probe (gaps reconstruct) may report
    self-intersection while the controller Close/Preview path succeeds;
    authoritative path is the controller/kernel path.
