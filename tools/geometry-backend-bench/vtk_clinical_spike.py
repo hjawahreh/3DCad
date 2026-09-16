@@ -121,19 +121,33 @@ def aabb_of(points: np.ndarray) -> dict[str, Any]:
     }
 
 
-def poly_to_arrays(poly) -> tuple[np.ndarray, np.ndarray]:
+def poly_to_arrays(poly, *, already_triangles: bool = False) -> tuple[np.ndarray, np.ndarray]:
+    """Convert vtkPolyData → numpy positions/indices.
+
+    GEO-002: when `already_triangles` is True, skip a second vtkTriangleFilter
+    (callers that already triangulated+cleaned must pass True).
+    Cell extraction uses a bulk reshape when the array is uniform triangles.
+    """
     from vtkmodules.util.numpy_support import vtk_to_numpy
     from vtkmodules.vtkFiltersCore import vtkTriangleFilter
 
-    tri = vtkTriangleFilter()
-    tri.SetInputData(poly)
-    tri.Update()
-    out = tri.GetOutput()
+    if already_triangles:
+        out = poly
+    else:
+        tri = vtkTriangleFilter()
+        tri.SetInputData(poly)
+        tri.Update()
+        out = tri.GetOutput()
     if out.GetNumberOfPoints() == 0 or out.GetNumberOfCells() == 0:
         return np.zeros((0, 3), dtype=np.float64), np.zeros((0, 3), dtype=np.int32)
-    pts = vtk_to_numpy(out.GetPoints().GetData()).astype(np.float64)
-    # cells as triangles
+    pts = vtk_to_numpy(out.GetPoints().GetData()).astype(np.float64, copy=False)
     cells = vtk_to_numpy(out.GetPolys().GetData())
+    # Fast path: [3,i,j,k, 3,i,j,k, ...]
+    if cells.size >= 4 and cells.size % 4 == 0 and int(cells[0]) == 3:
+        # Verify uniform triangle markers without a Python loop over faces.
+        if np.all(cells[0::4] == 3):
+            tris = cells.reshape(-1, 4)[:, 1:4].astype(np.int32, copy=False)
+            return pts, tris
     tris = []
     i = 0
     while i < len(cells):
@@ -451,21 +465,28 @@ def loop_intersects_removable_region(
     """
     True when the loop encloses mesh geometry that would be removed for the given keep mode.
     Used to reject false no-ops (loop misses surface entirely → acceptable no-op).
+
+    GEO-002: early-exit point-in-polygon — do not scan all vertices when unnecessary.
     """
     from vtkmodules.util.numpy_support import vtk_to_numpy
 
     loop2 = _project_loop_2d(loop_points, normal)
     u, v, n = _loop_plane_basis(normal)
-    pts3 = vtk_to_numpy(poly.GetPoints().GetData()).astype(np.float64)
+    pts3 = vtk_to_numpy(poly.GetPoints().GetData()).astype(np.float64, copy=False)
     pts2 = np.stack([(pts3 @ u), (pts3 @ v)], axis=1)
-    inside_mask = np.array([_point_in_polygon_2d(p, loop2) for p in pts2], dtype=bool)
-    if not np.any(inside_mask):
-        return False
+
+    # KEEP_INSIDE — removable region is outside: any exterior point is enough.
     if inside_out:
-        # KEEP_INSIDE — removable region is outside the loop
-        return np.any(~inside_mask)
-    # KEEP_OUTSIDE — removable region is inside the loop
-    return True
+        for p in pts2:
+            if not _point_in_polygon_2d(p, loop2):
+                return True
+        return False
+
+    # KEEP_OUTSIDE — removable region is inside: any interior point is enough.
+    for p in pts2:
+        if _point_in_polygon_2d(p, loop2):
+            return True
+    return False
 
 
 def vtk_bounds_list(poly) -> list[float]:
@@ -557,7 +578,9 @@ def _finalize_trim_output(
         + (bounds_before[3] - bounds_before[2]) ** 2
         + (bounds_before[5] - bounds_before[4]) ** 2
     )
-    surface_area_before = poly_surface_area(poly)
+    # GEO-002: avoid full input-mesh poly_to_arrays solely for area metrics.
+    # Cell/point/bounds checks remain authoritative for noop detection.
+    surface_area_before = float(before_cells)
     q = quality_checks(positions, indices, before_diag)
     bounds_after_dict = q.get("bounds")
     bounds_after = _bounds_dict_to_list(bounds_after_dict)
@@ -575,6 +598,9 @@ def _finalize_trim_output(
         after_pts=q["vertices"],
         after_bounds=bounds_after,
         after_area=surface_area_after,
+        rel_tol=1e-4,
+        # before_area is a cell-count proxy (GEO-002); do not fail on area delta alone.
+        abs_area_tol=1e9,
     )
     noop = unchanged or q.get("fingerprint") is None
 
@@ -696,7 +722,7 @@ def _run_select_polydata_trim(poly, loop_points: np.ndarray, *, inside_out: bool
     clean = vtkCleanPolyData()
     clean.SetInputData(tri.GetOutput())
     clean.Update()
-    positions, indices = poly_to_arrays(clean.GetOutput())
+    positions, indices = poly_to_arrays(clean.GetOutput(), already_triangles=True)
     timings["convert_out_ms"] = (time.perf_counter() - t0) * 1000
     return positions, indices, timings
 
@@ -733,7 +759,7 @@ def _run_implicit_loop_trim(
     clean = vtkCleanPolyData()
     clean.SetInputData(tri.GetOutput())
     clean.Update()
-    positions, indices = poly_to_arrays(clean.GetOutput())
+    positions, indices = poly_to_arrays(clean.GetOutput(), already_triangles=True)
     timings["convert_out_ms"] = (time.perf_counter() - t0) * 1000
     return positions, indices, timings
 

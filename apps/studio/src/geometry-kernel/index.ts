@@ -32,9 +32,32 @@ export {
   runGeometryQualityPipeline,
   type GeometryQualityReport,
   type GeometryQualityStats,
+  type GeometryQualityLevel,
   type QualityReport,
   type QualityStats
 } from './quality/GeometryQualityPipeline.js';
+
+export {
+  clinicalGeometryContexts,
+  ClinicalGeometryContextRegistry,
+  type ClinicalGeometryContext,
+  type OperationContext,
+  type GeometryCacheEvent
+} from './context/ClinicalGeometryContext.js';
+
+export {
+  geometryWarmup,
+  GeometryWarmupService,
+  type GeometryWarmupState,
+  type GeometryWarmupStage,
+  type GeometryWarmupStatus,
+  type GeometryWarmupTimings,
+  type GeometryWarmupFailure,
+  type GeometryWarmupBackend,
+  type WarmMeshOptions
+} from './context/GeometryWarmup.js';
+
+export { GeometryCache } from './cache/GeometryCache.js';
 
 export {
   buildSpatialIndex,
@@ -43,7 +66,10 @@ export {
   type Vec3
 } from './spatial/SpatialIndex.js';
 
-export { GeometryCache } from './cache/GeometryCache.js';
+export { SurfaceOperations } from './ops/SurfaceOperations.js';
+export { BoundaryOperations } from './ops/BoundaryOperations.js';
+export { MeshRepairOperations } from './ops/MeshRepairOperations.js';
+export { ClinicalGeometryValidation } from './ops/ClinicalGeometryValidation.js';
 
 export {
   trimMesh,
@@ -101,7 +127,9 @@ export { VtkClipAdapter } from './adapters/VtkClipAdapter.js';
 export {
   VtkHttpWorkerBackend,
   probeVtkHttpWorker,
-  type VtkHttpWorkerConfig
+  type VtkHttpWorkerConfig,
+  type VtkWorkerSessionInfo,
+  type VtkTransportMetrics
 } from './adapters/VtkHttpWorkerBackend.js';
 export { HybridGeometryBackend } from './adapters/HybridGeometryBackend.js';
 export {
@@ -109,6 +137,28 @@ export {
   runCloseBase,
   type AsyncGeometryBackend
 } from './adapters/AsyncGeometryBackend.js';
+export {
+  encodeBinaryGeometryFrame,
+  decodeBinaryGeometryFrame,
+  isBinaryGeometryFrame,
+  CGF_MAGIC,
+  CGF_VERSION,
+  CGF_CONTENT_TYPE,
+  type EncodedBinaryGeometryFrame,
+  type DecodedBinaryGeometryFrame,
+  type BinaryGeometryFrameMeta
+} from './transport/BinaryGeometryFrame.js';
+export {
+  HttpGeometryDeliveryClient,
+  NodeHostGeometryDeliveryClient,
+  TauriIpcGeometryDeliveryClient,
+  resolveGeometryDeliveryClient,
+  setGeometryDeliveryClientForTests,
+  isTauriRuntime,
+  type GeometryDeliveryClient,
+  type GeometryDeliveryMode,
+  type GeometryDeliveryResult
+} from './transport/GeometryDelivery.js';
 export {
   ManifoldWasmAdapter,
   injectManifoldModuleForTests,
@@ -142,10 +192,12 @@ export {
   buildTopology,
   extractBoundaryLoops,
   buildClinicalSpatialIndex,
+  invalidateSpatialCache,
   rayIntersectMesh,
   nearestSurfacePoint,
   projectPointToSurface,
   createSurfacePath,
+  appendSurfacePath,
   validateSurfacePath,
   resampleSurfacePath,
   closeSurfacePath,

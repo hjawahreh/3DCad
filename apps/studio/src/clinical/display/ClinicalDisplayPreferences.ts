@@ -37,14 +37,15 @@ export const DEFAULT_CLINICAL_DISPLAY_PREFERENCES: ClinicalDisplayPreferences = 
   displayMode: 'smooth',
   background: 'dark',
   showGrid: true,
-  showAxes: true,
-  showOrigin: true,
+  // GEO-003A: clinical workstation defaults — no engineering XYZ overlays.
+  showAxes: false,
+  showOrigin: false,
   showBoundingBox: false,
   showModelEdges: false,
   showFaceOrientation: false,
   backfaceCulling: true,
   lighting: 'studio',
-  showOrientationIndicator: true,
+  showOrientationIndicator: false,
   showScaleIndicator: true,
   showFrameStats: false,
   showHud: true,
@@ -62,7 +63,7 @@ export const DISPLAY_MODES: readonly ClinicalDisplayMode[] = Object.freeze([
 ]);
 
 export class ClinicalDisplayPreferencesStore {
-  private readonly storageKey = 'cad-studio.clinical.display.v1';
+  private readonly storageKey = 'cad-studio.clinical.display.v3';
   private prefs: ClinicalDisplayPreferences;
   private readonly listeners = new Set<() => void>();
 
@@ -70,7 +71,11 @@ export class ClinicalDisplayPreferencesStore {
     this.prefs = Object.freeze({
       ...DEFAULT_CLINICAL_DISPLAY_PREFERENCES,
       ...this.load(),
-      ...(initial ?? {})
+      ...(initial ?? {}),
+      // CLN-TRIM-002: clinical mode never restores engineering XYZ overlays from older prefs.
+      showAxes: initial?.showAxes ?? false,
+      showOrigin: initial?.showOrigin ?? false,
+      showOrientationIndicator: initial?.showOrientationIndicator ?? false
     });
   }
 

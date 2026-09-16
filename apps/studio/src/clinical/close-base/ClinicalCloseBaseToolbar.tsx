@@ -2,10 +2,10 @@ import { useSyncExternalStore } from 'react';
 import { useClinicalUiRevision } from '../shell/useClinicalUi.js';
 import { ClinicalArchSwitcher } from '../shell/ClinicalArchSwitcher.js';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
-import { CLOSE_BASE_STRATEGIES } from './ClinicalCloseBaseStrategy.js';
 
 /**
- * Close Base toolbar — arch, base style, clinical parameters, preview/commit.
+ * CLN-WORKSTATION-001 — compact Close Base / Extrude panel.
+ * Primary: Create Base. One parameter: Height. Done exits (accepts preview when ready).
  */
 export const ClinicalCloseBaseToolbar = ({
   workspace
@@ -35,7 +35,7 @@ export const ClinicalCloseBaseToolbar = ({
   };
 
   const params = state.parameters;
-  const toolStatus = closeBase.getToolStatus();
+  const processing = state.toolStatus === 'processing' || Boolean(state.progressMessage);
   const doc = session.getPublicState().activeCase;
   const targetObj = doc?.objects.find((o) => o.id === state.targetObjectId);
   const activeArch =
@@ -47,12 +47,12 @@ export const ClinicalCloseBaseToolbar = ({
 
   return (
     <div
-      className="clinical-close-base-toolbar"
+      className="clinical-close-base-toolbar clinical-close-base-toolbar--workstation"
       data-testid="clinical-close-base-toolbar"
       onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="clinical-close-base-toolbar__group">
-        <span className="clinical-close-base-toolbar__label">Arch</span>
+        <span className="clinical-close-base-toolbar__label">Base</span>
         <ClinicalArchSwitcher
           active={activeArch}
           hasUpper={hasUpper}
@@ -68,208 +68,101 @@ export const ClinicalCloseBaseToolbar = ({
           }
         />
       </div>
+
       <div className="clinical-close-base-toolbar__group">
-        <span className="clinical-close-base-toolbar__label">Base Style</span>
-        {CLOSE_BASE_STRATEGIES.map((strategy) => (
-          <button
-            key={strategy.id}
-            type="button"
-            className={
-              params.strategy === strategy.id
-                ? 'clinical-close-base-btn clinical-close-base-btn--active'
-                : 'clinical-close-base-btn'
-            }
-            title={strategy.description}
-            data-testid={`clinical-close-base-style-${strategy.id}`}
-            onClick={() =>
-              run(() => {
-                closeBase.setStrategy(strategy.id);
-              })
-            }
-          >
-            {strategy.title}
-          </button>
-        ))}
-      </div>
-      <div className="clinical-close-base-toolbar__group">
-        <label className="clinical-close-base-field">
+        <label className="clinical-close-base-field clinical-close-base-field--slider">
           Height
           <input
-            type="number"
+            type="range"
             min={0.5}
             max={20}
             step={0.5}
             value={params.height}
             data-testid="clinical-close-base-height"
+            disabled={processing}
             onChange={(event) =>
               run(() => {
                 closeBase.setParameters({ height: Number(event.target.value) });
               })
             }
           />
+          <span className="clinical-close-base-field__value">{String(params.height)} mm</span>
         </label>
-        <label className="clinical-close-base-field">
-          Thickness
-          <input
-            type="number"
-            min={0.5}
-            max={10}
-            step={0.1}
-            value={params.thickness}
-            data-testid="clinical-close-base-thickness"
-            onChange={(event) =>
-              run(() => {
-                closeBase.setParameters({ thickness: Number(event.target.value) });
-              })
-            }
-          />
-        </label>
-        <label className="clinical-close-base-field">
-          Offset
-          <input
-            type="number"
-            min={0}
-            max={5}
-            step={0.1}
-            value={params.margin}
-            data-testid="clinical-close-base-offset"
-            onChange={(event) =>
-              run(() => {
-                closeBase.setParameters({ offset: Number(event.target.value) });
-              })
-            }
-          />
-        </label>
-        <button
-          type="button"
-          className="clinical-close-base-btn"
-          title="Base plane orientation"
-          onClick={() =>
-            run(() => {
-              closeBase.cycleOrientation();
-            })
-          }
-        >
-          Plane {params.orientation.toUpperCase()}
-        </button>
       </div>
+
       <div className="clinical-close-base-toolbar__group clinical-close-base-toolbar__actions">
         <button
           type="button"
-          className="clinical-close-base-btn"
+          className="clinical-close-base-btn clinical-close-base-btn--primary"
           data-testid="clinical-close-base-auto"
+          disabled={processing}
           onClick={() =>
             runAsync(async () => {
               const result = await closeBase.autoCloseBase();
               if (!result.ok) {
-                session.getHost().notifications.push('warning', 'Close Base', result.error.message);
+                session.getHost().notifications.push('warning', 'Base', result.error.message);
               }
             })
           }
         >
-          Auto Create Base
+          Create Base
         </button>
+        {state.previewActive ? (
+          <button
+            type="button"
+            className="clinical-close-base-btn clinical-close-base-btn--accept"
+            data-testid="clinical-close-base-accept"
+            disabled={processing}
+            onClick={() =>
+              runAsync(async () => {
+                const result = await closeBase.accept();
+                if (!result.ok) {
+                  session.getHost().notifications.push('warning', 'Base', result.error.message);
+                } else {
+                  session.getHost().notifications.push('success', 'Base', 'Base complete');
+                }
+              })
+            }
+          >
+            Accept
+          </button>
+        ) : null}
         <button
           type="button"
-          className="clinical-close-base-btn"
-          data-testid="clinical-close-base-manual"
-          onClick={() =>
-            run(() => {
-              closeBase.enterManualMode();
-            })
-          }
-        >
-          Adjust Manually
-        </button>
-        <button
-          type="button"
-          className="clinical-close-base-btn"
-          data-testid="clinical-close-base-preview"
+          className="clinical-close-base-btn clinical-close-base-btn--done"
+          data-testid="clinical-close-base-done"
+          disabled={processing}
           onClick={() =>
             runAsync(async () => {
-              const result = await closeBase.preview();
-              if (!result.ok) {
-                session.getHost().notifications.push('warning', 'Close Base', result.error.message);
+              if (state.previewActive) {
+                const result = await closeBase.accept();
+                if (!result.ok) {
+                  session.getHost().notifications.push('warning', 'Base', result.error.message);
+                  return;
+                }
+                session.getHost().notifications.push('success', 'Base', 'Base complete');
               }
-            })
-          }
-        >
-          Preview
-        </button>
-        <button
-          type="button"
-          className="clinical-close-base-btn clinical-close-base-btn--accept"
-          data-testid="clinical-close-base-accept"
-          onClick={() =>
-            runAsync(async () => {
-              const result = await closeBase.accept();
-              if (!result.ok) {
-                session.getHost().notifications.push('warning', 'Close Base', result.error.message);
-              }
-            })
-          }
-        >
-          Accept
-        </button>
-        <button
-          type="button"
-          className="clinical-close-base-btn clinical-close-base-btn--cancel"
-          data-testid="clinical-close-base-cancel"
-          onClick={() =>
-            run(() => {
               closeBase.cancel();
             })
           }
         >
-          Cancel
-        </button>
-        <button
-          type="button"
-          className="clinical-close-base-btn"
-          onClick={() =>
-            run(() => {
-              closeBase.reset();
-            })
-          }
-        >
-          Reset
-        </button>
-        <button
-          type="button"
-          className="clinical-close-base-btn"
-          disabled={!closeBase.history.canUndo()}
-          onClick={() =>
-            run(() => {
-              closeBase.undo();
-            })
-          }
-        >
-          Undo
-        </button>
-        <button
-          type="button"
-          className="clinical-close-base-btn"
-          disabled={!closeBase.history.canRedo()}
-          onClick={() =>
-            run(() => {
-              closeBase.redo();
-            })
-          }
-        >
-          Redo
+          Done
         </button>
       </div>
-      <div className="clinical-close-base-toolbar__status muted" data-testid="clinical-close-base-status">
-        {toolStatus} · {state.statusMessage}
-        {state.kernelFingerprint !== undefined
-          ? ` · ${state.kernelFingerprint.slice(0, 18)}…`
-          : ''}
-      </div>
-      {state.progressMessage !== undefined ? (
-        <div className="clinical-close-base-toolbar__progress" data-testid="clinical-close-base-progress">
-          {state.progressMessage} ({String(state.progressCompleted)}/{String(state.progressTotal)})
+
+      {processing ? (
+        <div
+          className="clinical-close-base-toolbar__progress"
+          data-testid="clinical-close-base-progress"
+        >
+          CREATING BASE…
         </div>
-      ) : null}
+      ) : (
+        <div className="clinical-close-base-toolbar__status muted" data-testid="clinical-close-base-status">
+          {state.statusMessage}
+        </div>
+      )}
+
       {state.validationReport !== undefined && !state.validationReport.passed ? (
         <div className="clinical-close-base-toolbar__errors" data-testid="clinical-close-base-errors">
           {state.validationReport.checks

@@ -1,10 +1,11 @@
 import { useSyncExternalStore } from 'react';
+import { screenDeltaToOrbitRadians } from '../../application/camera-orbit-mapping.js';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
-import type { OrientationIncrement, OrientationMode } from '../orientation/ClinicalOrientationState.js';
 import { useClinicalUiRevision } from './useClinicalUi.js';
 
 /**
- * Orientation toolbar — auto-orient + manual refine + accept/cancel.
+ * CLN-WORKSTATION-001 — compact Orient Scan toolbar.
+ * Auto-orient is default; manual controls are direct camera nudges (no XYZ editing).
  */
 export const ClinicalOrientationToolbar = ({
   workspace
@@ -23,52 +24,94 @@ export const ClinicalOrientationToolbar = ({
     return null;
   }
 
-  const run = (fn: () => { readonly ok: boolean; readonly error?: { readonly message: string } }): void => {
-    const result = fn();
-    if (!result.ok) {
-      session.getHost().notifications.push(
-        'warning',
-        'Orientation',
-        result.error?.message ?? 'Orientation failed'
-      );
-    }
-    session.notifyUi();
-  };
-
-  const modes: Array<{ id: OrientationMode; label: string }> = [
-    { id: 'free', label: 'Free' },
-    { id: 'axis-x', label: 'X' },
-    { id: 'axis-y', label: 'Y' },
-    { id: 'axis-z', label: 'Z' },
-    { id: 'incremental', label: 'Step' },
-    { id: 'snap', label: 'Snap' }
-  ];
-
-  const increments: OrientationIncrement[] = [1, 5, 15];
-  const doc = session.getPublicState().activeCase;
-  const hasUpper = doc?.objects.some((o) => o.archRole === 'upper') === true;
-  const hasLower = doc?.objects.some((o) => o.archRole === 'lower') === true;
   const confidence = state.confidence;
   const lowConfidence = confidence === 'low' || confidence === 'unavailable';
   const failed = confidence === 'unavailable';
 
+  const nudgeCamera = (dx: number, dy: number): void => {
+    const camera = session.getHost().sessions.cameraSession;
+    if (camera === undefined) return;
+    const orbit = screenDeltaToOrbitRadians(dx, dy);
+    camera.orbit(orbit.yaw, orbit.pitch);
+    session.getHost().sessions.viewportSession?.invalidate('camera');
+    session.notifyUi();
+  };
+
+  const STEP_PX = 48;
+
   return (
-    <div className="clinical-orientation-toolbar" data-testid="clinical-orientation-toolbar">
-      <div className="clinical-orientation-toolbar__summary">
-        <strong>Orient</strong>
-        <span className="muted">
-          {state.autoMessage ?? 'We positioned your scans for clinical review.'}
-        </span>
-        <span className="clinical-orientation-toolbar__arches muted">
-          {hasUpper ? 'Upper Arch' : null}
-          {hasUpper && hasLower ? ' · ' : null}
-          {hasLower ? 'Lower Arch' : null}
-          {!hasUpper && !hasLower ? 'Scan' : null}
-          {confidence !== undefined ? ` · Confidence: ${confidence}` : null}
-        </span>
+    <div
+      className="clinical-orientation-toolbar clinical-orientation-toolbar--workstation"
+      data-testid="clinical-orientation-toolbar"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <div className="clinical-orientation-toolbar__group">
+        <span className="clinical-orientation-toolbar__label">Orient Scan</span>
+        <button
+          type="button"
+          className="clinical-orient-btn"
+          data-testid="clinical-orientation-rotate-left"
+          title="Rotate left"
+          onClick={() => nudgeCamera(-STEP_PX, 0)}
+        >
+          ←
+        </button>
+        <button
+          type="button"
+          className="clinical-orient-btn"
+          data-testid="clinical-orientation-rotate-right"
+          title="Rotate right"
+          onClick={() => nudgeCamera(STEP_PX, 0)}
+        >
+          →
+        </button>
+        <button
+          type="button"
+          className="clinical-orient-btn"
+          data-testid="clinical-orientation-rotate-up"
+          title="Rotate up"
+          onClick={() => nudgeCamera(0, -STEP_PX)}
+        >
+          ↑
+        </button>
+        <button
+          type="button"
+          className="clinical-orient-btn"
+          data-testid="clinical-orientation-rotate-down"
+          title="Rotate down"
+          onClick={() => nudgeCamera(0, STEP_PX)}
+        >
+          ↓
+        </button>
+        <button
+          type="button"
+          className="clinical-orient-btn"
+          data-testid="clinical-orientation-home"
+          title="Home — clinical anterior"
+          onClick={() => {
+            workspace.viewport.presentCanonicalClinicalView('front');
+            session.notifyUi();
+          }}
+        >
+          Home
+        </button>
+        <button
+          type="button"
+          className="clinical-orient-btn"
+          data-testid="clinical-orientation-reset"
+          onClick={() => {
+            const result = workspace.orientation.reset();
+            if (!result.ok) {
+              session.getHost().notifications.push('warning', 'Orientation', result.error.message);
+            }
+            session.notifyUi();
+          }}
+        >
+          Reset
+        </button>
       </div>
 
-      <div className="clinical-orientation-toolbar__group">
+      <div className="clinical-orientation-toolbar__group clinical-orientation-toolbar__actions">
         <button
           type="button"
           className="clinical-orient-btn clinical-orient-btn--auto"
@@ -81,75 +124,15 @@ export const ClinicalOrientationToolbar = ({
             session.notifyUi();
           }}
         >
-          Re-run Auto Orient
-        </button>
-        {modes.map((m) => (
-          <button
-            key={m.id}
-            type="button"
-            className={
-              state.mode === m.id
-                ? 'clinical-orient-btn clinical-orient-btn--active'
-                : 'clinical-orient-btn'
-            }
-            onClick={() => {
-              if (m.id === 'snap') {
-                run(() => workspace.orientation.snap());
-              } else {
-                run(() => workspace.orientation.setMode(m.id));
-              }
-            }}
-          >
-            {m.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="clinical-orientation-toolbar__group">
-        <span className="clinical-orientation-toolbar__label">Step°</span>
-        {increments.map((deg) => (
-          <button
-            key={deg}
-            type="button"
-            className={
-              state.incrementDegrees === deg
-                ? 'clinical-orient-btn clinical-orient-btn--active'
-                : 'clinical-orient-btn'
-            }
-            onClick={() => run(() => workspace.orientation.setIncrement(deg))}
-          >
-            {deg}°
-          </button>
-        ))}
-        <button
-          type="button"
-          className="clinical-orient-btn"
-          onClick={() => run(() => workspace.orientation.rotateIncremental(-1))}
-        >
-          −
-        </button>
-        <button
-          type="button"
-          className="clinical-orient-btn"
-          onClick={() => run(() => workspace.orientation.rotateIncremental(1))}
-        >
-          +
-        </button>
-      </div>
-
-      <div className="clinical-orientation-toolbar__group clinical-orientation-toolbar__actions">
-        <button
-          type="button"
-          className="clinical-orient-btn"
-          data-testid="clinical-orientation-reset"
-          onClick={() => run(() => workspace.orientation.reset())}
-        >
-          Reset
+          Auto Orient
         </button>
         <button
           type="button"
           className="clinical-orient-btn clinical-orient-btn--cancel"
-          onClick={() => run(() => workspace.orientation.cancel())}
+          onClick={() => {
+            workspace.orientation.cancel();
+            session.notifyUi();
+          }}
         >
           Cancel
         </button>
@@ -159,15 +142,14 @@ export const ClinicalOrientationToolbar = ({
             className="clinical-orient-btn clinical-orient-btn--accept"
             data-testid="clinical-orientation-manual"
             onClick={() => {
-              run(() => workspace.orientation.setMode('free'));
-              session.getHost().notifications.push(
-                'info',
-                'Orientation',
-                'Adjust manually, then Accept Orientation.'
-              );
+              workspace.orientation.setMode('free');
+              session
+                .getHost()
+                .notifications.push('info', 'Orientation', 'Adjust with arrows, then Accept.');
+              session.notifyUi();
             }}
           >
-            Orient Manually
+            Continue
           </button>
         ) : (
           <button
@@ -177,7 +159,9 @@ export const ClinicalOrientationToolbar = ({
             onClick={() => {
               const result = workspace.orientation.accept();
               if (!result.ok) {
-                session.getHost().notifications.push('warning', 'Orientation', result.error.message);
+                session
+                  .getHost()
+                  .notifications.push('warning', 'Orientation', result.error.message);
                 session.notifyUi();
                 return;
               }
@@ -195,13 +179,13 @@ export const ClinicalOrientationToolbar = ({
               session.notifyUi();
             }}
           >
-            {lowConfidence ? 'Review & Accept' : 'Accept Orientation'}
+            {lowConfidence ? 'Review & Accept' : 'Accept'}
           </button>
         )}
       </div>
 
       <div className="clinical-orientation-toolbar__status muted" data-testid="clinical-orientation-status">
-        {lowConfidence && !failed ? 'Orientation needs review.' : state.statusMessage}
+        {state.autoMessage ?? state.statusMessage}
       </div>
     </div>
   );

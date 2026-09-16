@@ -71,30 +71,20 @@ export const ClinicalOrientationOverlay = ({
       onPointerCancel={onPointerUp}
     >
       <div className="clinical-orient-pivot" aria-label="Visual pivot" />
-      <div className="clinical-orient-guides" aria-hidden="true">
-        <span className="clinical-orient-guide clinical-orient-guide--x" />
-        <span className="clinical-orient-guide clinical-orient-guide--y" />
-        <span className="clinical-orient-guide clinical-orient-guide--z" />
-      </div>
-      <div className="clinical-orient-gizmo-3d" aria-label="Orientation gizmo">
-        {(['x', 'y', 'z', 'free'] as const).map((handle) => (
-          <button
-            key={handle}
-            type="button"
-            className={handleClass(handle)}
-            aria-label={`Rotate ${handle}`}
-            onPointerDown={(e) => onPointerDown(handle, e)}
-            onPointerEnter={() => workspace.orientation.controller.hoverHandle(handle)}
-            onPointerLeave={() => workspace.orientation.controller.hoverHandle(undefined)}
-          >
-            {handle === 'free' ? '⟳' : handle.toUpperCase()}
-          </button>
-        ))}
-      </div>
-      <div className="clinical-orient-axis-labels" aria-hidden="true">
-        <span className="label-x">X</span>
-        <span className="label-y">Y</span>
-        <span className="label-z">Z</span>
+      {/* CLN-WORKSTATION-001: no XYZ gizmo / axis labels in clinical mode.
+          Orient Scan toolbar provides camera nudges; free handle remains for drag refine. */}
+      <div className="clinical-orient-gizmo-3d" aria-label="Orientation refine" data-xyz-guides="off">
+        <button
+          type="button"
+          className={handleClass('free')}
+          aria-label="Free rotate"
+          data-testid="clinical-orient-free-handle"
+          onPointerDown={(e) => onPointerDown('free', e)}
+          onPointerEnter={() => workspace.orientation.controller.hoverHandle('free')}
+          onPointerLeave={() => workspace.orientation.controller.hoverHandle(undefined)}
+        >
+          ⟳
+        </button>
       </div>
       <div className="clinical-orient-status">{state.statusMessage}</div>
     </div>

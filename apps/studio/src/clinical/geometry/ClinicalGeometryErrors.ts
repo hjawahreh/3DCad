@@ -14,7 +14,8 @@ export type ClinicalGeometryErrorCategory =
   | 'COMMIT_FAILED'
   | 'CANCELLED'
   | 'OUT_OF_MEMORY'
-  | 'UNSUPPORTED_OPERATION';
+  | 'UNSUPPORTED_OPERATION'
+  | 'GEOMETRY_WARMUP_FAILED';
 
 export const CLINICAL_GEOMETRY_ERROR_CATEGORIES = Object.freeze([
   'INPUT_INVALID',
@@ -27,7 +28,8 @@ export const CLINICAL_GEOMETRY_ERROR_CATEGORIES = Object.freeze([
   'COMMIT_FAILED',
   'CANCELLED',
   'OUT_OF_MEMORY',
-  'UNSUPPORTED_OPERATION'
+  'UNSUPPORTED_OPERATION',
+  'GEOMETRY_WARMUP_FAILED'
 ] as const satisfies readonly ClinicalGeometryErrorCategory[]);
 
 export interface ClinicalGeometryError {
@@ -51,7 +53,8 @@ const DEFAULT_RECOVERABLE: Readonly<Record<ClinicalGeometryErrorCategory, boolea
     COMMIT_FAILED: true,
     CANCELLED: true,
     OUT_OF_MEMORY: false,
-    UNSUPPORTED_OPERATION: false
+    UNSUPPORTED_OPERATION: false,
+    GEOMETRY_WARMUP_FAILED: true
   });
 
 export const createClinicalGeometryError = (input: {

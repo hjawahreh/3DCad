@@ -1,0 +1,58 @@
+{
+  "manifestVersion": "cln-001a-dataset-v1",
+  "datasetId": "cad-studio-clinical-accuracy-v0",
+  "license": {
+    "id": "internal-fixtures-only",
+    "cleared": false,
+    "notes": "In-repo STLs are engineering fixtures without orientation/trim/base/segmentation ground truth. Do not claim clinical accuracy. No patient leakage: fixtures use synthetic patient keys. Licensed public benchmarks (e.g. 3DTeethSeg) are NOT bundled."
+  },
+  "cases": [
+    {
+      "caseId": "fixture-upper-lower-pair",
+      "patientKey": "patient-fixture-001",
+      "archRole": "both",
+      "split": "TEST",
+      "sourceMeshPath": "apps/studio/public/clinical-fixtures/upper.stl",
+      "hardCaseTags": ["normal"],
+      "groundTruth": {
+        "orientationPresent": false,
+        "trimBoundaryPresent": false,
+        "basePresent": false,
+        "segmentationPresent": false,
+        "preparedPresent": false
+      },
+      "notes": "Held-out engineering fixture for pipeline wiring only"
+    },
+    {
+      "caseId": "fixture-upper-only",
+      "patientKey": "patient-fixture-002",
+      "archRole": "upper",
+      "split": "VALIDATION",
+      "sourceMeshPath": "apps/studio/public/clinical-fixtures/upper.stl",
+      "hardCaseTags": ["normal"],
+      "groundTruth": {
+        "orientationPresent": false,
+        "trimBoundaryPresent": false,
+        "basePresent": false,
+        "segmentationPresent": false,
+        "preparedPresent": false
+      }
+    },
+    {
+      "caseId": "fixture-lower-only",
+      "patientKey": "patient-fixture-003",
+      "archRole": "lower",
+      "split": "TRAIN",
+      "sourceMeshPath": "apps/studio/public/clinical-fixtures/lower.stl",
+      "hardCaseTags": ["normal"],
+      "groundTruth": {
+        "orientationPresent": false,
+        "trimBoundaryPresent": false,
+        "basePresent": false,
+        "segmentationPresent": false,
+        "preparedPresent": false
+      },
+      "notes": "TRAIN split placeholder for process — no GT labels; not for model training"
+    }
+  ]
+}

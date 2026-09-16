@@ -178,3 +178,23 @@ export type {
   AnalysisTypeId,
   AnalysisValidationState
 } from './analysis/index.js';
+export {
+  clinicalAccuracyEngine,
+  ClinicalAccuracyEngine,
+  DEFAULT_CLINICAL_ACCURACY_THRESHOLDS,
+  CLINICAL_VALIDATION_STATUSES,
+  parseDatasetManifest,
+  validateDatasetManifest,
+  computeTeethSeg22Metrics,
+  createProductionModelProvider,
+  createBlindedReview,
+  adaptTeethSeg22PointLabels,
+  evaluateTeethSeg22Benchmark
+} from './accuracy/index.js';
+export type {
+  ClinicalAccuracyReport,
+  ClinicalValidationStatus,
+  ClinicalAccuracyDatasetManifest,
+  ClinicalEndToEndScorecardRow,
+  TeethSeg22MetricsResult
+} from './accuracy/index.js';

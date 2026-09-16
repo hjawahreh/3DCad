@@ -107,6 +107,7 @@ export const isCaseSegmentationComplete = (doc: ClinicalDocumentSnapshot): boole
 
 /**
  * Infer preparation stage from persisted document metadata.
+ * Canonical order: Import → Orient → Prepare → Trim → Close Base → Segmentation.
  * Conservative: never claims movement-ready without accepted segmentation.
  */
 export const inferPreparationStageFromDocument = (
@@ -118,13 +119,14 @@ export const inferPreparationStageFromDocument = (
   if (doc.objects.some((o) => o.segmentationMeta !== undefined)) {
     return 'ready-for-segmentation';
   }
-  // Prefer clinical metadata over geometry-backend naming (no VTK/backend leak).
-  if (doc.preparationMeta?.uiState === 'ready' || doc.preparationMeta !== undefined) {
-    // If revision advanced after import, treat as past trim toward close-base / seg.
-    if (doc.objects.some((o) => (o.geometryRevision ?? 0) > 0)) {
-      return 'ready-for-segmentation';
-    }
+  const milestone = doc.preparationMeta?.lastMilestone;
+  if (milestone === 'segmented' || milestone === 'based') {
+    return 'ready-for-segmentation';
   }
+  if (milestone === 'trimmed') {
+    return 'ready-for-close-base';
+  }
+  // Geometry revision after Prepare implies Trim (or Base) ran — never skip to Segment.
   if (doc.objects.some((o) => (o.geometryRevision ?? 0) > 0)) {
     return 'ready-for-close-base';
   }

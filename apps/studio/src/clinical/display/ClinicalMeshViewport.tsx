@@ -79,8 +79,9 @@ const resolveDisplayTransform = (
 
 const buildGeometry = (positions: Float32Array, indices: Uint32Array): BufferGeometry => {
   const geometry = new BufferGeometry();
-  geometry.setAttribute('position', new BufferAttribute(positions.slice(), 3));
-  geometry.setIndex(new BufferAttribute(indices.slice(), 1));
+  // GEO-001G: bind typed arrays directly — avoid extra JS copies before GPU upload.
+  geometry.setAttribute('position', new BufferAttribute(positions, 3));
+  geometry.setIndex(new BufferAttribute(indices, 1));
   geometry.computeVertexNormals();
   return geometry;
 };

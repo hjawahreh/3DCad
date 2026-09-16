@@ -60,7 +60,7 @@ export class ClinicalTrimSession {
       phase: 'drawing',
       lifecycle: 'active',
       targetObjectId: input.objectId,
-      drawMode: 'idle',
+      drawMode: 'lasso',
       points: Object.freeze([]),
       closed: false,
       previewActive: true,
@@ -69,17 +69,21 @@ export class ClinicalTrimSession {
       lastHitSummary: undefined,
       validationReport: undefined,
       sessionStartedAt: input.now,
-      statusMessage: 'Choose Polyline or Freehand, then draw on the scan'
+      statusMessage: 'Draw around the area to remove — release to trim.'
     });
   }
 
   public setDrawMode(mode: TrimDrawMode): void {
     const message =
       mode === 'idle'
-        ? 'Choose Polyline or Freehand, then draw on the scan'
-        : mode === 'polyline'
-          ? 'Polyline — click the scan to add points'
-          : 'Freehand — drag on the scan to draw';
+        ? 'Choose Lasso or Curve, then draw on the scan.'
+        : mode === 'lasso' || mode === 'freehand'
+          ? 'Draw around the area to remove — release to trim.'
+          : mode === 'curve' || mode === 'polyline'
+            ? 'Draw a smooth curve — release to trim.'
+            : mode === 'plane'
+              ? 'Adjust the cutting plane, then Done.'
+              : 'Draw on the scan.';
     this.patch({
       drawMode: mode,
       previewCursor: undefined,

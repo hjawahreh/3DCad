@@ -38,6 +38,7 @@ import { ApplicationDiagnostics } from './diagnostics.js';
 import { LayoutPersistence } from './layout-persistence.js';
 import { ApplicationMetrics } from './metrics.js';
 import { NotificationHost } from './notifications.js';
+import { screenDeltaToOrbitRadians } from './camera-orbit-mapping.js';
 import { DialogHost, ModalHost } from './overlays.js';
 import { ClinicalProcessFeedbackHost } from '../clinical/shell/ClinicalProcessFeedback.js';
 import { CommandRegistry } from './commands.js';
@@ -397,9 +398,12 @@ export class StudioCompositionRoot {
           const dy = y - this.lastPointer.y;
           this.lastPointer = { x, y };
           if (button === 'secondary' || event.modifiers.shift) {
+            // Pan semantics unchanged (PanController owns screen→view-plane signs).
             camera.pan(dx, dy);
           } else {
-            camera.orbit(dx * 0.005, dy * 0.005);
+            // GEO-003A: single authoritative orbit sign mapping (see camera-orbit-mapping.ts).
+            const orbit = screenDeltaToOrbitRadians(dx, dy);
+            camera.orbit(orbit.yaw, orbit.pitch);
           }
           this.sessions.viewportSession?.invalidate('camera');
         }

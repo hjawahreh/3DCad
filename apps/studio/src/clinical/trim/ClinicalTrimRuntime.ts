@@ -108,6 +108,10 @@ export class ClinicalTrimRuntime {
     return this.controller.preview();
   }
 
+  public completeGestureAndTrim() {
+    return this.controller.completeGestureAndTrim();
+  }
+
   public accept() {
     return this.controller.accept();
   }
@@ -130,6 +134,14 @@ export class ClinicalTrimRuntime {
 
   public isActive(): boolean {
     return this.controller.isActive();
+  }
+
+  public isEditingReady(): boolean {
+    return this.controller.isEditingReady();
+  }
+
+  public getEditingReadyMessage(): string | undefined {
+    return this.controller.getEditingReadyMessage();
   }
 
   public dispose(): void {

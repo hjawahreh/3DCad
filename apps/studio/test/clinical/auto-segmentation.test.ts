@@ -88,9 +88,9 @@ const prepareReady = async (clinical: ReturnType<ClinicalBootstrap['bootstrap']>
 
 describe('progress copy', () => {
   it('maps provider stages to operator-facing messages', () => {
-    expect(toUserFacingProgressMessage('Preparing scan…')).toBe('Preparing dental surface');
-    expect(toUserFacingProgressMessage('Separating teeth…')).toBe('Separating teeth');
-    expect(toUserFacingProgressMessage('onnx-runtime EP webgpu')).toBe('Segmenting case…');
+    expect(toUserFacingProgressMessage('Preparing scan…')).toBe('Preparing model');
+    expect(toUserFacingProgressMessage('Separating teeth…')).toBe('Separating gingiva');
+    expect(toUserFacingProgressMessage('onnx-runtime EP webgpu')).toBe('PROCESSING…');
   });
 });
 

@@ -63,6 +63,11 @@ export interface ClinicalPreparationMeta {
   readonly preparedAt: number;
   readonly timingMs: number;
   readonly message: string;
+  /**
+   * PROD-003 — last completed clinical milestone for reopen resume.
+   * prepared → Trim; trimmed → Close Base; based → Segmentation.
+   */
+  readonly lastMilestone?: 'prepared' | 'trimmed' | 'based' | 'segmented';
 }
 
 export interface ClinicalDocumentSnapshot {
@@ -83,8 +88,8 @@ export interface ClinicalDocumentSnapshot {
 
 export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = Object.freeze({
   showGrid: true,
-  showOrigin: true,
-  showAxes: true,
+  showOrigin: false,
+  showAxes: false,
   background: 'dark'
 });
 

@@ -54,6 +54,7 @@ import {
 } from './ClinicalSegmentationValidation.js';
 import { recordClinicalGeometryDevDiag } from '../diagnostics/ClinicalGeometryDevDiagnostics.js';
 import type { ReviewActionMeta } from './review/ClinicalSegmentationReview.js';
+import { withPreparationMeta } from '../document/ClinicalDocument.js';
 
 const docObjectArchRole = (
   clinicalSession: ClinicalSession,
@@ -513,9 +514,23 @@ export class ClinicalSegmentationController {
     const caseComplete = isCaseSegmentationComplete(applied.value.next);
     if (caseComplete) {
       this.preparation.session.setStage('ready-for-movement');
+      const withMilestone =
+        applied.value.next.preparationMeta !== undefined
+          ? withPreparationMeta(
+              applied.value.next,
+              Object.freeze({
+                ...applied.value.next.preparationMeta,
+                lastMilestone: 'segmented'
+              }),
+              Date.now()
+            )
+          : applied.value.next;
+      if (withMilestone !== applied.value.next) {
+        this.clinicalSession.applyDocument(withMilestone, true);
+      }
       this.clinicalSession.getTools().deactivate();
       this.session.clear();
-      const summary = summarizeCaseSegmentation(applied.value.next);
+      const summary = summarizeCaseSegmentation(withMilestone);
       host.notifications.push(
         'success',
         'Segmentation Complete',

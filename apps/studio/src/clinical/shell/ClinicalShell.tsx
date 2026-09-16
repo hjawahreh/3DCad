@@ -6,18 +6,16 @@ import { ClinicalBottomPanel } from './ClinicalBottomPanel.js';
 import { ClinicalDialogHost } from './ClinicalDialogHost.js';
 import { ClinicalDocumentHost } from './ClinicalDocumentHost.js';
 import { ClinicalHeader } from './ClinicalHeader.js';
-import { ClinicalLeftPanel } from './ClinicalLeftPanel.js';
 import { ClinicalRightPanel } from './ClinicalRightPanel.js';
 import { ClinicalStatusBar } from './ClinicalStatusBar.js';
-import { ClinicalToolbar } from './ClinicalToolbar.js';
-import { ClinicalWorkflowBar } from './ClinicalWorkflowBar.js';
+import { ClinicalToolPalette } from './ClinicalToolPalette.js';
 import { useClinicalLayout } from './useClinicalLayout.js';
 
-export interface ClinicalShellProps {
-  readonly workspace: ClinicalWorkspace;
-}
-
-export const ClinicalShell = ({ workspace }: ClinicalShellProps): React.JSX.Element => {
+/**
+ * CLN-WORKSTATION-001 — viewport-first clinical shell.
+ * Compact header + tool palette + large viewport. Inspector collapsed by default.
+ */
+export const ClinicalShell = ({ workspace }: { readonly workspace: ClinicalWorkspace }): React.JSX.Element => {
   const host = workspace.getHost();
   const layout = useClinicalLayout(workspace.layout);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -41,33 +39,16 @@ export const ClinicalShell = ({ workspace }: ClinicalShellProps): React.JSX.Elem
   }, [host, togglePalette]);
 
   return (
-    <div className="clinical-shell" data-testid="clinical-shell">
+    <div className="clinical-shell clinical-shell--workstation" data-testid="clinical-shell">
       <ClinicalHeader workspace={workspace} onTogglePalette={togglePalette} />
-      <ClinicalWorkflowBar workspace={workspace} />
-      <ClinicalToolbar workspace={workspace} />
-      <div className="clinical-body">
-        {!layout.leftCollapsed ? (
-          <aside className="clinical-panel clinical-panel--left" style={{ width: layout.leftWidth }}>
-            <ClinicalLeftPanel workspace={workspace} />
-            <button
-              type="button"
-              className="panel-collapse"
-              aria-label="Collapse left panel"
-              onClick={() => workspace.layout.update({ leftCollapsed: true })}
-            >
-              ‹
-            </button>
-          </aside>
-        ) : (
-          <button
-            type="button"
-            className="panel-expand panel-expand-left"
-            aria-label="Expand left panel"
-            onClick={() => workspace.layout.update({ leftCollapsed: false })}
-          >
-            ›
-          </button>
-        )}
+      <div className="clinical-body clinical-body--workstation">
+        <aside
+          className="clinical-panel clinical-panel--palette"
+          style={{ width: layout.leftWidth }}
+          data-testid="clinical-workstation-rail"
+        >
+          <ClinicalToolPalette workspace={workspace} />
+        </aside>
 
         <main className="clinical-main">
           <div className="clinical-viewport-region">
@@ -85,16 +66,7 @@ export const ClinicalShell = ({ workspace }: ClinicalShellProps): React.JSX.Elem
                 ˅
               </button>
             </div>
-          ) : (
-            <button
-              type="button"
-              className="panel-expand panel-expand-bottom"
-              aria-label="Expand diagnostics panel"
-              onClick={() => workspace.layout.update({ bottomCollapsed: false })}
-            >
-              ˄
-            </button>
-          )}
+          ) : null}
         </main>
 
         {!layout.rightCollapsed ? (
@@ -114,6 +86,7 @@ export const ClinicalShell = ({ workspace }: ClinicalShellProps): React.JSX.Elem
             type="button"
             className="panel-expand panel-expand-right"
             aria-label="Expand inspector"
+            data-testid="clinical-inspector-expand"
             onClick={() => workspace.layout.update({ rightCollapsed: false })}
           >
             ‹

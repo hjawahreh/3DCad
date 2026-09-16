@@ -38,10 +38,13 @@ const quantKey = (x: number, y: number, z: number, scale = 1e5): string =>
 
 const edgeKey = (a: number, b: number): string => (a < b ? `${a}:${b}` : `${b}:${a}`);
 
+export type GeometryQualityLevel = 0 | 1 | 2;
+
 export const runGeometryQualityPipeline = (
   mesh: TriangleMesh,
-  _options?: { readonly buildSpatial?: boolean }
+  options?: { readonly buildSpatial?: boolean; readonly level?: GeometryQualityLevel }
 ): GeometryQualityReport => {
+  const level: GeometryQualityLevel = options?.level ?? 2;
   const started = performance.now();
   const codes: GeometryKernelErrorCode[] = [];
   const warnings: string[] = [];
@@ -79,6 +82,26 @@ export const runGeometryQualityPipeline = (
       warnings.push('Non-finite vertex coordinate');
       break;
     }
+  }
+
+  // LEVEL 0 — interactive: finite values + counts only.
+  if (level === 0) {
+    const uniqueCodes = [...new Set(codes)];
+    return {
+      ok: uniqueCodes.length === 0,
+      codes: uniqueCodes,
+      warnings: [...warnings, 'meta:qualityLevel=0'],
+      stats: {
+        vertexCount,
+        triangleCount,
+        boundaryEdges: 0,
+        components: 0,
+        degenerateCount: 0,
+        duplicateVertexEstimate: 0
+      },
+      timingMs: performance.now() - started,
+      spatialReady: vertexCount > 0 && triangleCount > 0 && !invalidIndex
+    };
   }
 
   const seen = new Set<string>();
@@ -202,6 +225,26 @@ export const runGeometryQualityPipeline = (
     warnings.push(`Connected components: ${String(components)}`);
   }
 
+  // LEVEL 1 — preview: geometry delta / topology basics; skip sampled self-intersection.
+  if (level === 1) {
+    const uniqueCodes = [...new Set(codes)];
+    return {
+      ok: uniqueCodes.length === 0,
+      codes: uniqueCodes,
+      warnings: [...warnings, 'meta:qualityLevel=1'],
+      stats: {
+        vertexCount,
+        triangleCount,
+        boundaryEdges,
+        components,
+        degenerateCount,
+        duplicateVertexEstimate
+      },
+      timingMs: performance.now() - started,
+      spatialReady: vertexCount > 0 && triangleCount > 0 && !invalidIndex
+    };
+  }
+
   let suspiciousPairs = 0;
   const sampleLimit = Math.min(triangleCount, 256);
   const centroidOf = (t: number): [number, number, number] => {
@@ -255,7 +298,7 @@ export const runGeometryQualityPipeline = (
   return {
     ok,
     codes: uniqueCodes,
-    warnings,
+    warnings: [...warnings, 'meta:qualityLevel=2'],
     stats: {
       vertexCount,
       triangleCount,

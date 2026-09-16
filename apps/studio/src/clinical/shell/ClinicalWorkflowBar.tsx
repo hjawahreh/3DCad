@@ -49,11 +49,20 @@ export const ClinicalWorkflowBar = ({
   const session = workspace.session;
   useClinicalUiRevision(session);
   const presentation = buildClinicalWorkflowPresentation(workspace);
+  const visibleStepIds = new Set<ClinicalWorkflowStepId>([
+    'import',
+    'orient',
+    'prepare',
+    'trim',
+    'close-base',
+    'segment'
+  ]);
+  const visibleSteps = presentation.steps.filter((step) => visibleStepIds.has(step.id));
 
   return (
     <nav className="clinical-workflow-bar" aria-label="Clinical workflow" data-testid="clinical-workflow-bar">
       <ol className="clinical-workflow-bar__list">
-        {presentation.steps.map((step, index) => {
+        {visibleSteps.map((step, index) => {
           const interactive =
             step.status === 'completed' ||
             step.status === 'current' ||

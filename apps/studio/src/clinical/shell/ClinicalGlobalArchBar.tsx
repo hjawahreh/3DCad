@@ -48,6 +48,8 @@ export const ClinicalGlobalArchBar = ({
     <div
       className="clinical-global-arch-bar"
       data-testid="clinical-global-arch-bar"
+      data-arch-context-bar="true"
+      id="clinical-arch-context-bar"
       onPointerDown={(e) => e.stopPropagation()}
     >
       <span className="clinical-global-arch-bar__label">Arch</span>

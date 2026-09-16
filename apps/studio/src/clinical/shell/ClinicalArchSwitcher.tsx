@@ -46,7 +46,7 @@ export const ClinicalArchSwitcher = ({
       aria-pressed={active === 'upper'}
       onClick={() => onSelect('upper')}
     >
-      Upper
+      UPPER
     </button>
     {showBoth ? (
       <button
@@ -61,7 +61,7 @@ export const ClinicalArchSwitcher = ({
         aria-pressed={active === 'both'}
         onClick={() => onSelect('both')}
       >
-        Both
+        BOTH
       </button>
     ) : null}
     <button
@@ -76,7 +76,7 @@ export const ClinicalArchSwitcher = ({
       aria-pressed={active === 'lower'}
       onClick={() => onSelect('lower')}
     >
-      Lower
+      LOWER
     </button>
   </div>
 );

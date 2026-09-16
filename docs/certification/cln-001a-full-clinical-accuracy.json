@@ -1,0 +1,109 @@
+{
+  "version": "cln-001a-cert-v1",
+  "generatedAt": "2026-09-15T14:27:45.998Z",
+  "dataset": {
+    "id": "cad-studio-clinical-accuracy-v0",
+    "license": {
+      "id": "internal-fixtures-only",
+      "cleared": false,
+      "notes": "In-repo STLs are engineering fixtures without orientation/trim/base/segmentation ground truth. Do not claim clinical accuracy. No patient leakage: fixtures use synthetic patient keys. Licensed public benchmarks (e.g. 3DTeethSeg) are NOT bundled."
+    },
+    "splits": {
+      "TRAIN": [
+        "fixture-lower-only"
+      ],
+      "VALIDATION": [
+        "fixture-upper-only"
+      ],
+      "TEST": [
+        "fixture-upper-lower-pair"
+      ]
+    }
+  },
+  "scorecard": [
+    {
+      "caseId": "fixture-upper-lower-pair",
+      "import": "NOT_AVAILABLE",
+      "orientation": "NOT_AVAILABLE",
+      "prepare": "ENGINEERING_VALIDATED · CLINICAL_REFERENCE_NOT_AVAILABLE",
+      "trim": "NOT_AVAILABLE",
+      "closeBase": "ENGINEERING_VALIDATED · CLINICAL_REFERENCE_NOT_AVAILABLE",
+      "segmentation": "NOT_AVAILABLE",
+      "endToEnd": "NOT_AVAILABLE",
+      "tla": null,
+      "tir": null,
+      "tsa": null,
+      "hardCaseTags": [
+        "normal"
+      ],
+      "note": "No quantitative clinical metrics without annotated ground truth"
+    }
+  ],
+  "reports": [
+    {
+      "caseId": "fixture-upper-lower-pair",
+      "status": "ENGINE_VALIDATED",
+      "clinicalStatus": "NOT YET CLINICALLY VALIDATED",
+      "groundTruthPresent": false,
+      "providerId": "reference-heuristic",
+      "modelVersion": null,
+      "limitations": [
+        "Fixtures lack orientation/trim/base/segmentation annotations",
+        "reference-heuristic must not be reported as clinically accurate",
+        "ProductionModelProvider refuses inference until licensed checkpoint is registered"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "manifest-load",
+      "status": "PASS",
+      "at": "2026-09-15T14:27:42.976Z",
+      "detail": "cad-studio-clinical-accuracy-v0 · 3 cases · license.cleared=false"
+    },
+    {
+      "id": "split-leakage",
+      "status": "PASS",
+      "at": "2026-09-15T14:27:42.986Z",
+      "detail": "no patientKey shared across TRAIN/VAL/TEST"
+    },
+    {
+      "id": "held-out-test-set",
+      "status": "PASS",
+      "at": "2026-09-15T14:27:42.987Z",
+      "detail": "TEST cases: fixture-upper-lower-pair"
+    },
+    {
+      "id": "case:fixture-upper-lower-pair",
+      "status": "PASS_WITH_OBSERVATIONS",
+      "at": "2026-09-15T14:27:42.987Z",
+      "detail": "ENGINEERING PASS · clinical GT NOT_AVAILABLE"
+    },
+    {
+      "id": "unit-tests",
+      "status": "PASS",
+      "at": "2026-09-15T14:27:45.998Z",
+      "detail": "cln-001a-clinical-accuracy.test.ts"
+    }
+  ],
+  "certification": {
+    "milestone": "CLN-001A",
+    "engineering": "PASS",
+    "benchmark": "NOT_EVALUATED",
+    "clinicalValidation": "NOT YET CLINICALLY VALIDATED",
+    "reason": "Infrastructure and honest NOT_AVAILABLE semantics verified; licensed annotated GT and production model checkpoint are absent — do not claim clinical accuracy",
+    "falseClaimsForbidden": [
+      "Clinical Accuracy: 98%",
+      "Clinical Grade",
+      "Clinically Validated",
+      "Production Clinical Model"
+    ],
+    "movement": "NOT STARTED"
+  },
+  "governance": {
+    "modelSource": "unset — ProductionModelProvider scaffold",
+    "checkpointSource": "none",
+    "clearedForClinicalClaims": false,
+    "datasetCleared": false
+  }
+}

@@ -1,0 +1,256 @@
+{
+  "generatedAt": "2026-09-13T21:36:24.651Z",
+  "summary": {
+    "pass": 8,
+    "fail": 0,
+    "observe": 1
+  },
+  "steps": [
+    {
+      "id": "00-create-import",
+      "status": "PASS",
+      "at": "2026-09-13T21:30:53.315Z"
+    },
+    {
+      "id": "00-auto-orientation",
+      "status": "PASS",
+      "at": "2026-09-13T21:31:08.587Z"
+    },
+    {
+      "id": "01-preview-a",
+      "status": "PASS",
+      "at": "2026-09-13T21:33:18.400Z",
+      "detail": "ms=86600 upload=0 resident=true",
+      "transport": {
+        "uploadBytes": 0,
+        "downloadBytes": 6173296,
+        "meshUploaded": false,
+        "meshResident": true,
+        "httpRoundTripMs": 79948,
+        "encodeMs": 0,
+        "initUploadBytes": 6289056
+      },
+      "session": {
+        "workerSessionId": "ws-bd15a82a2c40",
+        "geometryFingerprint": "geo:c828c055",
+        "objectId": "case-1789335021302:upper-arch",
+        "previewId": "pv-3eba2bb5e7",
+        "lastUploadBytes": 6289056,
+        "meshResident": true
+      }
+    },
+    {
+      "id": "02-cancel",
+      "status": "PASS",
+      "at": "2026-09-13T21:33:22.252Z",
+      "afterCancel": {
+        "id": "case-1789335021302:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "meshFingerprint": "geo:c828c055",
+        "meshFaces": 261287
+      },
+      "baseline": {
+        "id": "case-1789335021302:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "meshFingerprint": "geo:c828c055",
+        "meshFaces": 261287
+      }
+    },
+    {
+      "id": "03-preview-b-accept",
+      "status": "PASS",
+      "at": "2026-09-13T21:34:34.471Z",
+      "detail": "ms=57392 upload=0 mutated=true",
+      "before": {
+        "id": "case-1789335021302:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "meshFingerprint": "geo:c828c055",
+        "meshFaces": 261287
+      },
+      "after": {
+        "id": "case-1789335021302:upper-arch",
+        "fingerprint": "geo:1a0f6368",
+        "faceCount": 256316,
+        "meshFingerprint": "geo:1a0f6368",
+        "meshFaces": 256316
+      },
+      "previewFp": "geo:1a0f6368",
+      "transport": {
+        "uploadBytes": 0,
+        "downloadBytes": 6173296,
+        "meshUploaded": false,
+        "meshResident": true,
+        "httpRoundTripMs": 49175.69999999972,
+        "encodeMs": 0,
+        "initUploadBytes": 6289056
+      }
+    },
+    {
+      "id": "04-second-trim",
+      "status": "OBSERVE",
+      "at": "2026-09-13T21:36:08.359Z",
+      "detail": "skipped after retries: Error: close failed: Trim boundary crosses itself. Adjust the drawing.",
+      "afterB": {
+        "id": "case-1789335021302:upper-arch",
+        "fingerprint": "geo:1a0f6368",
+        "faceCount": 256316,
+        "meshFingerprint": "geo:1a0f6368",
+        "meshFaces": 256316
+      }
+    },
+    {
+      "id": "05-base-handoff",
+      "status": "PASS",
+      "at": "2026-09-13T21:36:24.649Z",
+      "handoff": {
+        "baseInputFingerprint": "geo:1a0f6368",
+        "expected": "geo:1a0f6368",
+        "match": true
+      },
+      "baseOk": true,
+      "basePreviewMs": 10363
+    },
+    {
+      "id": "06-no-full-mesh-repeat",
+      "status": "PASS",
+      "at": "2026-09-13T21:36:24.649Z",
+      "previewA": {
+        "uploadBytes": 0,
+        "downloadBytes": 6173296,
+        "meshUploaded": false,
+        "meshResident": true,
+        "httpRoundTripMs": 79948,
+        "encodeMs": 0,
+        "initUploadBytes": 6289056
+      },
+      "previewB": {
+        "uploadBytes": 0,
+        "downloadBytes": 6173296,
+        "meshUploaded": false,
+        "meshResident": true,
+        "httpRoundTripMs": 49175.69999999972,
+        "encodeMs": 0,
+        "initUploadBytes": 6289056
+      },
+      "previewC": null
+    },
+    {
+      "id": "07-performance",
+      "status": "PASS",
+      "at": "2026-09-13T21:36:24.650Z",
+      "detail": "previewAMs=86600ms, previewBMs=57392ms, basePreviewMs=10363ms",
+      "timings": {
+        "previewAMs": 86600,
+        "previewATransport": {
+          "uploadBytes": 0,
+          "downloadBytes": 6173296,
+          "meshUploaded": false,
+          "meshResident": true,
+          "httpRoundTripMs": 79948,
+          "encodeMs": 0,
+          "initUploadBytes": 6289056
+        },
+        "previewBMs": 57392,
+        "previewBTransport": {
+          "uploadBytes": 0,
+          "downloadBytes": 6173296,
+          "meshUploaded": false,
+          "meshResident": true,
+          "httpRoundTripMs": 49175.69999999972,
+          "encodeMs": 0,
+          "initUploadBytes": 6289056
+        },
+        "basePreviewMs": 10363
+      },
+      "geo001eBaselinePreviewMs": 49584,
+      "nodeWorkerTrimMs": {
+        "trim1": 8642,
+        "trim2": 10666,
+        "ensureMs": 187
+      }
+    }
+  ],
+  "evidence": {
+    "timings": {
+      "previewAMs": 86600,
+      "previewATransport": {
+        "uploadBytes": 0,
+        "downloadBytes": 6173296,
+        "meshUploaded": false,
+        "meshResident": true,
+        "httpRoundTripMs": 79948,
+        "encodeMs": 0,
+        "initUploadBytes": 6289056
+      },
+      "previewBMs": 57392,
+      "previewBTransport": {
+        "uploadBytes": 0,
+        "downloadBytes": 6173296,
+        "meshUploaded": false,
+        "meshResident": true,
+        "httpRoundTripMs": 49175.69999999972,
+        "encodeMs": 0,
+        "initUploadBytes": 6289056
+      },
+      "basePreviewMs": 10363
+    },
+    "trims": [
+      {
+        "id": "B",
+        "before": {
+          "id": "case-1789335021302:upper-arch",
+          "fingerprint": "geo:c828c055",
+          "faceCount": 261287,
+          "meshFingerprint": "geo:c828c055",
+          "meshFaces": 261287
+        },
+        "previewMs": 57392,
+        "previewFp": "geo:1a0f6368",
+        "transport": {
+          "uploadBytes": 0,
+          "downloadBytes": 6173296,
+          "meshUploaded": false,
+          "meshResident": true,
+          "httpRoundTripMs": 49175.69999999972,
+          "encodeMs": 0,
+          "initUploadBytes": 6289056
+        },
+        "session": {
+          "workerSessionId": "ws-bd15a82a2c40",
+          "geometryFingerprint": "geo:c828c055",
+          "objectId": "case-1789335021302:upper-arch",
+          "previewId": "pv-91f45ddb00",
+          "lastUploadBytes": 6289056,
+          "meshResident": true
+        },
+        "accept": {
+          "ok": true,
+          "message": null
+        },
+        "after": {
+          "id": "case-1789335021302:upper-arch",
+          "fingerprint": "geo:1a0f6368",
+          "faceCount": 256316,
+          "meshFingerprint": "geo:1a0f6368",
+          "meshFaces": 256316
+        },
+        "mutated": true
+      }
+    ],
+    "baseline": {
+      "id": "case-1789335021302:upper-arch",
+      "fingerprint": "geo:c828c055",
+      "faceCount": 261287,
+      "meshFingerprint": "geo:c828c055",
+      "meshFaces": 261287
+    },
+    "baseHandoff": {
+      "baseInputFingerprint": "geo:1a0f6368",
+      "expected": "geo:1a0f6368",
+      "match": true
+    }
+  }
+}

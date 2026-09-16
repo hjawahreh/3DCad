@@ -1,6 +1,6 @@
 # Display Preferences
 
-Persisted under `localStorage` key `cad-studio.clinical.display.v1`.
+Persisted under `localStorage` key `cad-studio.clinical.display.v2` (GEO-003A bumped from v1).
 
 ## Fields
 
@@ -9,10 +9,11 @@ Persisted under `localStorage` key `cad-studio.clinical.display.v1`.
 | `displayMode` | `smooth` |
 | `background` | `dark` |
 | `lighting` | `studio` |
-| `showGrid` / `showAxes` / `showOrigin` | true |
+| `showGrid` | true |
+| `showAxes` / `showOrigin` / `showOrientationIndicator` | **false** (clinical clean; enable via Display panel for diagnostics) |
 | `showBoundingBox` / `showModelEdges` / `showFaceOrientation` | false |
 | `backfaceCulling` | true |
-| `showOrientationIndicator` / `showScaleIndicator` / `showFrameStats` | true |
+| `showScaleIndicator` / `showFrameStats` | true / false |
 | `showHud` / `showOverlays` | true |
 
 ## API
@@ -21,6 +22,7 @@ Persisted under `localStorage` key `cad-studio.clinical.display.v1`.
 workspace.viewport.preferences.get()
 workspace.viewport.preferences.update({ displayMode: 'xray' })
 workspace.viewport.appearance.setBackground('clinical-blue')
+workspace.viewport.appearance.setAxes(true) // diagnostics only
 ```
 
 Updates notify React via `subscribe` + cached `ClinicalDisplayManager` snapshots (stable `useSyncExternalStore` identity until change).

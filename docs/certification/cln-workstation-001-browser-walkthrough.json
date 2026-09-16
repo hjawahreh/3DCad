@@ -1,0 +1,101 @@
+{
+  "milestone": "CLN-WORKSTATION-001",
+  "mandatoryFail": false,
+  "steps": [
+    {
+      "id": "orientation-ui",
+      "status": "PASS",
+      "at": "2026-09-16T18:46:16.341Z",
+      "detail": "Orient Scan toolbar visible"
+    },
+    {
+      "id": "clean-home",
+      "status": "PASS",
+      "at": "2026-09-16T18:47:03.486Z"
+    },
+    {
+      "id": "workstation-chrome",
+      "status": "PASS",
+      "at": "2026-09-16T18:47:05.432Z",
+      "detail": "palette + arch + viewcube"
+    },
+    {
+      "id": "axis-cleanup",
+      "status": "PASS",
+      "at": "2026-09-16T18:47:05.773Z",
+      "detail": "no XYZ overlays"
+    },
+    {
+      "id": "warmup",
+      "status": "PASS",
+      "at": "2026-09-16T18:47:15.488Z",
+      "detail": "editing ready"
+    },
+    {
+      "id": "trim-tool",
+      "status": "PASS",
+      "at": "2026-09-16T18:47:19.997Z",
+      "detail": "drawMode=lasso"
+    },
+    {
+      "id": "trim-release",
+      "status": "PASS",
+      "at": "2026-09-16T18:50:04.611Z",
+      "detail": "pointer up triggers completeGestureAndTrim"
+    },
+    {
+      "id": "trim-result",
+      "status": "OBSERVE",
+      "at": "2026-09-16T18:50:13.392Z",
+      "detail": "auto-release cut unclear (261287→261287); diag={\"phase\":\"preview-boundary\",\"closed\":false,\"points\":5,\"status\":\"Trim boundary crosses itself. Adjust the drawing.\",\"previewReady\":false,\"canAccept\":false,\"preview\":null}; retrying API loop"
+    },
+    {
+      "id": "trim-api-fallback",
+      "status": "PASS",
+      "at": "2026-09-16T18:50:55.204Z",
+      "detail": "api trim ok · placed=4 · preview={\"beforeFaces\":261287,\"afterFaces\":260702,\"removedFaces\":585,\"beforeFingerprint\":\"geo:c828c055\",\"afterFingerprint\":\"geo:1fc58392\"} · status=Trim complete — draw again or continue to Base."
+    },
+    {
+      "id": "trim-result",
+      "status": "PASS",
+      "at": "2026-09-16T18:51:22.229Z",
+      "detail": "retry faces 261287 → 260702"
+    },
+    {
+      "id": "trim-clear",
+      "status": "PASS",
+      "at": "2026-09-16T18:51:31.503Z",
+      "detail": "{\"points\":0,\"mode\":\"lasso\"}"
+    },
+    {
+      "id": "base-tool",
+      "status": "PASS",
+      "at": "2026-09-16T18:51:51.453Z"
+    },
+    {
+      "id": "base-result",
+      "status": "OBSERVE",
+      "at": "2026-09-16T18:52:28.269Z",
+      "detail": "{\"phase\":\"previewing\",\"status\":\"Auto Base Preview — Accept, Adjust, or Cancel\",\"preview\":true}"
+    },
+    {
+      "id": "seg-labeling",
+      "status": "PASS",
+      "at": "2026-09-16T18:53:22.016Z",
+      "detail": "Beta / Reference disclaimer visible"
+    },
+    {
+      "id": "seg-result",
+      "status": "OBSERVE",
+      "at": "2026-09-16T18:54:30.641Z",
+      "detail": "phase=inferencing"
+    },
+    {
+      "id": "orbit-mapping",
+      "status": "PASS",
+      "at": "2026-09-16T18:54:31.834Z",
+      "detail": "screenDeltaToOrbitRadians(+dx,+dy) applied once in composition-root"
+    }
+  ],
+  "at": "2026-09-16T18:54:31.834Z"
+}

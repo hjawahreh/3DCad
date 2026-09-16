@@ -32,6 +32,8 @@ import {
   extractBoundaryLoops,
   validateSurfacePath
 } from './engine/index.js';
+import { clinicalGeometryContexts } from './context/ClinicalGeometryContext.js';
+import { runGeometryQualityPipeline } from './quality/GeometryQualityPipeline.js';
 
 const reportProgress = (
   report: ProgressReporter,
@@ -258,20 +260,42 @@ export class ClinicalGeometryKernelBridge implements KernelBridge {
 
       reportProgress(report, 1, 6, 'Analyzing topology…');
       const preprocessStart = performance.now();
+      // GEO-002: preview trim is read-only on input — avoid full buffer clone.
       let inputMesh =
-        this.registry.cloneForMutation(objectId, 'working') ??
-        this.registry.cloneForMutation(objectId, 'source')!;
+        preview
+          ? (this.registry.getByObjectId(objectId, 'working') ??
+            this.registry.getByObjectId(objectId, 'source')!)
+          : (this.registry.cloneForMutation(objectId, 'working') ??
+            this.registry.cloneForMutation(objectId, 'source')!);
+      const geoCtx = clinicalGeometryContexts.getOrCreate(inputMesh);
       const cachedTopology = this.cache.getTopology(
         objectId,
         inputMesh.revision,
         inputMesh.fingerprint
       );
       const topology =
-        cachedTopology ?? this.backend.validate(inputMesh);
+        cachedTopology ??
+        geoCtx.qualitySummary ??
+        (preview
+          ? runGeometryQualityPipeline(inputMesh, { level: 1 })
+          : this.backend.validate(inputMesh));
       if (cachedTopology === undefined) {
         this.cache.putTopology(objectId, inputMesh.revision, inputMesh.fingerprint, topology);
+        geoCtx.qualitySummary = topology;
+        clinicalGeometryContexts.record(
+          objectId,
+          inputMesh.fingerprint,
+          'MISS',
+          'quality'
+        );
       } else {
         diagnostics.push('meta:topologyCache=hit');
+        clinicalGeometryContexts.record(
+          objectId,
+          inputMesh.fingerprint,
+          'HIT',
+          'quality'
+        );
       }
       const preprocessingMs = performance.now() - preprocessStart;
       diagnostics.push(...topology.codes.map((c) => `quality:${c}`));
@@ -289,18 +313,45 @@ export class ClinicalGeometryKernelBridge implements KernelBridge {
       reportProgress(report, 2, 6, 'Building spatial index…');
       const spatialStart = performance.now();
       let spatialMs = 0;
+      const loop3dEarly = parseLoop3d(request.payload);
+      // GEO-002: VTK trim does not consume the Bridge KD-tree — skip rebuild on warm preview.
+      const skipKdSpatial = preview && loop3dEarly !== undefined;
       try {
-        const cached = this.cache.getSpatial(
-          objectId,
-          inputMesh.revision,
-          inputMesh.fingerprint
-        );
-        const spatial = cached ?? this.backend.buildSpatialIndex(inputMesh);
-        if (cached === undefined) {
-          this.cache.putSpatial(objectId, inputMesh.revision, inputMesh.fingerprint, spatial);
+        if (skipKdSpatial) {
+          spatialMs = performance.now() - spatialStart;
+          diagnostics.push('meta:spatialCache=skipped-vtk-preview');
+          clinicalGeometryContexts.record(
+            objectId,
+            inputMesh.fingerprint,
+            'HIT',
+            'spatialKd'
+          );
+        } else {
+          const cached = this.cache.getSpatial(
+            objectId,
+            inputMesh.revision,
+            inputMesh.fingerprint
+          );
+          const spatial = cached ?? this.backend.buildSpatialIndex(inputMesh);
+          if (cached === undefined) {
+            this.cache.putSpatial(objectId, inputMesh.revision, inputMesh.fingerprint, spatial);
+            clinicalGeometryContexts.record(
+              objectId,
+              inputMesh.fingerprint,
+              'MISS',
+              'spatialKd'
+            );
+          } else {
+            clinicalGeometryContexts.record(
+              objectId,
+              inputMesh.fingerprint,
+              'HIT',
+              'spatialKd'
+            );
+          }
+          spatialMs = performance.now() - spatialStart;
+          diagnostics.push(`meta:spatialTriangles=${String(spatial.triangleCount)}`);
         }
-        spatialMs = performance.now() - spatialStart;
-        diagnostics.push(`meta:spatialTriangles=${String(spatial.triangleCount)}`);
       } catch (err) {
         spatialMs = performance.now() - spatialStart;
         warnings.push(
@@ -449,6 +500,11 @@ export class ClinicalGeometryKernelBridge implements KernelBridge {
         resultMesh = trimmed.mesh;
         removedTriangles = trimmed.removedTriangles;
         warnings.push(...trimmed.warnings);
+        for (const w of trimmed.warnings) {
+          if (typeof w === 'string' && w.startsWith('meta:')) {
+            diagnostics.push(w);
+          }
+        }
         // GEO-001E: never treat identity as success.
         if (
           resultMesh.fingerprint === inputFingerprint ||
@@ -459,16 +515,25 @@ export class ClinicalGeometryKernelBridge implements KernelBridge {
             'Trim produced no geometry change. Selected region must remove real dental material.'
           );
         }
+        // GEO-002: single Level-1 gate on preview; avoid duplicate analyzeMesh later.
         const inputTris = inputFaceCount;
         const outputTris = Math.floor(resultMesh.indices.length / 3);
         const keepTris = Math.max(0, outputTris);
-        // Fast gate here; Accept path runs full backend.validate below when !preview.
-        const qualityAfter = this.geometryEngine.analyzeMesh(resultMesh);
-        validationOk = trimmed.quality.ok && qualityAfter.gate !== 'FAIL';
-        validationCodes = [
-          ...trimmed.quality.codes,
-          ...(qualityAfter.gate === 'FAIL' ? (['VALIDATION_FAILED'] as const) : [])
-        ];
+        let qualityAfterGate: string = 'PASS';
+        if (preview) {
+          validationOk = trimmed.quality.ok;
+          validationCodes = [...trimmed.quality.codes];
+          qualityAfterGate = trimmed.quality.ok ? 'PASS' : 'FAIL';
+          diagnostics.push('meta:outputGate=preview-level1');
+        } else {
+          const qualityAfter = this.geometryEngine.analyzeMesh(resultMesh);
+          qualityAfterGate = qualityAfter.gate;
+          validationOk = trimmed.quality.ok && qualityAfter.gate !== 'FAIL';
+          validationCodes = [
+            ...trimmed.quality.codes,
+            ...(qualityAfter.gate === 'FAIL' ? (['VALIDATION_FAILED'] as const) : [])
+          ];
+        }
         diagnostics.push(
           `meta:removedTriangles=${String(trimmed.removedTriangles)}`,
           `meta:selectedRegionTriangles=${String(trimmed.removedTriangles)}`,
@@ -482,7 +547,7 @@ export class ClinicalGeometryKernelBridge implements KernelBridge {
           `meta:keepRegion=exterior`,
           `meta:removedRegion=interior`,
           `meta:projectionAxes=${String(trimmed.projectionAxes.u)},${String(trimmed.projectionAxes.v)},${String(trimmed.projectionAxes.n)}`,
-          `meta:outputGate=${qualityAfter.gate}`,
+          `meta:outputGate=${qualityAfterGate}`,
           `meta:inputTriangleCount=${String(inputTris)}`,
           `meta:outputTriangleCount=${String(outputTris)}`,
           ...(loop3d !== undefined ? [`meta:loop3dCount=${String(loop3d.length)}`] : [])
@@ -649,21 +714,20 @@ export class ClinicalGeometryKernelBridge implements KernelBridge {
 
       reportProgress(report, 4, 6, 'Validating geometry…');
       const valStart = performance.now();
-      // GEO-001E: preview uses analyzeMesh only; Accept runs full quality pipeline.
+      // GEO-002: preview already gated above (Level 1). Accept runs full Level 2.
       if (resultMesh !== inputMesh) {
         if (preview) {
-          const quick = this.geometryEngine.analyzeMesh(resultMesh);
-          validationOk = quick.gate !== 'FAIL' && validationOk;
-          if (quick.gate === 'FAIL') {
-            validationCodes = [...new Set([...validationCodes, 'VALIDATION_FAILED'])];
-          }
-          warnings.push(...quick.warnings);
+          diagnostics.push('meta:validation=preview-reuse-level1');
         } else {
           const finalQuality = this.backend.validate(resultMesh);
           validationOk = finalQuality.ok && validationOk;
           validationCodes = [...new Set([...validationCodes, ...finalQuality.codes])];
           warnings.push(...finalQuality.warnings);
         }
+      }
+      // Invalidate context when committing a new working fingerprint.
+      if (!preview && resultMesh.fingerprint !== inputFingerprint) {
+        clinicalGeometryContexts.invalidate(objectId);
       }
       const validationMs = performance.now() - valStart;
       warnings.push(`timing:validation=${validationMs.toFixed(1)}ms`);

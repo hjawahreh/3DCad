@@ -45,6 +45,7 @@ export {
 } from './SpatialAcceleration.js';
 export {
   createSurfacePath,
+  appendSurfacePath,
   validateSurfacePath,
   resampleSurfacePath,
   closeSurfacePath,

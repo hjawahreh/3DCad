@@ -326,8 +326,24 @@ export const ClinicalRightPanel = ({
             {(
               [
                 ['showGrid', 'Grid', () => workspace.viewport.appearance.setGrid(!prefs.showGrid)],
-                ['showAxes', 'Axes', () => workspace.viewport.appearance.setAxes(!prefs.showAxes)],
-                ['showOrigin', 'Origin', () => workspace.viewport.appearance.setOrigin(!prefs.showOrigin)],
+                [
+                  'showAxes',
+                  'Axes (diagnostics)',
+                  () => workspace.viewport.appearance.setAxes(!prefs.showAxes)
+                ],
+                [
+                  'showOrigin',
+                  'Origin (diagnostics)',
+                  () => workspace.viewport.appearance.setOrigin(!prefs.showOrigin)
+                ],
+                [
+                  'showOrientationIndicator',
+                  'XYZ badge (diagnostics)',
+                  () =>
+                    workspace.viewport.appearance.setOrientationIndicator(
+                      !prefs.showOrientationIndicator
+                    )
+                ],
                 [
                   'showBoundingBox',
                   'Bounding box',

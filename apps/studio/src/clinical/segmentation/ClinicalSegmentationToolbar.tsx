@@ -1,5 +1,7 @@
 /**
- * Segmentation toolbar — Segment Teeth, modes, arch switcher, accept/reject.
+ * CLN-WORKSTATION-001 — compact Segmentation panel.
+ * Primary: Auto Segmentation (Beta). Secondary: Review / Accept / Reject.
+ * Never claims clinical validation accuracy.
  */
 
 import type { JSX } from 'react';
@@ -8,14 +10,12 @@ import { ClinicalArchSwitcher } from '../shell/ClinicalArchSwitcher.js';
 import { useClinicalUiRevision } from '../shell/useClinicalUi.js';
 import type { SegmentationViewMode } from './ClinicalSegmentationSession.js';
 
-const MODES: readonly { readonly id: SegmentationViewMode; readonly label: string }[] = Object.freeze([
-  { id: 'semantic', label: 'Semantic' },
-  { id: 'instance', label: 'Instance' },
-  { id: 'fdi', label: 'FDI' },
-  { id: 'confidence', label: 'Confidence' },
-  { id: 'review', label: 'Review' },
-  { id: 'boundary', label: 'Boundary' }
-]);
+const REVIEW_MODES: readonly { readonly id: SegmentationViewMode; readonly label: string }[] =
+  Object.freeze([
+    { id: 'semantic', label: 'Semantic' },
+    { id: 'instance', label: 'Teeth' },
+    { id: 'review', label: 'Review' }
+  ]);
 
 export const ClinicalSegmentationToolbar = (props: {
   readonly workspace: ClinicalWorkspace;
@@ -42,12 +42,27 @@ export const ClinicalSegmentationToolbar = (props: {
     state.phase === 'inferencing' ||
     state.phase === 'postprocessing';
   const validationFail = state.validationReport?.verdict === 'FAIL';
-  const acceptBlocked =
-    state.phase !== 'ready-for-review' || validationFail;
+  const acceptBlocked = state.phase !== 'ready-for-review' || validationFail;
+  const inReview = state.phase === 'ready-for-review' || state.prediction !== undefined;
 
   return (
-    <div className="clinical-segmentation-toolbar" role="toolbar" aria-label="Segmentation">
-      <span className="clinical-segmentation-toolbar__label">Segment Teeth</span>
+    <div
+      className="clinical-segmentation-toolbar clinical-segmentation-toolbar--workstation"
+      role="toolbar"
+      aria-label="Segmentation"
+      data-testid="clinical-segmentation-toolbar"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <div className="clinical-segmentation-toolbar__header">
+        <span className="clinical-segmentation-toolbar__label">Segment</span>
+        <span
+          className="clinical-segmentation-toolbar__disclaimer"
+          data-testid="clinical-seg-disclaimer"
+        >
+          Auto Segmentation (Beta)
+        </span>
+      </div>
+
       <ClinicalArchSwitcher
         active={activeArch}
         hasUpper={hasUpper}
@@ -60,11 +75,14 @@ export const ClinicalSegmentationToolbar = (props: {
           }
           const result = runtime.setActiveArch(mode);
           if (!result.ok) {
-            workspace.session.getHost().notifications.push('warning', 'Segmentation', result.error.message);
+            workspace.session
+              .getHost()
+              .notifications.push('warning', 'Segmentation', result.error.message);
           }
         }}
         testId="clinical-segmentation-arch"
       />
+
       <button
         type="button"
         className="clinical-btn clinical-btn--primary"
@@ -72,87 +90,61 @@ export const ClinicalSegmentationToolbar = (props: {
         data-testid="clinical-segmentation-run"
         onClick={() => void runtime.segmentTeeth()}
       >
-        Segment Teeth
+        Auto Segmentation
       </button>
-      <button
-        type="button"
-        className="clinical-btn clinical-btn--primary"
-        disabled={acceptBlocked}
-        title={
-          validationFail
-            ? 'Accept blocked — segmentation validation FAIL'
-            : undefined
-        }
-        data-testid="clinical-segmentation-accept"
-        onClick={() => void runtime.accept()}
-      >
-        Accept Segmentation
-      </button>
-      {state.phase === 'ready-for-review' &&
-      state.prediction !== undefined &&
-      state.prediction.confidence.needsReviewCount > 0 &&
-      !state.reviewAcknowledged ? (
-        <button
-          type="button"
-          className="clinical-btn clinical-btn--secondary"
-          data-testid="clinical-segmentation-acknowledge-review"
-          onClick={() => runtime.acknowledgeReview()}
-        >
-          Acknowledge Review Required
-        </button>
+
+      {inReview ? (
+        <>
+          <div className="clinical-segmentation-toolbar__modes" role="group" aria-label="Review">
+            {REVIEW_MODES.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                className={
+                  state.viewMode === m.id
+                    ? 'clinical-btn clinical-btn--tertiary clinical-btn--active'
+                    : 'clinical-btn clinical-btn--tertiary'
+                }
+                disabled={state.prediction === undefined}
+                data-testid={`clinical-segmentation-mode-${m.id}`}
+                onClick={() => runtime.setViewMode(m.id)}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="clinical-btn clinical-btn--primary"
+            disabled={acceptBlocked}
+            title={
+              validationFail ? 'Accept blocked — segmentation validation FAIL' : undefined
+            }
+            data-testid="clinical-segmentation-accept"
+            onClick={() => void runtime.accept()}
+          >
+            Accept
+          </button>
+          <button
+            type="button"
+            className="clinical-btn clinical-btn--secondary"
+            disabled={busy}
+            data-testid="clinical-segmentation-reject"
+            onClick={() => runtime.reject()}
+          >
+            Reject / Retry
+          </button>
+        </>
       ) : null}
+
       <button
         type="button"
         className="clinical-btn clinical-btn--secondary"
         disabled={busy}
         onClick={() => runtime.cancel()}
       >
-        Cancel
+        Done
       </button>
-      <button
-        type="button"
-        className="clinical-btn clinical-btn--secondary"
-        disabled={busy}
-        onClick={() => runtime.reject()}
-      >
-        Reject
-      </button>
-      <div className="clinical-segmentation-toolbar__modes" role="group" aria-label="View mode">
-        {MODES.map((m) => (
-          <button
-            key={m.id}
-            type="button"
-            className={
-              state.viewMode === m.id
-                ? 'clinical-btn clinical-btn--tertiary clinical-btn--active'
-                : 'clinical-btn clinical-btn--tertiary'
-            }
-            disabled={state.prediction === undefined}
-            data-testid={`clinical-segmentation-mode-${m.id}`}
-            onClick={() => runtime.setViewMode(m.id)}
-          >
-            {m.label}
-          </button>
-        ))}
-      </div>
-      <details className="clinical-advanced clinical-advanced--inline">
-        <summary>Provider</summary>
-        <label>
-          Provider
-          <select
-            value={state.providerId}
-            disabled={busy}
-            onChange={(e) => runtime.setProvider(e.target.value)}
-          >
-            {runtime.registry.list().map((p) => (
-              <option key={p.info.id} value={p.info.id} disabled={!p.info.operational}>
-                {p.info.displayName}
-                {!p.info.operational ? ' (unavailable)' : ''}
-              </option>
-            ))}
-          </select>
-        </label>
-      </details>
     </div>
   );
 };

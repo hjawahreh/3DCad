@@ -13,12 +13,21 @@ import {
 } from './ClinicalViewCubeMath.js';
 
 const FACE_LABELS: Readonly<Record<ClinicalViewCubeFace, string>> = Object.freeze({
-  front: 'Ant',
-  back: 'Post',
-  left: 'L',
-  right: 'R',
-  top: 'Occ',
-  bottom: 'Inf'
+  front: 'ANTERIOR',
+  back: 'POSTERIOR',
+  left: 'LEFT',
+  right: 'RIGHT',
+  top: 'UPPER',
+  bottom: 'LOWER'
+});
+
+const FACE_TITLES: Readonly<Record<ClinicalViewCubeFace, string>> = Object.freeze({
+  front: 'Anterior',
+  back: 'Posterior',
+  left: 'Left',
+  right: 'Right',
+  top: 'Upper / Occlusal',
+  bottom: 'Lower'
 });
 
 const CORNERS: ReadonlyArray<{
@@ -150,7 +159,9 @@ export const ClinicalViewCube = ({
               type="button"
               className={`clinical-view-cube__face clinical-view-cube__face--${face}${activeFace === face ? ' clinical-view-cube__face--active' : ''}`}
               data-testid={`clinical-view-cube-${face}`}
-              title={face}
+              data-clinical-face={face}
+              title={FACE_TITLES[face]}
+              aria-label={FACE_TITLES[face]}
               aria-pressed={activeFace === face}
               onClick={() => onFace(face)}
             >

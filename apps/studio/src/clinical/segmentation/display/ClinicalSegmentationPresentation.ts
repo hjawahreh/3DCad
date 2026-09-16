@@ -32,40 +32,46 @@ export interface CompactToothMeta {
 }
 
 export const USER_PROGRESS_STAGES = Object.freeze([
-  'Preparing dental surface',
-  'Analyzing anatomy',
-  'Separating teeth',
+  'Preparing model',
+  'Detecting teeth',
+  'Separating gingiva',
   'Identifying teeth',
-  'Refining boundaries',
-  'Reconstructing clinical model'
+  'Building tooth regions'
 ] as const);
 
 /** Map provider progress copy → operator-facing stages (no provider internals). */
 export const toUserFacingProgressMessage = (raw: string | undefined): string => {
-  if (raw === undefined || raw.length === 0) return 'Segmenting case…';
+  if (raw === undefined || raw.length === 0) return 'PROCESSING…';
   const lower = raw.toLowerCase();
   if (lower.includes('prepar') || lower.includes('scan') || lower.includes('mesh')) {
-    return 'Preparing dental surface';
+    return 'Preparing model';
   }
-  if (lower.includes('load') || lower.includes('model')) {
-    return 'Analyzing anatomy';
+  if (lower.includes('load') || lower.includes('model') || lower.includes('detect')) {
+    return 'Detecting teeth';
   }
   if (lower.includes('analyz') || lower.includes('surface') || lower.includes('semantic')) {
-    return 'Analyzing anatomy';
+    return 'Detecting teeth';
   }
-  if (lower.includes('separat') || lower.includes('instance')) {
-    return 'Separating teeth';
+  if (
+    lower.includes('separat') ||
+    lower.includes('instance') ||
+    lower.includes('gingiva')
+  ) {
+    return 'Separating gingiva';
   }
   if (lower.includes('identif')) {
     return 'Identifying teeth';
   }
-  if (lower.includes('refin') || lower.includes('boundar')) {
-    return 'Refining boundaries';
+  if (
+    lower.includes('refin') ||
+    lower.includes('boundar') ||
+    lower.includes('region') ||
+    lower.includes('reconstr') ||
+    lower.includes('build')
+  ) {
+    return 'Building tooth regions';
   }
-  if (lower.includes('check') || lower.includes('reconstr') || lower.includes('ready')) {
-    return 'Reconstructing clinical model';
-  }
-  return 'Segmenting case…';
+  return 'PROCESSING…';
 };
 
 export const summarizeReview = (prediction: SegmentationPrediction): SegmentationReviewSummary => {

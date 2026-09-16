@@ -1,0 +1,87 @@
+{
+  "milestone": "CLN-TRIM-002",
+  "generatedAt": "2026-09-15T15:57:44.868Z",
+  "certification": "PASS WITH OBSERVATIONS",
+  "note": "Automated Playwright evidence only. Manual browser verification is required for PASS.",
+  "steps": [
+    {
+      "id": "orientation",
+      "status": "PASS",
+      "at": "2026-09-15T15:49:53.212Z"
+    },
+    {
+      "id": "axis-cleanup",
+      "status": "PASS",
+      "at": "2026-09-15T15:49:53.975Z",
+      "detail": "no XYZ overlays"
+    },
+    {
+      "id": "warmup",
+      "status": "PASS",
+      "at": "2026-09-15T15:50:23.845Z",
+      "detail": "editing ready"
+    },
+    {
+      "id": "freehand-arm",
+      "status": "PASS",
+      "at": "2026-09-15T15:50:36.569Z"
+    },
+    {
+      "id": "freehand-draw",
+      "status": "PASS",
+      "at": "2026-09-15T15:52:00.627Z",
+      "detail": "4 peripheral · points=25 · valid=true"
+    },
+    {
+      "id": "freehand-preview",
+      "status": "PASS",
+      "at": "2026-09-15T15:52:26.310Z",
+      "detail": "{\"beforeFaces\":261287,\"afterFaces\":255922,\"removedFaces\":5365,\"beforeFingerprint\":\"geo:c828c055\",\"afterFingerprint\":\"geo:63308263\"}"
+    },
+    {
+      "id": "freehand-accept",
+      "status": "PASS",
+      "at": "2026-09-15T15:53:07.007Z",
+      "detail": "faces 261287 → 255922"
+    },
+    {
+      "id": "clear-redraw",
+      "status": "PASS",
+      "at": "2026-09-15T15:54:34.377Z"
+    },
+    {
+      "id": "polyline-cancel-preview",
+      "status": "PASS",
+      "at": "2026-09-15T15:57:01.829Z",
+      "detail": "via API"
+    },
+    {
+      "id": "viewcube-ant",
+      "status": "PASS",
+      "at": "2026-09-15T15:57:16.583Z"
+    },
+    {
+      "id": "orbit",
+      "status": "PASS",
+      "at": "2026-09-15T15:57:44.867Z",
+      "detail": "mapping applied once via camera.orbit"
+    }
+  ],
+  "shots": [
+    "01-orientation-final.png",
+    "02-clean-clinical-viewport.png",
+    "03-freehand-armed.png",
+    "04-freehand-drawing.png",
+    "05-freehand-closed.png",
+    "06-freehand-real-preview.png",
+    "07-freehand-accepted.png",
+    "08-clear-redraw.png",
+    "09-polyline-drawing.png",
+    "10-polyline-preview.png",
+    "11-viewcube-anterior.png",
+    "12-orbit-up.png",
+    "13-orbit-down.png",
+    "14-orbit-left.png",
+    "15-orbit-right.png"
+  ]
+}

@@ -23,6 +23,10 @@ import type { RecentCaseEntry } from './RecentCases.js';
 import { deriveClinicalCaseWorkflowStatus } from './ClinicalCaseWorkflowStatus.js';
 import { hydrateClinicalPipelineFromDocument } from './ClinicalCaseResume.js';
 import {
+  cancelClinicalGeometryWarmup,
+  startClinicalGeometryWarmup
+} from '../geometry/ClinicalGeometryWarmup.js';
+import {
   buildClinicalHandoffSnapshot,
   rebuildClinicalHandoffFromDocument,
   type ClinicalHandoffSnapshot
@@ -72,6 +76,8 @@ const collectMeshes = (workspace: ClinicalWorkspace): readonly PersistedMeshGeom
 
 const clearWorkspaceGeometry = (workspace: ClinicalWorkspace): void => {
   const host = workspace.getHost();
+  // GEO-003: drop warm contexts so Case A never leaks into Case B.
+  cancelClinicalGeometryWarmup();
   workspace.importCoordinator.objects.clear();
   workspace.importCoordinator.sceneBuilder.publishEmpty(host, host.runtimes.scene);
   host.runtimes.kernel.registry.clear();
@@ -344,6 +350,30 @@ export class ClinicalCaseService {
       workspace.viewport.presentClinicalAnteriorView();
     }
     hydrateClinicalPipelineFromDocument(workspace, opened.value);
+    // GEO-003: when reopening a prepared case, warm editing context in background.
+    if (
+      opened.value.preparationMeta?.uiState === 'ready' ||
+      opened.value.preparationMeta?.uiState === 'warning'
+    ) {
+      const registry = host.runtimes.kernel.registry;
+      const arches = opened.value.objects
+        .map((obj) => {
+          const mesh =
+            registry.getByObjectId(obj.id as string, 'working') ??
+            registry.getByObjectId(obj.id as string, 'source');
+          if (mesh === undefined) return undefined;
+          return {
+            objectId: obj.id as string,
+            mesh,
+            ...(obj.archRole !== undefined ? { archRole: obj.archRole } : {})
+          };
+        })
+        .filter((a): a is NonNullable<typeof a> => a !== undefined);
+      if (arches.length > 0) {
+        host.notifications.push('progress', 'Geometry', 'Preparing scan for editing…');
+        void startClinicalGeometryWarmup(workspace.session, arches);
+      }
+    }
     // Authoritative handoff is rebuilt from restored document (provider-agnostic).
     // Persisted handoffJson is audit/cache only — never trust backend-leaking v1 blobs.
     this.lastHandoff = rebuildClinicalHandoffFromDocument(opened.value, Date.now());

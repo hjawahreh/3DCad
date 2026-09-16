@@ -1,0 +1,396 @@
+{
+  "generatedAt": "2026-09-15T12:43:07.239Z",
+  "summary": {
+    "pass": 10,
+    "fail": 0,
+    "observe": 2
+  },
+  "steps": [
+    {
+      "id": "00-create-import",
+      "status": "PASS",
+      "at": "2026-09-15T12:35:18.447Z"
+    },
+    {
+      "id": "00-auto-orientation",
+      "status": "PASS",
+      "at": "2026-09-15T12:35:33.412Z"
+    },
+    {
+      "id": "01-preview-a",
+      "status": "PASS",
+      "at": "2026-09-15T12:37:59.405Z",
+      "detail": "ms=83718 upload=0 resident=true",
+      "transport": {
+        "uploadBytes": 0,
+        "downloadBytes": 4632712,
+        "meshUploaded": false,
+        "meshResident": true,
+        "httpRoundTripMs": 74222.59999999986,
+        "encodeMs": 0,
+        "resultFormat": "binary",
+        "jsonBytes": 0,
+        "binaryBytes": 4629972,
+        "metaBytes": 2668,
+        "decodeMs": 0.20000000018626451,
+        "arrayBufferMs": 0,
+        "deliveryMode": "http-fallback",
+        "httpMs": 74222,
+        "ipcMs": "unavailable",
+        "initUploadBytes": 6289056
+      },
+      "session": {
+        "workerSessionId": "ws-fcd0f631ab87",
+        "geometryFingerprint": "geo:c828c055",
+        "objectId": "case-1789475682845:upper-arch",
+        "previewId": "pv-d7c09e480f",
+        "lastUploadBytes": 6289056,
+        "meshResident": true
+      }
+    },
+    {
+      "id": "02-cancel",
+      "status": "PASS",
+      "at": "2026-09-15T12:38:03.566Z",
+      "afterCancel": {
+        "id": "case-1789475682845:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "meshFingerprint": "geo:c828c055",
+        "meshFaces": 261287
+      },
+      "baseline": {
+        "id": "case-1789475682845:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "meshFingerprint": "geo:c828c055",
+        "meshFaces": 261287
+      }
+    },
+    {
+      "id": "03-preview-b-accept",
+      "status": "PASS",
+      "at": "2026-09-15T12:39:43.000Z",
+      "detail": "ms=79414 upload=0 mutated=true",
+      "before": {
+        "id": "case-1789475682845:upper-arch",
+        "fingerprint": "geo:c828c055",
+        "faceCount": 261287,
+        "meshFingerprint": "geo:c828c055",
+        "meshFaces": 261287
+      },
+      "after": {
+        "id": "case-1789475682845:upper-arch",
+        "fingerprint": "geo:1a0f6368",
+        "faceCount": 256316,
+        "meshFingerprint": "geo:1a0f6368",
+        "meshFaces": 256316
+      },
+      "previewFp": "geo:1a0f6368",
+      "transport": {
+        "uploadBytes": 0,
+        "downloadBytes": 4632712,
+        "meshUploaded": false,
+        "meshResident": true,
+        "httpRoundTripMs": 70084.30000000005,
+        "encodeMs": 0,
+        "resultFormat": "binary",
+        "jsonBytes": 0,
+        "binaryBytes": 4629972,
+        "metaBytes": 2670,
+        "decodeMs": 0.39999999990686774,
+        "arrayBufferMs": 0,
+        "deliveryMode": "http-fallback",
+        "httpMs": 70083.40000000014,
+        "ipcMs": "unavailable",
+        "initUploadBytes": 6289056
+      }
+    },
+    {
+      "id": "04-second-trim",
+      "status": "OBSERVE",
+      "at": "2026-09-15T12:42:35.999Z",
+      "detail": "skipped after retries: Error: close failed: Trim boundary crosses itself. Adjust the drawing.",
+      "afterB": {
+        "id": "case-1789475682845:upper-arch",
+        "fingerprint": "geo:1a0f6368",
+        "faceCount": 256316,
+        "meshFingerprint": "geo:1a0f6368",
+        "meshFaces": 256316
+      }
+    },
+    {
+      "id": "05-base-handoff",
+      "status": "PASS",
+      "at": "2026-09-15T12:43:03.541Z",
+      "handoff": {
+        "baseInputFingerprint": "geo:1a0f6368",
+        "expected": "geo:1a0f6368",
+        "match": true
+      },
+      "baseOk": true,
+      "basePreviewMs": 23031
+    },
+    {
+      "id": "06-no-full-mesh-repeat",
+      "status": "PASS",
+      "at": "2026-09-15T12:43:03.541Z",
+      "previewA": {
+        "uploadBytes": 0,
+        "downloadBytes": 4632712,
+        "meshUploaded": false,
+        "meshResident": true,
+        "httpRoundTripMs": 74222.59999999986,
+        "encodeMs": 0,
+        "resultFormat": "binary",
+        "jsonBytes": 0,
+        "binaryBytes": 4629972,
+        "metaBytes": 2668,
+        "decodeMs": 0.20000000018626451,
+        "arrayBufferMs": 0,
+        "deliveryMode": "http-fallback",
+        "httpMs": 74222,
+        "ipcMs": "unavailable",
+        "initUploadBytes": 6289056
+      },
+      "previewB": {
+        "uploadBytes": 0,
+        "downloadBytes": 4632712,
+        "meshUploaded": false,
+        "meshResident": true,
+        "httpRoundTripMs": 70084.30000000005,
+        "encodeMs": 0,
+        "resultFormat": "binary",
+        "jsonBytes": 0,
+        "binaryBytes": 4629972,
+        "metaBytes": 2670,
+        "decodeMs": 0.39999999990686774,
+        "arrayBufferMs": 0,
+        "deliveryMode": "http-fallback",
+        "httpMs": 70083.40000000014,
+        "ipcMs": "unavailable",
+        "initUploadBytes": 6289056
+      },
+      "previewC": null
+    },
+    {
+      "id": "07-binary-result-path",
+      "status": "PASS",
+      "at": "2026-09-15T12:43:03.542Z",
+      "previewA": {
+        "uploadBytes": 0,
+        "downloadBytes": 4632712,
+        "meshUploaded": false,
+        "meshResident": true,
+        "httpRoundTripMs": 74222.59999999986,
+        "encodeMs": 0,
+        "resultFormat": "binary",
+        "jsonBytes": 0,
+        "binaryBytes": 4629972,
+        "metaBytes": 2668,
+        "decodeMs": 0.20000000018626451,
+        "arrayBufferMs": 0,
+        "deliveryMode": "http-fallback",
+        "httpMs": 74222,
+        "ipcMs": "unavailable",
+        "initUploadBytes": 6289056
+      },
+      "previewB": {
+        "uploadBytes": 0,
+        "downloadBytes": 4632712,
+        "meshUploaded": false,
+        "meshResident": true,
+        "httpRoundTripMs": 70084.30000000005,
+        "encodeMs": 0,
+        "resultFormat": "binary",
+        "jsonBytes": 0,
+        "binaryBytes": 4629972,
+        "metaBytes": 2670,
+        "decodeMs": 0.39999999990686774,
+        "arrayBufferMs": 0,
+        "deliveryMode": "http-fallback",
+        "httpMs": 70083.40000000014,
+        "ipcMs": "unavailable",
+        "initUploadBytes": 6289056
+      },
+      "previewC": null
+    },
+    {
+      "id": "07b-delivery-mode",
+      "status": "PASS",
+      "at": "2026-09-15T12:43:03.542Z",
+      "detail": "WEB DEVELOPMENT FALLBACK (Chromium HTTP CGF1); mode=http-fallback",
+      "deliveryMode": "http-fallback",
+      "note": "Playwright Vite harness uses HTTP fallback; desktop uses Tauri IPC / node-host proves ~10s host path"
+    },
+    {
+      "id": "08-performance",
+      "status": "PASS",
+      "at": "2026-09-15T12:43:03.543Z",
+      "detail": "previewAMs=83718ms, previewBMs=79414ms, basePreviewMs=23031ms",
+      "timings": {
+        "previewAMs": 83718,
+        "previewATransport": {
+          "uploadBytes": 0,
+          "downloadBytes": 4632712,
+          "meshUploaded": false,
+          "meshResident": true,
+          "httpRoundTripMs": 74222.59999999986,
+          "encodeMs": 0,
+          "resultFormat": "binary",
+          "jsonBytes": 0,
+          "binaryBytes": 4629972,
+          "metaBytes": 2668,
+          "decodeMs": 0.20000000018626451,
+          "arrayBufferMs": 0,
+          "deliveryMode": "http-fallback",
+          "httpMs": 74222,
+          "ipcMs": "unavailable",
+          "initUploadBytes": 6289056
+        },
+        "previewBMs": 79414,
+        "previewBTransport": {
+          "uploadBytes": 0,
+          "downloadBytes": 4632712,
+          "meshUploaded": false,
+          "meshResident": true,
+          "httpRoundTripMs": 70084.30000000005,
+          "encodeMs": 0,
+          "resultFormat": "binary",
+          "jsonBytes": 0,
+          "binaryBytes": 4629972,
+          "metaBytes": 2670,
+          "decodeMs": 0.39999999990686774,
+          "arrayBufferMs": 0,
+          "deliveryMode": "http-fallback",
+          "httpMs": 70083.40000000014,
+          "ipcMs": "unavailable",
+          "initUploadBytes": 6289056
+        },
+        "basePreviewMs": 23031
+      },
+      "geo001gBrowserPreviewAMs": 36611,
+      "geo001gBrowserPreviewBMs": 38867,
+      "geo001gNodeDownloadBytes": 4716920,
+      "payloadBytes": 4632712,
+      "resultFormat": "binary"
+    },
+    {
+      "id": "09-save-reopen",
+      "status": "OBSERVE",
+      "at": "2026-09-15T12:43:07.238Z",
+      "detail": "{\"ok\":true,\"via\":\"noop-unavailable\"}",
+      "save": {
+        "ok": true,
+        "via": "noop-unavailable"
+      }
+    }
+  ],
+  "evidence": {
+    "timings": {
+      "previewAMs": 83718,
+      "previewATransport": {
+        "uploadBytes": 0,
+        "downloadBytes": 4632712,
+        "meshUploaded": false,
+        "meshResident": true,
+        "httpRoundTripMs": 74222.59999999986,
+        "encodeMs": 0,
+        "resultFormat": "binary",
+        "jsonBytes": 0,
+        "binaryBytes": 4629972,
+        "metaBytes": 2668,
+        "decodeMs": 0.20000000018626451,
+        "arrayBufferMs": 0,
+        "deliveryMode": "http-fallback",
+        "httpMs": 74222,
+        "ipcMs": "unavailable",
+        "initUploadBytes": 6289056
+      },
+      "previewBMs": 79414,
+      "previewBTransport": {
+        "uploadBytes": 0,
+        "downloadBytes": 4632712,
+        "meshUploaded": false,
+        "meshResident": true,
+        "httpRoundTripMs": 70084.30000000005,
+        "encodeMs": 0,
+        "resultFormat": "binary",
+        "jsonBytes": 0,
+        "binaryBytes": 4629972,
+        "metaBytes": 2670,
+        "decodeMs": 0.39999999990686774,
+        "arrayBufferMs": 0,
+        "deliveryMode": "http-fallback",
+        "httpMs": 70083.40000000014,
+        "ipcMs": "unavailable",
+        "initUploadBytes": 6289056
+      },
+      "basePreviewMs": 23031
+    },
+    "trims": [
+      {
+        "id": "B",
+        "before": {
+          "id": "case-1789475682845:upper-arch",
+          "fingerprint": "geo:c828c055",
+          "faceCount": 261287,
+          "meshFingerprint": "geo:c828c055",
+          "meshFaces": 261287
+        },
+        "previewMs": 79414,
+        "previewFp": "geo:1a0f6368",
+        "transport": {
+          "uploadBytes": 0,
+          "downloadBytes": 4632712,
+          "meshUploaded": false,
+          "meshResident": true,
+          "httpRoundTripMs": 70084.30000000005,
+          "encodeMs": 0,
+          "resultFormat": "binary",
+          "jsonBytes": 0,
+          "binaryBytes": 4629972,
+          "metaBytes": 2670,
+          "decodeMs": 0.39999999990686774,
+          "arrayBufferMs": 0,
+          "deliveryMode": "http-fallback",
+          "httpMs": 70083.40000000014,
+          "ipcMs": "unavailable",
+          "initUploadBytes": 6289056
+        },
+        "session": {
+          "workerSessionId": "ws-fcd0f631ab87",
+          "geometryFingerprint": "geo:c828c055",
+          "objectId": "case-1789475682845:upper-arch",
+          "previewId": "pv-d400f6af94",
+          "lastUploadBytes": 6289056,
+          "meshResident": true
+        },
+        "accept": {
+          "ok": true,
+          "message": null
+        },
+        "after": {
+          "id": "case-1789475682845:upper-arch",
+          "fingerprint": "geo:1a0f6368",
+          "faceCount": 256316,
+          "meshFingerprint": "geo:1a0f6368",
+          "meshFaces": 256316
+        },
+        "mutated": true
+      }
+    ],
+    "baseline": {
+      "id": "case-1789475682845:upper-arch",
+      "fingerprint": "geo:c828c055",
+      "faceCount": 261287,
+      "meshFingerprint": "geo:c828c055",
+      "meshFaces": 261287
+    },
+    "baseHandoff": {
+      "baseInputFingerprint": "geo:1a0f6368",
+      "expected": "geo:1a0f6368",
+      "match": true
+    }
+  }
+}

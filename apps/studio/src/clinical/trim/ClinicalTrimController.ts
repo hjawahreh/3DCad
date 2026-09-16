@@ -39,7 +39,12 @@ import {
   tryConnectPolylineAnchors
 } from './ClinicalTrimSurfacePath.js';
 import { thinSurfacePath } from '../../geometry-kernel/engine/index.js';
-import type { TrimDrawMode } from './ClinicalTrimState.js';
+import {
+  isLassoLikeTrimMode,
+  isStrokeTrimMode,
+  type TrimDrawMode
+} from './ClinicalTrimState.js';
+import { HybridGeometryBackend } from '../../geometry-kernel/adapters/HybridGeometryBackend.js';
 import type { StudioCompositionRoot } from '../../application/composition-root.js';
 import { computeAABB, cloneMesh } from '../../geometry-kernel/mesh/TriangleMesh.js';
 import type { TriangleMesh } from '../../geometry-kernel/mesh/TriangleMesh.js';
@@ -47,6 +52,14 @@ import type {
   ClinicalArchContext,
   ClinicalArchVisibilityMode
 } from '../shell/ClinicalArchContext.js';
+import {
+  getEditingReadinessMessage,
+  isGeometryEditingReady,
+  rewarmAfterGeometryMutation,
+  startClinicalGeometryWarmup
+} from '../geometry/ClinicalGeometryWarmup.js';
+import { geometryWarmup } from '../../geometry-kernel/context/GeometryWarmup.js';
+import { withPreparationMeta } from '../document/ClinicalDocument.js';
 
 const TRIM_POINTER_OWNER = asInteractionTargetId('clinical-trim-draw');
 
@@ -91,8 +104,21 @@ export class ClinicalTrimController {
   private trimIsolationActive = false;
   /** Preview mesh fingerprint before accept (non-destructive). */
   private previewReady = false;
+  /** GEO-001F: worker-owned preview handle (no mesh re-upload on cancel/accept). */
+  private workerPreviewId: string | undefined;
+  private workerBaseFingerprint: string | undefined;
   /** Working mesh clone captured before kernel mutation (for undo). */
   private preKernelMesh: TriangleMesh | undefined;
+  /** CLN-TRIM-002 — last real preview cut diagnostics (developer mode). */
+  private previewDiagnostics: {
+    readonly beforeFaces: number;
+    readonly afterFaces: number;
+    readonly removedFaces: number;
+    readonly beforeFingerprint: string | null;
+    readonly afterFingerprint: string | null;
+    readonly meaningfulDelta: boolean;
+    readonly qualityPassed: boolean;
+  } | null = null;
 
   public constructor(
     private readonly clinicalSession: ClinicalSession,
@@ -143,6 +169,38 @@ export class ClinicalTrimController {
     this.metrics.recordTrimStart();
     this.applyArchPresentation(target.value.objectId, { fit: true });
     this.bindInteraction();
+    // GEO-003: Trim may open while warming; drawing stays gated until READY.
+    const mesh = this.resolveWorkingMesh(target.value.objectId as string);
+    if (mesh !== undefined) {
+      if (!isGeometryEditingReady(mesh.objectId, mesh.fingerprint)) {
+        const msg =
+          getEditingReadinessMessage(mesh.objectId, mesh.fingerprint) ??
+          'Preparing editing tools…';
+        this.session.patchStatus(msg);
+        if (!geometryWarmup.isWarming(mesh.objectId, mesh.fingerprint)) {
+          const doc = this.clinicalSession.getPublicState().activeCase;
+          const archRole = doc?.objects.find((o) => o.id === target.value.objectId)?.archRole;
+          void startClinicalGeometryWarmup(
+            this.clinicalSession,
+            [
+              {
+                objectId: mesh.objectId,
+                archRole: archRole ?? 'upper',
+                mesh
+              }
+            ]
+          ).then(() => {
+            if (this.isActive() && isGeometryEditingReady(mesh.objectId, mesh.fingerprint)) {
+              this.session.patchStatus('Editing ready — draw on the scan, release to trim.');
+              this.clinicalSession.notifyUi();
+            }
+          });
+        }
+      } else {
+        this.session.patchStatus('Draw around the area to remove — release to trim.');
+      }
+    }
+    this.preferences.update({ drawMode: 'lasso' });
     this.clinicalSession.notifyUi();
     return clinicalSuccess(undefined);
   }
@@ -195,12 +253,19 @@ export class ClinicalTrimController {
     if (!this.isActive()) {
       return clinicalFailure('lifecycle', 'Trim not active');
     }
+    if (isStrokeTrimMode(mode) || mode === 'plane') {
+      const gated = this.requireEditingReady();
+      if (!gated.ok) {
+        return gated;
+      }
+    }
     const previous = this.session.getState().drawMode;
     this.endDraw();
-    // Tool switch: cancel old gesture so Freehand ↔ Polyline starts clean.
+    // Tool switch: cancel old gesture so mode changes start clean.
     if (previous !== mode && previous !== 'idle') {
       this.operation.cancel();
       this.previewReady = false;
+      this.previewDiagnostics = null;
       this.clinicalSession.getHost().runtimes.tools.clearActiveIfTerminal();
       if (
         this.session.getState().targetObjectId !== undefined &&
@@ -221,17 +286,15 @@ export class ClinicalTrimController {
       }
       this.session.clearPoints();
       this.session.setLastHitSummary(undefined);
+      this.session.setPointerCaptured(false);
+      this.drawingPointerId = undefined;
+      this.workerPreviewId = undefined;
+      this.workerBaseFingerprint = undefined;
     }
-    // Ensure workflow can accept new points immediately after preview/execute.
     this.session.resumeDrawingAfterPreview();
     this.session.setDrawMode(mode);
-    if (mode === 'polyline' || mode === 'freehand') {
+    if (isStrokeTrimMode(mode) || mode === 'plane') {
       this.preferences.update({ drawMode: mode });
-      this.session.patchStatus(
-        mode === 'freehand'
-          ? 'Freehand armed — drag on the scan to draw'
-          : 'Polyline armed — click the scan to add points'
-      );
     }
     this.clinicalSession.notifyUi();
     return clinicalSuccess(undefined);
@@ -240,6 +303,10 @@ export class ClinicalTrimController {
   public addPoint(point: TrimBoundaryPoint): ClinicalResult<void> {
     if (!this.isDrawing()) {
       return clinicalFailure('lifecycle', 'Trim not in drawing phase');
+    }
+    const gated = this.requireEditingReady();
+    if (!gated.ok) {
+      return gated;
     }
     const state = this.session.getState();
     if (state.drawMode === 'idle') {
@@ -266,7 +333,7 @@ export class ClinicalTrimController {
       return clinicalSuccess(undefined);
     }
     const mesh = this.resolveWorkingMesh(state.targetObjectId as string | undefined);
-    if (state.drawMode === 'freehand') {
+    if (isLassoLikeTrimMode(state.drawMode)) {
       const last = state.points[state.points.length - 1];
       if (
         last !== undefined &&
@@ -334,6 +401,7 @@ export class ClinicalTrimController {
     this.endDraw();
     this.operation.cancel();
     this.previewReady = false;
+    this.previewDiagnostics = null;
     this.clinicalSession.getHost().runtimes.tools.clearActiveIfTerminal();
     if (state.targetObjectId !== undefined && this.preKernelMesh !== undefined) {
       const registry = this.clinicalSession.getHost().runtimes.kernel.registry;
@@ -353,15 +421,13 @@ export class ClinicalTrimController {
     this.session.setLastHitSummary(undefined);
     this.session.setPointerCaptured(false);
     this.drawingPointerId = undefined;
+    this.workerPreviewId = undefined;
+    this.workerBaseFingerprint = undefined;
     this.session.resumeDrawingAfterPreview();
     // Keep the same tool armed so Clear → redraw needs no re-click / reload.
-    if (armedMode === 'polyline' || armedMode === 'freehand') {
+    if (isStrokeTrimMode(armedMode) || armedMode === 'plane') {
       this.session.setDrawMode(armedMode);
-      this.session.patchStatus(
-        armedMode === 'freehand'
-          ? 'Cleared — Freehand still armed, drag to redraw'
-          : 'Cleared — Polyline still armed, click to redraw'
-      );
+      this.session.patchStatus('Cleared — draw again, release to trim.');
     }
     this.clinicalSession.notifyUi();
     return clinicalSuccess(undefined);
@@ -481,16 +547,67 @@ export class ClinicalTrimController {
   /**
    * Explicit preview — runs VTK clip without mutating working mesh (GEO-001E).
    * Accept promotes the exact preview fingerprint — no second clip.
+   * CLN-TRIM-002: Reject orange-loop-only / no-op previews.
    */
   public async preview() {
     const result = await this.runTrimKernel({ commitReady: true, preview: true });
-    if (result.ok) {
-      this.previewReady = true;
-      this.session.patchStatus(
-        'Preview ready — review clipped mesh, then Accept Trim or Cancel Preview'
-      );
-      this.clinicalSession.notifyUi();
+    if (!result.ok) {
+      this.previewReady = false;
+      this.previewDiagnostics = null;
+      return result;
     }
+    const objectId = this.session.getState().targetObjectId as string | undefined;
+    const registry = this.clinicalSession.getHost().runtimes.kernel.registry;
+    const before = this.preKernelMesh;
+    const after =
+      objectId === undefined
+        ? undefined
+        : (registry.getByObjectId(objectId, 'preview') ??
+          registry.getByObjectId(objectId, 'display') ??
+          registry.getByObjectId(objectId, 'working'));
+    const beforeFaces =
+      before === undefined ? 0 : Math.floor(before.indices.length / 3);
+    const afterFaces =
+      after === undefined ? 0 : Math.floor(after.indices.length / 3);
+    const beforeFp = before?.fingerprint ?? null;
+    const afterFp = after?.fingerprint ?? null;
+    const fingerprintChanged =
+      beforeFp !== null && afterFp !== null && beforeFp !== afterFp;
+    const removedFaces = Math.max(0, beforeFaces - afterFaces);
+    const faceDelta = Math.abs(beforeFaces - afterFaces);
+    // Meaningful cut: fingerprint must change AND either faces dropped or substantial remesh delta.
+    const meaningfulDelta =
+      fingerprintChanged && (removedFaces >= 50 || faceDelta >= 100);
+    let qualityPassed = false;
+    if (after !== undefined) {
+      try {
+        qualityPassed = this.clinicalSession.getHost().runtimes.kernel.backend.validate(after).ok;
+      } catch {
+        qualityPassed = false;
+      }
+    }
+    this.previewDiagnostics = Object.freeze({
+      beforeFaces,
+      afterFaces,
+      removedFaces,
+      beforeFingerprint: beforeFp,
+      afterFingerprint: afterFp,
+      meaningfulDelta,
+      qualityPassed
+    });
+    if (!meaningfulDelta || !qualityPassed) {
+      this.previewReady = false;
+      const message = !meaningfulDelta
+        ? 'Preview did not remove a meaningful region — redraw a larger boundary on excess scan material.'
+        : 'Preview mesh failed quality validation.';
+      this.session.patchStatus(message);
+      this.diagnostics.recordValidationFailure(message);
+      this.clinicalSession.notifyUi();
+      return clinicalFailure('validation', message);
+    }
+    this.previewReady = true;
+    this.session.patchStatus('Review the actual cut, then Accept Trim.');
+    this.clinicalSession.notifyUi();
     return result;
   }
 
@@ -500,6 +617,19 @@ export class ClinicalTrimController {
     }
     this.operation.cancel();
     this.previewReady = false;
+    this.previewDiagnostics = null;
+    const objectId = this.session.getState().targetObjectId as string | undefined;
+    const hybrid = this.resolveHybridBackend();
+    if (hybrid !== undefined && objectId !== undefined) {
+      void hybrid.vtkBackend
+        .cancelWorkerPreview({
+          objectId,
+          ...(this.workerPreviewId !== undefined ? { previewId: this.workerPreviewId } : {})
+        })
+        .catch(() => undefined);
+    }
+    this.workerPreviewId = undefined;
+    this.workerBaseFingerprint = undefined;
     this.clinicalSession.getHost().runtimes.tools.clearActiveIfTerminal();
     const state = this.session.getState();
     if (state.targetObjectId !== undefined && this.preKernelMesh !== undefined) {
@@ -524,7 +654,38 @@ export class ClinicalTrimController {
   }
 
   public isPreviewReady(): boolean {
-    return this.previewReady;
+    return this.previewReady && this.previewDiagnostics?.meaningfulDelta === true;
+  }
+
+  /** Accept only after real preview with fingerprint change + quality. */
+  public canAcceptTrim(): boolean {
+    const state = this.session.getState();
+    const report = state.validationReport;
+    return (
+      this.isPreviewReady() &&
+      state.closed &&
+      report !== undefined &&
+      report.passed &&
+      this.previewDiagnostics?.qualityPassed === true &&
+      this.previewDiagnostics.meaningfulDelta === true
+    );
+  }
+
+  public getPreviewDiagnostics(): {
+    readonly beforeFaces: number;
+    readonly afterFaces: number;
+    readonly removedFaces: number;
+    readonly beforeFingerprint: string | null;
+    readonly afterFingerprint: string | null;
+  } | null {
+    if (this.previewDiagnostics === null) return null;
+    return Object.freeze({
+      beforeFaces: this.previewDiagnostics.beforeFaces,
+      afterFaces: this.previewDiagnostics.afterFaces,
+      removedFaces: this.previewDiagnostics.removedFaces,
+      beforeFingerprint: this.previewDiagnostics.beforeFingerprint,
+      afterFingerprint: this.previewDiagnostics.afterFingerprint
+    });
   }
 
   private async runTrimKernel(options: {
@@ -544,11 +705,11 @@ export class ClinicalTrimController {
     const process = host.processFeedback;
     process.begin({
       kind: 'trim',
-      title: 'Trim',
+      title: 'TRIMMING…',
       stages: [
         { id: 'validate', label: 'Validating boundary' },
-        { id: 'worker', label: 'Clipping mesh (VTK)' },
-        { id: 'preview', label: 'Building preview' }
+        { id: 'worker', label: 'Clipping mesh' },
+        { id: 'preview', label: 'Updating model' }
       ],
       initialStageId: 'validate'
     });
@@ -711,6 +872,15 @@ export class ClinicalTrimController {
     process.setStage('preview');
     const opSession = this.operation.getSession();
     const fingerprint = opSession?.snapshot().kernelResult?.fingerprint;
+    const previewId =
+      this.readMeta(
+        opSession?.snapshot().kernelResult?.payload as
+          | { readonly diagnostics?: unknown; readonly warnings?: unknown }
+          | undefined,
+        'previewId'
+      ) ?? undefined;
+    this.workerPreviewId = previewId;
+    this.workerBaseFingerprint = this.preKernelMesh?.fingerprint;
     this.session.markExecuting(fingerprint, opSession?.id ?? '');
     if (options.commitReady) {
       this.previewReady = true;
@@ -721,15 +891,69 @@ export class ClinicalTrimController {
     return clinicalSuccess(undefined);
   }
 
+  private resolveHybridBackend(): HybridGeometryBackend | undefined {
+    const backend = this.clinicalSession.getHost().runtimes.kernel.backend;
+    return backend instanceof HybridGeometryBackend ? backend : undefined;
+  }
+
+  /** GEO-003: drawing/ops require warmed clinical spatial + context. */
+  private requireEditingReady(): ClinicalResult<void> {
+    const objectId = this.session.getState().targetObjectId as string | undefined;
+    const mesh = this.resolveWorkingMesh(objectId);
+    if (mesh === undefined) {
+      return clinicalFailure('not-found', 'No working geometry for trim target');
+    }
+    if (isGeometryEditingReady(mesh.objectId, mesh.fingerprint)) {
+      return clinicalSuccess(undefined);
+    }
+    const status = geometryWarmup.getStatus(mesh.objectId);
+    if (status?.state === 'FAILED' && status.geometryFingerprint === mesh.fingerprint) {
+      const msg = 'Editing tools could not be prepared.';
+      this.session.patchStatus(msg);
+      this.clinicalSession.notifyUi();
+      return clinicalFailure('unavailable', msg);
+    }
+    const msg =
+      getEditingReadinessMessage(mesh.objectId, mesh.fingerprint) ??
+      'Preparing editing tools…';
+    this.session.patchStatus(msg);
+    this.clinicalSession.notifyUi();
+    return clinicalFailure('unavailable', msg);
+  }
+
+  private scheduleRewarm(mesh: TriangleMesh): void {
+    const doc = this.clinicalSession.getPublicState().activeCase;
+    const archRole = doc?.objects.find((o) => (o.id as string) === mesh.objectId)?.archRole;
+    void rewarmAfterGeometryMutation(this.clinicalSession, mesh, archRole);
+  }
+
+  private readMeta(
+    payload: { readonly diagnostics?: unknown; readonly warnings?: unknown } | undefined,
+    key: string
+  ): string | undefined {
+    if (payload === undefined) return undefined;
+    const prefix = `meta:${key}=`;
+    for (const bag of [payload.diagnostics, payload.warnings]) {
+      if (!Array.isArray(bag)) continue;
+      for (const row of bag) {
+        if (typeof row !== 'string' || !row.startsWith(prefix)) continue;
+        const v = row.slice(prefix.length);
+        if (v.length > 0) return v;
+      }
+    }
+    return undefined;
+  }
+
   public async accept() {
     if (!this.isActive()) {
       return clinicalFailure('lifecycle', 'Trim not active');
     }
-    if (!this.previewReady) {
-      const previewed = await this.preview();
-      if (!previewed.ok) {
-        return previewed;
-      }
+    // CLN-TRIM-002: Accept is impossible before a real preview — no silent auto-preview.
+    if (!this.canAcceptTrim()) {
+      return clinicalFailure(
+        'validation',
+        'Run Preview and confirm a real cut before Accept Trim.'
+      );
     }
     const state = this.session.getState();
     if (state.targetObjectId === undefined) {
@@ -766,6 +990,24 @@ export class ClinicalTrimController {
         revision: previewMesh.revision
       });
       registry.clearPreview(objectId);
+      // GEO-001F: promote worker-resident preview → working without recomputing Trim.
+      const hybrid = this.resolveHybridBackend();
+      if (
+        hybrid !== undefined &&
+        this.workerPreviewId !== undefined &&
+        this.workerBaseFingerprint !== undefined
+      ) {
+        void hybrid.vtkBackend
+          .acceptWorkerPreview({
+            objectId,
+            previewId: this.workerPreviewId,
+            expectedBaseFingerprint: this.workerBaseFingerprint,
+            promotedFingerprint: promoted.fingerprint
+          })
+          .catch(() => undefined);
+      }
+      this.workerPreviewId = undefined;
+      this.workerBaseFingerprint = undefined;
       try {
         const display = host.runtimes.kernel.backend.prepareDisplay(promoted);
         registry.setDisplay(objectId, { ...display.mesh, revision: promoted.revision });
@@ -833,6 +1075,22 @@ export class ClinicalTrimController {
       asWorkflowStepId('ready-for-trim'),
       asCommitTokenId(token)
     );
+    // PROD-003: Trim Accept unlocks Close Base (not Segmentation).
+    this.preparation.session.setStage('ready-for-close-base');
+    const activeDoc = this.clinicalSession.getPublicState().activeCase;
+    if (activeDoc?.preparationMeta !== undefined) {
+      this.clinicalSession.applyDocument(
+        withPreparationMeta(
+          activeDoc,
+          Object.freeze({
+            ...activeDoc.preparationMeta,
+            lastMilestone: 'trimmed'
+          }),
+          Date.now()
+        ),
+        true
+      );
+    }
     host.runtimes.tools.clearActiveIfTerminal();
     this.operation.dispose();
     const duration = now - (state.sessionStartedAt ?? now);
@@ -847,6 +1105,8 @@ export class ClinicalTrimController {
       objectId: state.targetObjectId,
       now: Date.now()
     });
+    // GEO-003: fingerprint changed — invalidate old context and rewarm async.
+    this.scheduleRewarm(nextMesh);
     this.clinicalSession.getHost().notifications.push(
       'success',
       'Trim',
@@ -900,6 +1160,7 @@ export class ClinicalTrimController {
       entry.value.previous,
       'trim-undo'
     );
+    this.scheduleRewarm(entry.value.previousMesh);
     this.clinicalSession.notifyUi();
     return clinicalSuccess(undefined);
   }
@@ -922,6 +1183,7 @@ export class ClinicalTrimController {
       entry.value.next,
       'trim-redo'
     );
+    this.scheduleRewarm(entry.value.nextMesh);
     this.clinicalSession.notifyUi();
     return clinicalSuccess(undefined);
   }
@@ -952,6 +1214,69 @@ export class ClinicalTrimController {
     this.session.setPointerCaptured(false);
   }
 
+  /**
+   * CLN-WORKSTATION-001 — pointer release completes the gesture:
+   * close → real trim compute → auto-accept when valid (Undo remains).
+   */
+  public async completeGestureAndTrim() {
+    if (!this.isActive()) {
+      return clinicalFailure('lifecycle', 'Trim not active');
+    }
+    this.endDraw();
+    const mode = this.session.getState().drawMode;
+    if (!isLassoLikeTrimMode(mode) && mode !== 'plane') {
+      return clinicalSuccess(undefined);
+    }
+    const points = this.session.getState().points;
+    if (points.length < 3) {
+      this.session.patchStatus('Draw a larger loop, then release.');
+      this.clinicalSession.notifyUi();
+      return clinicalFailure('validation', 'Need at least 3 surface points');
+    }
+    this.session.patchStatus('Trimming…');
+    this.clinicalSession.notifyUi();
+    let closed = this.closeBoundary();
+    // Lasso freehand can self-cross on SurfacePath; thin to angular samples and retry once.
+    if (
+      !closed.ok &&
+      isLassoLikeTrimMode(mode) &&
+      /crosses itself|SELF_INTERSECT/i.test(closed.error?.message ?? '')
+    ) {
+      const raw = this.session.getState().points;
+      if (raw.length >= 4) {
+        const target = 5;
+        const step = Math.max(1, Math.floor(raw.length / target));
+        const thinned = raw.filter((_, i) => i % step === 0 || i === raw.length - 1).slice(0, target);
+        if (thinned.length >= 3) {
+          this.session.setPoints(thinned, false);
+          closed = this.closeBoundary();
+        }
+      }
+    }
+    if (!closed.ok) {
+      return closed;
+    }
+    const previewed = await this.preview();
+    if (!previewed.ok) {
+      return previewed;
+    }
+    if (!this.canAcceptTrim()) {
+      this.session.patchStatus('Trim needs review — use Undo or Clear.');
+      this.clinicalSession.notifyUi();
+      return clinicalFailure('validation', 'Trim result needs review');
+    }
+    const accepted = await this.accept();
+    if (accepted.ok) {
+      this.clinicalSession.getHost().notifications.push('success', 'Trim', 'Trim complete');
+      if (isStrokeTrimMode(mode) || mode === 'plane') {
+        this.session.setDrawMode(mode);
+        this.session.patchStatus('Trim complete — draw again or continue to Base.');
+      }
+      this.clinicalSession.notifyUi();
+    }
+    return accepted;
+  }
+
   public isPointerCaptured(): boolean {
     return this.drawingPointerId !== undefined;
   }
@@ -963,6 +1288,21 @@ export class ClinicalTrimController {
   public isDrawing(): boolean {
     const phase = this.session.getState().phase;
     return phase === 'drawing' || phase === 'preview-boundary' || phase === 'validating';
+  }
+
+  /** GEO-003: true when clinical spatial/context is READY for the target mesh. */
+  public isEditingReady(): boolean {
+    const objectId = this.session.getState().targetObjectId as string | undefined;
+    const mesh = this.resolveWorkingMesh(objectId);
+    if (mesh === undefined) return false;
+    return isGeometryEditingReady(mesh.objectId, mesh.fingerprint);
+  }
+
+  public getEditingReadyMessage(): string | undefined {
+    const objectId = this.session.getState().targetObjectId as string | undefined;
+    const mesh = this.resolveWorkingMesh(objectId);
+    if (mesh === undefined) return 'Preparing editing tools…';
+    return getEditingReadinessMessage(mesh.objectId, mesh.fingerprint);
   }
 
   public dispose(): void {
@@ -1084,7 +1424,7 @@ export class ClinicalTrimController {
       if (event.pointerId !== this.drawingPointerId) {
         return;
       }
-      if (event.phase === 'move' && this.session.getState().drawMode === 'freehand') {
+      if (event.phase === 'move' && isLassoLikeTrimMode(this.session.getState().drawMode)) {
         return;
       }
       if (event.phase === 'up' || event.phase === 'cancel') {

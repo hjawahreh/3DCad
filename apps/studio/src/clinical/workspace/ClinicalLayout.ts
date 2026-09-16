@@ -34,11 +34,11 @@ export type ClinicalRightTab =
 export type ClinicalBottomTab = 'notifications' | 'logs' | 'diagnostics' | 'import' | 'jobs';
 
 export const DEFAULT_CLINICAL_LAYOUT: ClinicalLayoutState = Object.freeze({
-  leftWidth: 300,
-  rightWidth: 300,
+  leftWidth: 88,
+  rightWidth: 280,
   bottomHeight: 180,
   leftCollapsed: false,
-  rightCollapsed: false,
+  rightCollapsed: true,
   bottomCollapsed: true,
   leftSection: 'case',
   rightTab: 'inspector',
@@ -46,7 +46,7 @@ export const DEFAULT_CLINICAL_LAYOUT: ClinicalLayoutState = Object.freeze({
 });
 
 export class ClinicalLayout {
-  private readonly storageKey = 'cad-studio.clinical.layout.v2';
+  private readonly storageKey = 'cad-studio.clinical.layout.v3';
   private state: ClinicalLayoutState;
   private readonly listeners = new Set<() => void>();
 
@@ -54,7 +54,11 @@ export class ClinicalLayout {
     this.state = Object.freeze({
       ...DEFAULT_CLINICAL_LAYOUT,
       ...this.sanitize(this.load()),
-      ...(initial ?? {})
+      ...(initial ?? {}),
+      // CLN-WORKSTATION-001: prefer collapsed inspector + narrow rail.
+      leftWidth: initial?.leftWidth ?? Math.min(120, this.load()?.leftWidth ?? 88),
+      rightCollapsed: initial?.rightCollapsed ?? true,
+      bottomCollapsed: initial?.bottomCollapsed ?? true
     });
   }
 
@@ -88,7 +92,7 @@ export class ClinicalLayout {
       bottomHeight?: number;
     } & Partial<ClinicalLayoutState> = { ...partial };
     if (typeof next.leftWidth === 'number') {
-      next.leftWidth = Math.min(480, Math.max(220, Math.round(next.leftWidth)));
+      next.leftWidth = Math.min(200, Math.max(72, Math.round(next.leftWidth)));
     }
     if (typeof next.rightWidth === 'number') {
       next.rightWidth = Math.min(480, Math.max(220, Math.round(next.rightWidth)));

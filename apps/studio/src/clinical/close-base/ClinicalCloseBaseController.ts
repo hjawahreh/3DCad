@@ -17,6 +17,7 @@ import {
   clinicalSuccess,
   type ClinicalResult
 } from '../runtime/types.js';
+import { withPreparationMeta } from '../document/ClinicalDocument.js';
 import { ClinicalCloseBaseHistory } from './ClinicalCloseBaseHistory.js';
 import { ClinicalCloseBaseManager } from './ClinicalCloseBaseManager.js';
 import {
@@ -476,7 +477,7 @@ export class ClinicalCloseBaseController {
     );
     host.runtimes.tools.clearActiveIfTerminal();
     this.operation.dispose();
-    // Unlock Segment after a committed base (prep stage may still be ready-for-trim).
+    // Unlock Segment after a committed base (canonical: after Trim → Base).
     const prepStage = this.preparation.session.getState().currentStage;
     if (
       prepStage === 'orientation-complete' ||
@@ -484,6 +485,40 @@ export class ClinicalCloseBaseController {
       prepStage === 'ready-for-close-base'
     ) {
       this.preparation.session.setStage('ready-for-segmentation');
+    }
+    const activeDoc = this.clinicalSession.getPublicState().activeCase;
+    if (activeDoc?.preparationMeta !== undefined) {
+      this.clinicalSession.applyDocument(
+        withPreparationMeta(
+          activeDoc,
+          Object.freeze({
+            ...activeDoc.preparationMeta,
+            lastMilestone: 'based',
+            message: 'Prepared model ready for segmentation.'
+          }),
+          Date.now()
+        ),
+        true
+      );
+    } else if (activeDoc !== undefined) {
+      this.clinicalSession.applyDocument(
+        withPreparationMeta(
+          activeDoc,
+          Object.freeze({
+            algorithmVersion: 'clinical-auto-prep-v1',
+            uiState: 'ready' as const,
+            sourceFingerprint: `base:${String(activeDoc.caseId)}`,
+            warningCount: 0,
+            archCount: activeDoc.objects.length,
+            preparedAt: Date.now(),
+            timingMs: 0,
+            message: 'Prepared model ready for segmentation.',
+            lastMilestone: 'based' as const
+          }),
+          Date.now()
+        ),
+        true
+      );
     }
     const duration = now - (state.sessionStartedAt ?? now);
     const previewMs = now - (state.previewStartedAt ?? now);
@@ -577,10 +612,10 @@ export class ClinicalCloseBaseController {
   public isPreparationReady(): boolean {
     const stage = this.preparation.session.getState().currentStage;
     return (
-      this.preparation.isReadyForGeometry() ||
       stage === 'ready-for-close-base' ||
       stage === 'preparation-complete' ||
-      stage === 'ready-for-trim'
+      stage === 'ready-for-segmentation' ||
+      stage === 'ready-for-movement'
     );
   }
 

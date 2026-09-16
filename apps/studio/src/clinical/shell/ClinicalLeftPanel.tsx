@@ -2,6 +2,11 @@ import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
 import { ClinicalPreparationPanel } from './ClinicalPreparationPanel.js';
 import { ClinicalWorkflowGuide } from './ClinicalWorkflowGuide.js';
 import { useClinicalUiRevision } from './useClinicalUi.js';
+import { useSyncExternalStore } from 'react';
+import {
+  deriveTrimInteractionState,
+  trimGuidedMessage
+} from '../trim/ClinicalTrimInteractionState.js';
 
 /**
  * Left workflow panel — guided current step; case objects; advanced preparation collapsed.
@@ -19,11 +24,36 @@ export const ClinicalLeftPanel = ({
   const selected = new Set<string>(
     (host.sessions.selectionSession?.getSnapshot().ids ?? []).map((id) => id as string)
   );
+  const trimState = useSyncExternalStore(
+    (cb) => workspace.trim.session.subscribe(cb),
+    () => workspace.trim.session.getState(),
+    () => workspace.trim.session.getState()
+  );
+  const trimming = workspace.trim.isActive();
+  const trimInteraction = deriveTrimInteractionState({
+    state: trimState,
+    previewReady: workspace.trim.controller.isPreviewReady(),
+    pointerDrawing: workspace.trim.controller.isPointerCaptured()
+  });
+  const trimGuide = trimming
+    ? trimGuidedMessage(trimInteraction, trimState.drawMode)
+    : undefined;
 
   return (
     <div className="clinical-left" data-testid="clinical-left-panel">
       <div className="clinical-left__body">
         <ClinicalWorkflowGuide workspace={workspace} />
+
+        {trimGuide !== undefined ? (
+          <section
+            className="clinical-left__section clinical-left__trim-guide"
+            aria-label="Trim guidance"
+            data-testid="clinical-trim-left-guide"
+          >
+            <h3>Trim</h3>
+            <p className="clinical-left__trim-guide-text">{trimGuide}</p>
+          </section>
+        ) : null}
 
         <section className="clinical-left__section" aria-label="Case objects">
           <h3>Case</h3>

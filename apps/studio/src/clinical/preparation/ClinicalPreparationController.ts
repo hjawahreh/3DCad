@@ -32,6 +32,7 @@ import {
   type ClinicalAutoPreparationReport,
   type PrepareArchInput
 } from './ClinicalAutoPreparationRunner.js';
+import { startClinicalGeometryWarmup } from '../geometry/ClinicalGeometryWarmup.js';
 
 export class ClinicalPreparationController {
   public readonly session: ClinicalPreparationSession;
@@ -392,7 +393,8 @@ export class ClinicalPreparationController {
       archCount: report.arches.length,
       preparedAt: report.preparedAt,
       timingMs: report.timingMs,
-      message: report.message
+      message: report.message,
+      lastMilestone: 'prepared'
     });
     const current = this.clinicalSession.getPublicState().activeCase;
     if (current !== undefined) {
@@ -409,11 +411,37 @@ export class ClinicalPreparationController {
     });
 
     host.processFeedback.complete();
-    host.notifications.push(
-      report.uiState === 'warning' ? 'warning' : 'success',
-      'Preparation',
-      report.message
-    );
+    // GEO-003: kick geometry warmup immediately after Prepare (non-blocking).
+    // Warmup progress replaces the transient prepare toast via the one-notification rule.
+    if (arches.length > 0) {
+      host.notifications.push('progress', 'Geometry', 'Preparing scan for editing…');
+      const warmInputs = arches.map((a) => ({
+        objectId: a.objectId,
+        mesh: a.mesh,
+        ...(a.archRole !== undefined ? { archRole: a.archRole } : {})
+      }));
+      void startClinicalGeometryWarmup(this.clinicalSession, warmInputs).then((statuses) => {
+        const failed = statuses.find((s) => s.state === 'FAILED');
+        if (failed !== undefined) {
+          this.session.setAutoPreparation({
+            statusMessage: 'Editing tools could not be prepared.',
+            nextStep: 'Retry preparation'
+          });
+        } else if (statuses.every((s) => s.state === 'READY')) {
+          this.session.setAutoPreparation({
+            statusMessage: 'Editing ready',
+            nextStep: 'Continue to Trim'
+          });
+        }
+        this.clinicalSession.notifyUi();
+      });
+    } else {
+      host.notifications.push(
+        report.uiState === 'warning' ? 'warning' : 'success',
+        'Preparation',
+        report.message
+      );
+    }
     this.clinicalSession.notifyUi();
     return clinicalSuccess(report);
   }

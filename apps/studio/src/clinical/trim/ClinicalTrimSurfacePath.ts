@@ -19,8 +19,8 @@ import type { TrimDrawMode } from './ClinicalTrimState.js';
 import type { TrimBoundaryPoint } from './ClinicalTrimBoundaryMath.js';
 
 export const reconstructModeForDraw = (mode: TrimDrawMode): SurfacePathReconstructMode => {
-  if (mode === 'polyline') return 'always';
-  if (mode === 'freehand') return 'gaps';
+  if (mode === 'polyline' || mode === 'curve') return 'always';
+  if (mode === 'freehand' || mode === 'lasso' || mode === 'plane') return 'gaps';
   return 'gaps';
 };
 
@@ -145,7 +145,9 @@ export const buildAuthoritativeClosedSurfacePath = (
     closed: false,
     reconstruct,
     maxProjectDistanceMm: 12,
-    maxJumpMm: 2.5
+    maxJumpMm: 2.5,
+    // GEO-001F: bound densification while reconstructing — keep VTK loop ≤128.
+    ...(alreadyDense ? {} : { maxTotalSamples: 128 })
   });
   if (!built.ok) {
     return {

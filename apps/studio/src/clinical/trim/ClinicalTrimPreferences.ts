@@ -13,9 +13,9 @@ export interface ClinicalTrimPreferences {
 }
 
 export const DEFAULT_TRIM_PREFERENCES: ClinicalTrimPreferences = Object.freeze({
-  drawMode: 'polyline',
-  showStatistics: true,
-  showValidationDetails: true,
+  drawMode: 'lasso',
+  showStatistics: false,
+  showValidationDetails: false,
   lockSelection: true
 });
 

@@ -36,36 +36,27 @@ export const ClinicalViewportHUD = ({
   const viewport = host.sessions.viewportSession;
   const avgFrame = viewport?.getMetrics().snapshot().averageFrameTimeMs ?? 0;
   const fps = avgFrame > 0 ? Math.min(120, Math.round(1000 / avgFrame)) : '—';
-  const archSummaries =
+  // CLN-WORKSTATION-001: keep HUD minimal — no triangle counts / fingerprints in clinical mode.
+  const visibleArches =
     doc?.objects
       .filter((o) => o.visible)
-      .map((o) => {
-        const tris =
-          o.faceCount !== undefined
-            ? o.faceCount >= 1_000_000
-              ? `${(o.faceCount / 1_000_000).toFixed(1)}M`
-              : o.faceCount >= 1000
-                ? `${(o.faceCount / 1000).toFixed(1)}k`
-                : String(o.faceCount)
-            : '—';
-        return `${o.displayName} · ${tris} triangles`;
-      }) ?? [];
+      .map((o) => o.displayName)
+      .slice(0, 2) ?? [];
 
   return (
     <div className="clinical-viewport-hud" aria-label="Viewport info" data-testid="clinical-viewport-hud">
       <span>{presentation.caseName ?? 'No case'}</span>
-      {archSummaries.slice(0, 2).map((label) => (
+      {visibleArches.map((label) => (
         <span key={label}>{label}</span>
       ))}
       {presentation.activeToolLabel !== undefined ? (
-        <span>Tool {presentation.activeToolLabel}</span>
+        <span>{presentation.activeToolLabel}</span>
       ) : null}
-      <span>{doc?.units ?? 'mm'}</span>
-      <span>{render.displayMode}</span>
       {selectionCount > 0 ? <span>Selected {String(selectionCount)}</span> : null}
       {prefs.showFrameStats ? (
         <>
           <span className="clinical-viewport-hud__dev">FPS {String(fps)}</span>
+          <span className="clinical-viewport-hud__dev">{render.displayMode}</span>
           <span className="clinical-viewport-hud__dev">
             Tris {String(doc?.objects.reduce((n, o) => n + (o.faceCount ?? 0), 0) ?? 0)}
           </span>

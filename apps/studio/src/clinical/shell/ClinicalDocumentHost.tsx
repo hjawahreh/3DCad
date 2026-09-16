@@ -63,7 +63,7 @@ export const ClinicalDocumentHost = ({
           orienting
             ? 'Accept · Cancel · Reset available from the Orientation toolbar'
             : trimming
-              ? 'Draw · Accept · Cancel available from the Trim toolbar'
+              ? 'Draw on the scan — release to trim. Clear · Done on the Trim toolbar'
               : analyzing
                 ? 'Measure · Tooth · Arch available from the Analysis toolbar'
                 : 'Fit All and display modes are available from the inspector'

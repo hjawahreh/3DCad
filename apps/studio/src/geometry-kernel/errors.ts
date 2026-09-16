@@ -13,7 +13,13 @@ export type GeometryKernelErrorCode =
   | 'COMMIT_FAILED'
   | 'CANCELLED'
   | 'OUT_OF_MEMORY'
-  | 'UNSUPPORTED_OPERATION';
+  | 'UNSUPPORTED_OPERATION'
+  | 'BINARY_GEOMETRY_INVALID'
+  | 'BINARY_GEOMETRY_TRUNCATED'
+  | 'BINARY_GEOMETRY_VERSION_UNSUPPORTED'
+  | 'GEOMETRY_FINGERPRINT_MISMATCH'
+  | 'WORKER_SESSION_INVALID'
+  | 'GEOMETRY_WARMUP_FAILED';
 
 export class GeometryKernelError extends Error {
   public readonly code: GeometryKernelErrorCode;

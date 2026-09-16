@@ -8,8 +8,32 @@ import type { TrimValidationReport } from './ClinicalTrimValidation.js';
 import type { TrimWorkflowPhase } from './ClinicalTrimWorkflow.js';
 import type { TrimSessionLifecycle } from './ClinicalTrimLifecycle.js';
 
-/** idle = toolbar usable, no viewport stroke capture until Polyline/Freehand chosen. */
-export type TrimDrawMode = 'idle' | 'freehand' | 'polyline';
+/**
+ * CLN-WORKSTATION-001 clinical draw modes.
+ * freehand/polyline kept as aliases for older call sites (lasso/curve).
+ */
+export type TrimDrawMode =
+  | 'idle'
+  | 'lasso'
+  | 'curve'
+  | 'plane'
+  | 'freehand'
+  | 'polyline';
+
+export const isStrokeTrimMode = (mode: TrimDrawMode): boolean =>
+  mode === 'lasso' ||
+  mode === 'curve' ||
+  mode === 'freehand' ||
+  mode === 'polyline';
+
+export const isLassoLikeTrimMode = (mode: TrimDrawMode): boolean =>
+  mode === 'lasso' || mode === 'curve' || mode === 'freehand';
+
+export const normalizeTrimDrawMode = (mode: TrimDrawMode): TrimDrawMode => {
+  if (mode === 'freehand') return 'lasso';
+  if (mode === 'polyline') return 'curve';
+  return mode;
+};
 
 export interface ClinicalTrimState {
   readonly phase: TrimWorkflowPhase;

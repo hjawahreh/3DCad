@@ -142,10 +142,10 @@ export class ClinicalCloseBaseValidation {
   }): CloseBaseValidationCheckResult {
     const stage = input.preparation.session.getState().currentStage;
     const passed =
-      input.preparation.isReadyForGeometry() ||
       stage === 'ready-for-close-base' ||
       stage === 'preparation-complete' ||
-      stage === 'ready-for-trim';
+      stage === 'ready-for-segmentation' ||
+      stage === 'ready-for-movement';
     return freezeCheck({
       id: 'preparation-readiness',
       label: 'Preparation readiness',

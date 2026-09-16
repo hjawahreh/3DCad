@@ -28,18 +28,31 @@ export const ClinicalViewportOverlay = ({
   }
 
   return (
-    <div className="clinical-viewport-overlay" data-display-mode={render.displayMode}>
-      {prefs.showOrigin || render.showOrigin ? <div className="clinical-origin" /> : null}
+    <div
+      className="clinical-viewport-overlay"
+      data-display-mode={render.displayMode}
+      data-testid="clinical-viewport-overlay"
+      data-axes={prefs.showAxes || render.showAxes ? 'on' : 'off'}
+      data-origin={prefs.showOrigin || render.showOrigin ? 'on' : 'off'}
+      data-orient-gizmo={prefs.showOrientationIndicator ? 'on' : 'off'}
+    >
+      {prefs.showOrigin || render.showOrigin ? (
+        <div className="clinical-origin" data-testid="clinical-origin" />
+      ) : null}
       {prefs.showAxes || render.showAxes ? (
-        <>
+        <div data-testid="clinical-axes-helper" aria-hidden="true">
           <div className="clinical-axis clinical-axis--x" />
           <div className="clinical-axis clinical-axis--y" />
           <div className="clinical-axis clinical-axis--z" />
-        </>
+        </div>
       ) : null}
 
       {prefs.showOrientationIndicator ? (
-        <div className="clinical-orient-gizmo" aria-label="Orientation indicator">
+        <div
+          className="clinical-orient-gizmo"
+          data-testid="clinical-orient-gizmo"
+          aria-label="Orientation indicator"
+        >
           <span className="gizmo-x">X</span>
           <span className="gizmo-y">Y</span>
           <span className="gizmo-z">Z</span>

@@ -216,12 +216,18 @@ export class ClinicalTrimValidation {
     // GEO-001C: screen-space self-intersection is not authoritative for curved
     // mesh-local SurfacePath loops. When local 3D samples exist, defer to Close/Preview
     // SurfacePath validation (still reject obvious screen crossings for screen-only strokes).
-    const hasLocal3d = input.points.every(
+    const localCount = input.points.filter(
       (p) =>
         typeof p.localX === 'number' &&
         typeof p.localY === 'number' &&
-        typeof p.localZ === 'number'
-    );
+        typeof p.localZ === 'number' &&
+        Number.isFinite(p.localX) &&
+        Number.isFinite(p.localY) &&
+        Number.isFinite(p.localZ)
+    ).length;
+    // CLN-WORKSTATION-001: majority mesh-local samples → defer (densified SurfacePath
+    // remaps screen x/y and can falsely trip screen-space crossing checks).
+    const hasLocal3d = localCount > 0 && localCount >= Math.ceil(input.points.length * 0.75);
     const passed = hasLocal3d ? true : !hasSelfIntersection(input.points);
     return freezeCheck({
       id: 'self-intersection',

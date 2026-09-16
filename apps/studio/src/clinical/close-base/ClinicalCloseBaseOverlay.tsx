@@ -27,23 +27,24 @@ export const ClinicalCloseBaseOverlay = ({
 
   const preview = state.previewActive;
   const liveMesh = state.kernelFingerprint !== undefined;
+  const processing = state.toolStatus === 'processing' || Boolean(state.progressMessage);
 
   return (
     <div
-      className={`clinical-close-base-overlay${preview ? ' clinical-close-base-overlay--preview' : ''}${state.toolStatus === 'processing' ? ' clinical-close-base-overlay--processing' : ''}${liveMesh ? ' clinical-close-base-overlay--live-mesh' : ''}`}
+      className={`clinical-close-base-overlay${preview ? ' clinical-close-base-overlay--preview' : ''}${processing ? ' clinical-close-base-overlay--processing' : ''}${liveMesh ? ' clinical-close-base-overlay--live-mesh' : ''}`}
       data-testid="clinical-close-base-overlay"
       data-status={state.toolStatus}
       data-live-mesh={liveMesh ? 'true' : 'false'}
     >
-      <div className="clinical-close-base-badge">
-        {state.interactionMode === 'auto' && liveMesh
-          ? 'AUTO BASE PREVIEW'
-          : preview
-            ? 'PREVIEW'
-            : 'COMMITTED'}{' '}
-        · {state.parameters.strategy}
-        {liveMesh ? ' · live mesh' : ''}
-      </div>
+      {processing ? (
+        <div className="clinical-close-base-processing" data-testid="clinical-close-base-processing">
+          CREATING BASE…
+        </div>
+      ) : (
+        <div className="clinical-close-base-badge">
+          {preview ? 'BASE PREVIEW' : 'BASE'}
+        </div>
+      )}
       <div className="clinical-close-base-status">{state.statusMessage}</div>
     </div>
   );

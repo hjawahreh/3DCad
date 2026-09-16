@@ -15,6 +15,8 @@ import {
 } from './SpatialAcceleration.js';
 import type { SurfacePath, SurfacePathSample } from './types.js';
 
+export type { SurfacePath, SurfacePathSample };
+
 export interface SurfacePathQualityMetrics {
   readonly pointCount: number;
   readonly uniquePointCount: number;
@@ -247,6 +249,8 @@ export const createSurfacePath = (
     readonly sampleMm?: number;
     readonly maxProjectDistanceMm?: number;
     readonly maxJumpMm?: number;
+    /** GEO-001F: cap total samples while building (bounded densify). */
+    readonly maxTotalSamples?: number;
   }
 ): { ok: true; path: SurfacePath } | { ok: false; code: string; message: string } => {
   if (seeds.length < 1) {
@@ -255,6 +259,7 @@ export const createSurfacePath = (
   const spatial = buildClinicalSpatialIndex(mesh);
   const maxDist = options?.maxProjectDistanceMm ?? 12;
   const maxJump = options?.maxJumpMm ?? 2.5;
+  const maxTotal = options?.maxTotalSamples;
   const projected: SurfacePathSample[] = [];
   for (const seed of seeds) {
     const hit = projectPointToSurface(mesh, seed.point, spatial, maxDist);
@@ -293,6 +298,10 @@ export const createSurfacePath = (
   if (reconstructNever || cleaned.length === 1) {
     samples = cleaned;
   } else {
+    const segBudget =
+      maxTotal !== undefined && maxTotal > cleaned.length
+        ? Math.max(2, Math.floor(maxTotal / Math.max(1, cleaned.length - 1)))
+        : undefined;
     samples = [cleaned[0]!];
     for (let i = 1; i < cleaned.length; i += 1) {
       const prev = cleaned[i - 1]!;
@@ -301,6 +310,7 @@ export const createSurfacePath = (
       const spacing = adaptiveSampleSpacingMm(mesh, prev.faceId, options?.sampleMm ?? 0.35);
       const needGeodesic =
         reconstructAlways || (reconstructGaps && gap > Math.max(maxJump, spacing * 2.5));
+      let mid: SurfacePathSample[];
       if (!needGeodesic) {
         const densified = densifyChordOnSurface(mesh, spatial, [prev, cur], spacing, maxDist);
         if (densified === undefined) {
@@ -310,18 +320,38 @@ export const createSurfacePath = (
             message: 'Trim boundary crossed disconnected scan geometry.'
           };
         }
-        samples.push(...densified.slice(1));
-        continue;
+        mid = densified.slice(1);
+      } else {
+        const seg = reconstructSurfaceSegment(mesh, prev, cur, maxJump);
+        if (seg === undefined) {
+          return {
+            ok: false,
+            code: 'DISCONNECTED_PATH',
+            message: 'Trim boundary crossed disconnected scan geometry.'
+          };
+        }
+        mid = seg.slice(1);
       }
-      const seg = reconstructSurfaceSegment(mesh, prev, cur, maxJump);
-      if (seg === undefined) {
-        return {
-          ok: false,
-          code: 'DISCONNECTED_PATH',
-          message: 'Trim boundary crossed disconnected scan geometry.'
-        };
+      // GEO-001F: bound each segment immediately — avoid thousands-of-points then thin.
+      if (segBudget !== undefined && mid.length > segBudget) {
+        const thinned: SurfacePathSample[] = [];
+        const step = (mid.length - 1) / Math.max(1, segBudget - 1);
+        for (let k = 0; k < segBudget; k += 1) {
+          const idx = Math.min(mid.length - 1, Math.round(k * step));
+          const s = mid[idx]!;
+          const last = thinned[thinned.length - 1];
+          if (last === undefined || dist3(last.point, s.point) > 1e-6) thinned.push(s);
+        }
+        // Ensure segment ends on the anchor.
+        if (
+          thinned.length === 0 ||
+          dist3(thinned[thinned.length - 1]!.point, cur.point) > 1e-6
+        ) {
+          thinned.push(cur);
+        }
+        mid = thinned;
       }
-      samples.push(...seg.slice(1));
+      samples.push(...mid);
     }
   }
 
@@ -666,6 +696,129 @@ export const simplifySurfacePath = (
   };
 };
 
+/**
+ * GEO-002 — incremental polyline append: reconstruct only last → new seed.
+ * Does not recompute points 1 → N-1.
+ */
+export const appendSurfacePath = (
+  mesh: TriangleMesh,
+  path: SurfacePath,
+  seed: {
+    readonly point: readonly [number, number, number];
+    readonly faceId?: number;
+    readonly normal?: readonly [number, number, number];
+  },
+  options?: {
+    readonly reconstruct?: SurfacePathReconstructMode;
+    readonly sampleMm?: number;
+    readonly maxProjectDistanceMm?: number;
+    readonly maxJumpMm?: number;
+    readonly maxTotalSamples?: number;
+  }
+): { ok: true; path: SurfacePath } | { ok: false; code: string; message: string } => {
+  if (path.closed) {
+    return { ok: false, code: 'ALREADY_CLOSED', message: 'Cannot append to a closed surface path.' };
+  }
+  if (path.meshFingerprint !== mesh.fingerprint) {
+    return {
+      ok: false,
+      code: 'MESH_MISMATCH',
+      message: 'Surface path does not match current geometry fingerprint.'
+    };
+  }
+  const spatial = buildClinicalSpatialIndex(mesh);
+  const maxDist = options?.maxProjectDistanceMm ?? 12;
+  const maxJump = options?.maxJumpMm ?? 2.5;
+  const hit = projectPointToSurface(mesh, seed.point, spatial, maxDist);
+  if (!hit.hit) {
+    return { ok: false, code: 'OFF_SURFACE', message: 'Move onto the scan to draw.' };
+  }
+  const next: SurfacePathSample = {
+    point: hit.point,
+    normal: seed.normal ?? hit.normal,
+    faceId: seed.faceId !== undefined && seed.faceId >= 0 ? seed.faceId : hit.faceId,
+    componentId: hit.componentId
+  };
+  if (path.samples.length === 0) {
+    return {
+      ok: true,
+      path: {
+        samples: [next],
+        length: 0,
+        closed: false,
+        fingerprint: pathFingerprint([next], false),
+        meshFingerprint: mesh.fingerprint
+      }
+    };
+  }
+  const prev = path.samples[path.samples.length - 1]!;
+  if (dist3(prev.point, next.point) < 1e-7) {
+    return { ok: true, path };
+  }
+  if (prev.componentId !== next.componentId) {
+    return {
+      ok: false,
+      code: 'DISCONNECTED_PATH',
+      message: 'Trim boundary crossed disconnected scan geometry.'
+    };
+  }
+  const mode = options?.reconstruct ?? 'gaps';
+  const reconstructAlways = mode === true || mode === 'always';
+  const reconstructGaps = mode === 'gaps';
+  const reconstructNever = mode === false || mode === 'never';
+  const gap = dist3(prev.point, next.point);
+  const spacing = adaptiveSampleSpacingMm(mesh, prev.faceId, options?.sampleMm ?? 0.35);
+  const needGeodesic =
+    reconstructAlways || (reconstructGaps && gap > Math.max(maxJump, spacing * 2.5));
+  let mid: SurfacePathSample[];
+  if (reconstructNever || !needGeodesic) {
+    const densified = densifyChordOnSurface(mesh, spatial, [prev, next], spacing, maxDist);
+    if (densified === undefined) {
+      return {
+        ok: false,
+        code: 'DISCONNECTED_PATH',
+        message: 'Trim boundary crossed disconnected scan geometry.'
+      };
+    }
+    mid = densified.slice(1);
+  } else {
+    const seg = reconstructSurfaceSegment(mesh, prev, next, maxJump);
+    if (seg === undefined) {
+      return {
+        ok: false,
+        code: 'DISCONNECTED_PATH',
+        message: 'Trim boundary crossed disconnected scan geometry.'
+      };
+    }
+    mid = seg.slice(1);
+  }
+  let samples = [...path.samples, ...mid];
+  const maxTotal = options?.maxTotalSamples;
+  if (maxTotal !== undefined && samples.length > maxTotal) {
+    samples = [...thinSurfacePath(
+      {
+        samples,
+        length: pathLength(samples, false),
+        closed: false,
+        fingerprint: '',
+        meshFingerprint: mesh.fingerprint
+      },
+      1,
+      maxTotal
+    ).samples];
+  }
+  return {
+    ok: true,
+    path: {
+      samples,
+      length: pathLength(samples, false),
+      closed: false,
+      fingerprint: pathFingerprint(samples, false),
+      meshFingerprint: mesh.fingerprint
+    }
+  };
+};
+
 export const closeSurfacePath = (
   mesh: TriangleMesh,
   path: SurfacePath,
@@ -688,20 +841,17 @@ export const closeSurfacePath = (
   const spacing = adaptiveSampleSpacingMm(mesh, last.faceId);
   let samples = [...path.samples];
   if (gap > 1e-6) {
-    const seg = reconstructSurfaceSegment(mesh, last, first, options?.maxJumpMm ?? 2.5);
-    if (seg === undefined) {
-      return {
-        ok: false,
-        code: 'INVALID_CLOSURE',
-        message: 'Trim boundary could not be closed along the scan surface.'
-      };
-    }
-    // Append closing route without duplicating first/last endpoints.
-    const mid = seg.slice(1, -1);
-    // If closing is short, densify chord instead of full mid list.
-    if (mid.length === 0 && gap > spacing) {
+    // GEO-002: short closures densify on-surface; only long gaps pay geodesic.
+    const needGeodesic = gap > Math.max(options?.maxJumpMm ?? 2.5, spacing * 2.5);
+    if (!needGeodesic) {
       const spatial = buildClinicalSpatialIndex(mesh);
-      const densified = densifyChordOnSurface(mesh, spatial, [last, first], spacing, options?.maxProjectDistanceMm ?? 12);
+      const densified = densifyChordOnSurface(
+        mesh,
+        spatial,
+        [last, first],
+        spacing,
+        options?.maxProjectDistanceMm ?? 12
+      );
       if (densified === undefined) {
         return {
           ok: false,
@@ -711,6 +861,15 @@ export const closeSurfacePath = (
       }
       samples = [...path.samples, ...densified.slice(1, -1)];
     } else {
+      const seg = reconstructSurfaceSegment(mesh, last, first, options?.maxJumpMm ?? 2.5);
+      if (seg === undefined) {
+        return {
+          ok: false,
+          code: 'INVALID_CLOSURE',
+          message: 'Trim boundary could not be closed along the scan surface.'
+        };
+      }
+      const mid = seg.slice(1, -1);
       samples = [...path.samples, ...mid];
     }
   }

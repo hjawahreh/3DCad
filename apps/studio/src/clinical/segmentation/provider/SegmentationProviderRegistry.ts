@@ -10,6 +10,7 @@ import { MeshSegNetAdapter } from './adapters/MeshSegNetAdapter.js';
 import { TGNetAdapter } from './adapters/TGNetAdapter.js';
 import { DentalMAEAdapter } from './adapters/DentalMAEAdapter.js';
 import { OnnxSegmentationProvider } from './adapters/OnnxSegmentationProvider.js';
+import { createProductionModelProvider } from '../../accuracy/providers/ProductionModelProvider.js';
 
 export class SegmentationProviderRegistry {
   private readonly providers = new Map<string, SegmentationProvider>();
@@ -63,6 +64,7 @@ export const createDefaultSegmentationRegistry = (): SegmentationProviderRegistr
   registry.register(new MeshSegNetAdapter());
   registry.register(new TGNetAdapter());
   registry.register(new DentalMAEAdapter());
+  registry.register(createProductionModelProvider());
   // Production default fixed by segmentation-model-decision.md — never silently switch.
   registry.setDefault('reference-heuristic');
   return registry;

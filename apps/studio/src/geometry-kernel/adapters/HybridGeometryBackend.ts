@@ -62,6 +62,26 @@ export class HybridGeometryBackend implements AsyncGeometryBackend {
     return this.reference.prepareDisplay(mesh, options);
   }
 
+  public get vtkBackend(): VtkHttpWorkerBackend {
+    return this.vtk;
+  }
+
+  public async ensureVtkGeometry(
+    mesh: TriangleMesh,
+    options?: { readonly caseId?: string; readonly signal?: AbortSignal; readonly force?: boolean }
+  ) {
+    if (!this.vtkHealthy) {
+      await this.refreshVtkHealth();
+    }
+    if (!this.vtkHealthy) {
+      throw new GeometryKernelError(
+        'UNSUPPORTED_OPERATION',
+        'VTK worker unavailable for ensureGeometry'
+      );
+    }
+    return this.vtk.ensureGeometry(mesh, options);
+  }
+
   public async trimAsync(
     mesh: TriangleMesh,
     options: TrimMeshOptions,

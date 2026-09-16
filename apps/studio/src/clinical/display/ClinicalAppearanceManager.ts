@@ -31,6 +31,11 @@ export class ClinicalAppearanceManager {
     this.prefs.update({ showOrigin: show });
   }
 
+  /** GEO-003A — bottom-corner XYZ badge (diagnostics / developer only by default). */
+  public setOrientationIndicator(show: boolean): void {
+    this.prefs.update({ showOrientationIndicator: show });
+  }
+
   public setBoundingBox(show: boolean): void {
     this.prefs.update({ showBoundingBox: show });
   }

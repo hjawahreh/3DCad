@@ -1,13 +1,18 @@
 /**
- * ClinicalTrimOverlay — viewport-only drawing surface.
- * When Freehand/Polyline is armed, pointer interaction belongs to Trim (not camera).
- * View Cube remains above and owns its own hits.
+ * ClinicalTrimOverlay — direct clinical drawing.
+ * Lasso/Curve: pointer up → completeGestureAndTrim (close + real cut + auto-accept).
  */
 
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { useClinicalUiRevision } from '../shell/useClinicalUi.js';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
-import { deriveTrimInteractionState } from './ClinicalTrimInteractionState.js';
+import {
+  deriveTrimInteractionState,
+  trimGuidedMessage
+} from './ClinicalTrimInteractionState.js';
+import { isLassoLikeTrimMode, isStrokeTrimMode } from './ClinicalTrimState.js';
+
+const CLOSE_SNAP_PX = 14;
 
 const localPoint = (
   event: React.PointerEvent,
@@ -30,6 +35,7 @@ export const ClinicalTrimOverlay = ({
   const trim = workspace.trim;
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const capturedPointerRef = useRef<number | undefined>(undefined);
+  const completingRef = useRef(false);
   const state = useSyncExternalStore(
     (cb) => trim.session.subscribe(cb),
     () => trim.session.getState(),
@@ -64,12 +70,19 @@ export const ClinicalTrimOverlay = ({
     return null;
   }
 
-  const drawingEnabled = state.drawMode === 'polyline' || state.drawMode === 'freehand';
+  const drawingEnabled = isStrokeTrimMode(state.drawMode) || state.drawMode === 'plane';
   const interaction = deriveTrimInteractionState({
     state,
     previewReady: trim.controller.isPreviewReady(),
     pointerDrawing: trim.controller.isPointerCaptured()
   });
+  const guide = trimGuidedMessage(interaction, state.drawMode);
+  const first = state.points[0];
+  const nearFirst =
+    !state.closed &&
+    first !== undefined &&
+    state.points.length >= 3 &&
+    state.hoveredPointIndex === 0;
 
   const resolve = (event: React.PointerEvent): { readonly x: number; readonly y: number } => {
     const el = overlayRef.current ?? (event.currentTarget as HTMLElement);
@@ -85,30 +98,59 @@ export const ClinicalTrimOverlay = ({
     return { width: Math.max(1, rect.width), height: Math.max(1, rect.height) };
   };
 
-  const onPointerDown = (event: React.PointerEvent): void => {
-    if (!drawingEnabled) {
+  const finishStroke = (): void => {
+    if (completingRef.current) return;
+    const live = trim.session.getState();
+    if (!isLassoLikeTrimMode(live.drawMode)) return;
+    if (live.points.length < 3) {
+      trim.session.patchStatus('Draw a larger loop, then release.');
+      session.notifyUi();
       return;
     }
-    // Only capture when the event originates on this overlay (not toolbar/panels/cube).
+    completingRef.current = true;
+    void trim
+      .completeGestureAndTrim()
+      .finally(() => {
+        completingRef.current = false;
+        session.notifyUi();
+      });
+  };
+
+  const onPointerDown = (event: React.PointerEvent): void => {
+    if (!drawingEnabled || completingRef.current) {
+      return;
+    }
     if (
       event.currentTarget !== event.target &&
       !(event.target instanceof Element && event.currentTarget.contains(event.target))
     ) {
       return;
     }
-    // Trim owns the mesh viewport while armed — block camera orbit/pan.
     event.preventDefault();
     event.stopPropagation();
     const el = event.currentTarget as HTMLElement;
+    const screen = resolve(event);
+    const live = trim.session.getState();
+    const liveFirst = live.points[0];
+
+    if (
+      !live.closed &&
+      liveFirst !== undefined &&
+      live.points.length >= 3 &&
+      Math.hypot(screen.x - liveFirst.x, screen.y - liveFirst.y) <= CLOSE_SNAP_PX
+    ) {
+      releaseCapturedPointer(el, event.pointerId);
+      finishStroke();
+      return;
+    }
+
     el.setPointerCapture(event.pointerId);
     capturedPointerRef.current = event.pointerId;
-    const screen = resolve(event);
     const point = trim.controller.resolvePickPoint(screen, canvasSize());
-    // Production contract: only surface hits become trim points.
     if (point.localX === undefined || point.localY === undefined || point.localZ === undefined) {
       releaseCapturedPointer(el, event.pointerId);
       trim.controller.endDraw();
-      trim.session.patchStatus('Missed the scan surface — aim at the active arch mesh');
+      trim.session.patchStatus('Aim at the scan surface');
       session.notifyUi();
       return;
     }
@@ -118,31 +160,33 @@ export const ClinicalTrimOverlay = ({
   };
 
   const onPointerMove = (event: React.PointerEvent): void => {
-    if (!drawingEnabled) {
+    if (!drawingEnabled || completingRef.current) {
       return;
     }
-    // Keep camera from receiving moves while armed over the viewport.
     event.stopPropagation();
     const screen = resolve(event);
+    const live = trim.session.getState();
+    const liveFirst = live.points[0];
+    if (!live.closed && liveFirst !== undefined && live.points.length >= 3) {
+      const dist = Math.hypot(screen.x - liveFirst.x, screen.y - liveFirst.y);
+      const next = dist <= CLOSE_SNAP_PX ? 0 : undefined;
+      if (live.hoveredPointIndex !== next) {
+        trim.session.setHover(next);
+      }
+    }
     const point = trim.controller.resolvePickPoint(screen, canvasSize());
     const onSurface =
       point.localX !== undefined &&
       point.localY !== undefined &&
       point.localZ !== undefined &&
-      Number.isFinite(point.localX) &&
-      Number.isFinite(point.localY) &&
-      Number.isFinite(point.localZ);
+      Number.isFinite(point.localX);
 
-    // Surface cursor: only while the pointer is on the scan (never sticky last-hit).
     trim.controller.setPreviewCursor(onSurface ? point : undefined);
 
-    if (state.drawMode === 'polyline' && !trim.controller.isPointerCaptured()) {
+    if (!isLassoLikeTrimMode(live.drawMode)) {
       return;
     }
-    if (state.drawMode !== 'freehand') {
-      return;
-    }
-    if (trim.controller.isDrawing() === false || !trim.controller.isPointerCaptured()) {
+    if (!trim.controller.isDrawing() || !trim.controller.isPointerCaptured()) {
       return;
     }
     if (!onSurface) {
@@ -159,15 +203,19 @@ export const ClinicalTrimOverlay = ({
     releaseCapturedPointer(event.currentTarget as HTMLElement, event.pointerId);
     trim.controller.endDraw();
     trim.controller.setPreviewCursor(undefined);
-    session.notifyUi();
+    const live = trim.session.getState();
+    if (isLassoLikeTrimMode(live.drawMode) && live.points.length >= 3) {
+      finishStroke();
+    } else {
+      session.notifyUi();
+    }
   };
 
   const onPointerLeave = (): void => {
-    if (!drawingEnabled) {
-      return;
-    }
+    if (!drawingEnabled) return;
     if (!trim.controller.isPointerCaptured()) {
       trim.controller.setPreviewCursor(undefined);
+      trim.session.setHover(undefined);
       session.notifyUi();
     }
   };
@@ -175,7 +223,6 @@ export const ClinicalTrimOverlay = ({
   const onPointerCancel = onPointerUp;
 
   const onWheel = (event: React.WheelEvent): void => {
-    // Drawing overlay must not consume wheel — forward to Camera Runtime via host.
     event.preventDefault();
     event.stopPropagation();
     const host = session.getHost();
@@ -204,17 +251,11 @@ export const ClinicalTrimOverlay = ({
   };
 
   const pointsAttr = state.points.map((p) => `${String(p.x)},${String(p.y)}`).join(' ');
-  const previewLine =
-    state.drawMode === 'polyline' &&
-    state.previewCursor !== undefined &&
-    state.points.length > 0
-      ? `${String(state.points[state.points.length - 1]!.x)},${String(state.points[state.points.length - 1]!.y)} ${String(state.previewCursor.x)},${String(state.previewCursor.y)}`
-      : undefined;
 
   return (
     <div
       ref={overlayRef}
-      className={`clinical-trim-overlay${state.previewActive ? ' clinical-trim-overlay--preview' : ''}${drawingEnabled ? ' clinical-trim-overlay--drawing' : ' clinical-trim-overlay--idle'}${interaction === 'DRAWING' ? ' clinical-trim-overlay--gesture' : ''}`}
+      className={`clinical-trim-overlay${drawingEnabled ? ' clinical-trim-overlay--drawing' : ' clinical-trim-overlay--idle'}${interaction === 'DRAWING' ? ' clinical-trim-overlay--gesture' : ''}${interaction === 'PREVIEWING' || interaction === 'COMMITTING' ? ' clinical-trim-overlay--processing' : ''}`}
       data-testid="clinical-trim-overlay"
       data-draw-mode={state.drawMode}
       data-interaction-state={interaction}
@@ -230,27 +271,22 @@ export const ClinicalTrimOverlay = ({
         {state.points.length > 1 ? (
           <polyline className="clinical-trim-stroke" points={pointsAttr} fill="none" />
         ) : null}
-        {previewLine !== undefined ? (
-          <polyline className="clinical-trim-stroke clinical-trim-stroke--preview" points={previewLine} fill="none" />
-        ) : null}
         {state.closed && state.points.length >= 3 ? (
           <polygon className="clinical-trim-fill" points={pointsAttr} />
         ) : null}
-        {state.points.map((p, index) => (
+        {/* Workstation: one clean line — no dense point handles */}
+        {first !== undefined ? (
           <circle
-            key={`${String(index)}-${String(p.x)}-${String(p.y)}`}
             className={
-              state.activePointIndex === index
-                ? 'clinical-trim-point clinical-trim-point--active'
-                : state.hoveredPointIndex === index
-                  ? 'clinical-trim-point clinical-trim-point--hover'
-                  : 'clinical-trim-point'
+              nearFirst
+                ? 'clinical-trim-point clinical-trim-point--close-target'
+                : 'clinical-trim-point'
             }
-            cx={p.x}
-            cy={p.y}
-            r={4}
+            cx={first.x}
+            cy={first.y}
+            r={nearFirst ? 7 : 3}
           />
-        ))}
+        ) : null}
         {state.previewCursor !== undefined &&
         state.previewCursor.localX !== undefined &&
         state.previewCursor.localY !== undefined &&
@@ -264,8 +300,13 @@ export const ClinicalTrimOverlay = ({
           />
         ) : null}
       </svg>
+      {(interaction === 'PREVIEWING' || interaction === 'COMMITTING' || interaction === 'VALIDATING') && (
+        <div className="clinical-trim-processing" data-testid="clinical-trim-processing">
+          TRIMMING…
+        </div>
+      )}
       <div className="clinical-trim-status" data-testid="clinical-trim-interaction-status">
-        {state.statusMessage}
+        {nearFirst ? 'Release to close & trim' : guide}
       </div>
     </div>
   );
