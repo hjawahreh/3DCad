@@ -17,12 +17,12 @@ const FACE_LABELS: Readonly<Record<ClinicalViewCubeFace, string>> = Object.freez
   back: 'POSTERIOR',
   left: 'LEFT',
   right: 'RIGHT',
-  top: 'UPPER',
+  top: 'OCCLUSAL',
   bottom: 'LOWER'
 });
 
 const FACE_TITLES: Readonly<Record<ClinicalViewCubeFace, string>> = Object.freeze({
-  front: 'Anterior',
+  front: 'Anterior / Facial',
   back: 'Posterior',
   left: 'Left',
   right: 'Right',

@@ -1,62 +1,61 @@
-# Segmentation Model Decision (Phase 7)
+# Segmentation Model Decision (CLN-SEG-001)
 
-**Status:** Production default selected  
-**Date:** 2026-09-11  
+**Status:** Production NN slot defined; checkpoint gate closed  
+**Date:** 2026-09-16  
 **Decision owner:** Clinical CAD architecture
 
 ## Decision
 
-**Production default provider:** `reference-heuristic` (`clinical-reference-seg` v1.1.0)
-
-**Not selected as default:** TSegFormer, MeshSegNet, TGNet, DentalMAE, or ONNX Runtime scaffold.
+| Role | Provider |
+|------|----------|
+| **Production slot** | `production-clinical-model` (`ProductionModelProvider`) — real inference via Python worker **when configured** |
+| **Reference / Development** | `reference-heuristic` — **REFERENCE HEURISTIC** for engineering / UI pipeline tests only |
+| **Default when Production unavailable** | `reference-heuristic` (visually marked; never claimed clinically accurate) |
+| **Default when Production operational** | `production-clinical-model` |
 
 ## Criteria applied
 
 | Criterion | Result |
 |-----------|--------|
-| Benchmark on identical fixtures | Only `reference-heuristic` produces measurable preprocess / inference / postprocess timings in-repo |
-| License review | Research NN code/weights/datasets not cleared for bundling (see `model-licensing.md`) |
-| Runtime compatibility | No PyTorch in React; no Python clinical dependency. ONNX Web optional, not installed |
-| Memory evaluation | Heuristic uses mesh buffers only; NN weights would add multi‑MB/GB payloads — not shipped |
-| Failure testing | Research adapters fail closed (`MODEL_UNAVAILABLE`); ONNX scaffold fails closed; cancel leaves document unchanged |
+| Real model inference | Worker + TSegFormer adapter path implemented; refuses fake NN output |
+| License review | TSegFormer **code MIT**; checkpoint + dataset **not cleared** → Production unavailable |
+| Runtime isolation | No PyTorch in React; `tools/segmentation-inference/seg_worker_http.py` |
+| Failure testing | Unconfigured Production fails closed (`Production model not configured.`) |
+| No silent fallback | Heuristic never labeled as Production |
 
 ## Candidate summary
 
-| Model | Why not default |
-|-------|-----------------|
-| **MeshSegNet** | Strongest *future* candidate (code MIT). Weights not redistributed; needs ONNX export + browser benchmarks + FDI mapping. Dataset unavailable upstream. |
-| **TSegFormer** | Public research code; SPDX / weights / dataset commercial terms not cleared. |
-| **TGNet** | External checkpoints; license/dataset terms not cleared. |
-| **DentalMAE** | Code/weights redistribution not verified. |
-| **ONNX Runtime scaffold** | Provider wired (`onnx-runtime`) with WebGPU→WASM→CPU capability reporting; remains `operational: false` until license-cleared `.onnx` + optional runtime enablement. |
+| Model | Status |
+|-------|--------|
+| **TSegFormer** | Preferred research candidate (MIT code). Enable when checkpoint + dataset obligations cleared and `CAD_SEG_CHECKPOINT` / `CAD_TSEGFORMER_ROOT` set. |
+| **MeshSegNet** | Future ONNX candidate; weights not redistributed. |
+| **Reference heuristic** | Development only. |
 
 ## Production path
 
 ```
-Prepared model
-  → Provider Registry (default: reference-heuristic)
-  → Preprocess (CLN-008/009 mapping preserved; large-mesh sample plan available)
-  → Infer (CPU geometry inference)
-  → Instance separation + identification
-  → Human review
-  → Commit (metadata only; compact clinical document)
+Final prepared model
+  → geometryFingerprint verify
+  → ProductionModelProvider (if operational)
+  → Segmentation worker
+  → TSegFormer
+  → instances + FDI + gingiva
+  → Review / Tooth Numbering
+  → Accept (persist membership + provenance)
 ```
 
-## Explicit non-goals (this decision)
+## Explicit non-goals
 
-- Do **not** silently switch provider/model when GPU is unavailable.
-- Do **not** bundle unlicensed weights.
-- Do **not** claim research-paper headline accuracy for the default provider.
-- Do **not** introduce PyTorch or Python into the clinical workflow.
+- Do **not** start Movement / biomechanics in this milestone
+- Do **not** modify Trim geometry or redesign Close Base
+- Do **not** claim Clinically Validated without completed clinical evaluation
+- Do **not** bundle unlicensed weights
 
 ## Revisit triggers
 
-Promote an NN provider to default only when **all** are true:
+Promote Production to operational default when **all** are true:
 
 1. License clearance recorded in `model-licensing.md`
-2. ONNX (or equivalent) browser runtime verified (WebGPU / WASM / CPU)
-3. Repeatable fixture benchmark beats or matches heuristic on semantic / instance / identification / boundary / failure rate / calibration
-4. Memory within Studio budget
-5. Cancel + failure paths leave clinical document untouched
-
-Until then, `reference-heuristic` remains the sole operational production model.
+2. Cleared checkpoint path configured and worker load verified
+3. Fixture / held-out benchmark recorded
+4. Cancel + failure paths leave clinical document untouched

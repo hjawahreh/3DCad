@@ -1,0 +1,163 @@
+{
+  "ticket": "CLN-WORKFLOW-002A-FINAL-MANUAL-GATE",
+  "at": "2026-09-17T15:52:34.652Z",
+  "mandatoryFail": false,
+  "steps": [
+    {
+      "id": "01-orbit",
+      "status": "PASS",
+      "at": "2026-09-17T15:36:59.120Z",
+      "detail": "{\"ok\":true,\"mapping\":\"yaw=-dx,pitch=-dy (unchanged)\",\"rightDecreasesEyeX\":true,\"leftIncreasesEyeX\":true,\"upIncreasesEyeY\":true,\"downDecreasesEyeY\":true,\"samples\":{\"base\":{\"x\":1.9999999999999993,\"y\":2,\"z\":1.9999999999999996},\"afterRight\":{\"x\":1.7903414972623948,\"y\":2,\"z\":2.1896751638497074},\"afterLeft\":{\"x\":2.1896751638497074,\"y\":2,\"z\":1.7903414972623948},\"afterUp\":{\"x\":1.8488225587560632,\"y\":2.272379874156028,\"z\":1.848822558756063},\"afterDown\":{\"x\":2.1311941023560395,\"y\":1.7076367869560751,\"z\":2.131194102356039}}}"
+    },
+    {
+      "id": "02-import",
+      "status": "PASS",
+      "at": "2026-09-17T15:37:28.713Z"
+    },
+    {
+      "id": "03-auto-orientation",
+      "status": "PASS",
+      "at": "2026-09-17T15:37:42.352Z",
+      "detail": "{\"origin\":\"auto\",\"visible\":[\"upper\",\"lower\"],\"eye\":null,\"target\":null}"
+    },
+    {
+      "id": "04-accept-opens-trim",
+      "status": "PASS",
+      "at": "2026-09-17T15:38:12.665Z"
+    },
+    {
+      "id": "05-trim-warmup",
+      "status": "PASS",
+      "at": "2026-09-17T15:38:13.864Z"
+    },
+    {
+      "id": "06-trim-upper-only",
+      "status": "PASS",
+      "at": "2026-09-17T15:38:14.217Z",
+      "detail": "[\"upper\"]"
+    },
+    {
+      "id": "06b-no-xyz",
+      "status": "PASS",
+      "at": "2026-09-17T15:38:14.687Z",
+      "detail": "{\"axes\":\"off\",\"gizmo\":\"off\",\"axesEl\":false,\"gizmoEl\":false}"
+    },
+    {
+      "id": "06c-view-cube-labels",
+      "status": "PASS",
+      "at": "2026-09-17T15:38:15.149Z",
+      "detail": "[\"Home\",\"ANTERIOR\",\"POSTERIOR\",\"LEFT\",\"RIGHT\",\"OCCLUSAL\",\"LOWER\"]"
+    },
+    {
+      "id": "07-trim-upper-A",
+      "status": "PASS",
+      "at": "2026-09-17T15:44:22.331Z",
+      "detail": "{\"beforeFingerprint\":\"geo:503132cd\",\"afterFingerprint\":\"geo:202e0bdd\",\"beforeFaceCount\":257233,\"afterFaceCount\":255844,\"diag\":{\"tipRank\":0,\"attempts\":[{\"count\":5,\"rad\":95,\"mouse\":{\"phase\":\"preview-boundary\",\"points\":5,\"status\":\"Trim boundary crosses itself. Adjust the drawing.\",\"preview\":null},\"afterFaceCount\":257233,\"api\":{\"placed\":5,\"ok\":false,\"detail\":\"Trim boundary crosses itself. Adjust the drawing.\",\"status\":\"Trim boundary crosses itself. Adjust the drawing.\",\"preview\":null}},{\"count\":6,\"rad\":130,\"mouse\":{\"phase\":\"preview-boundary\",\"points\":5,\"status\":\"Trim boundary crosses itself. Adjust the drawing.\",\"preview\":null},\"afterFaceCount\":257233,\"api\":{\"placed\":4,\"ok\":false,\"detail\":\"Trim boundary crosses itself. Adjust the drawing.\",\"status\":\"Trim boundary crosses itself. Adjust the drawing.\",\"preview\":null}},{\"count\":5,\"rad\":160,\"mouse\":{\"phase\":\"drawing\",\"points\":0,\"status\":\"Trim complete — draw again or continue to Base.\",\"preview\":{\"beforeFaces\":257233,\"afterFaces\":255844,\"removedFaces\":1389,\"beforeFingerprint\":\"geo:503132cd\",\"afterFingerprint\":\"geo:202e0bdd\"}},\"afterFaceCount\":255844}],\"winner\":{\"count\":5,\"rad\":160,\"path\":\"mouse-lasso\"}}}"
+    },
+    {
+      "id": "08-clear-redraw-1",
+      "status": "PASS",
+      "at": "2026-09-17T15:44:31.332Z",
+      "detail": "{\"points\":0,\"active\":true,\"phase\":\"drawing\",\"status\":\"Cleared — draw again, release to trim.\"}"
+    },
+    {
+      "id": "08-clear-redraw-2",
+      "status": "PASS",
+      "at": "2026-09-17T15:45:12.667Z",
+      "detail": "{\"points\":0,\"active\":true,\"phase\":\"drawing\",\"status\":\"Cleared — draw again, release to trim.\"}"
+    },
+    {
+      "id": "09-trim-upper-B",
+      "status": "PASS",
+      "at": "2026-09-17T15:46:42.169Z",
+      "detail": "{\"beforeFingerprint\":\"geo:202e0bdd\",\"afterFingerprint\":\"geo:a0cc1035\",\"beforeFaceCount\":255844,\"afterFaceCount\":246000,\"diag\":{\"tipRank\":2,\"attempts\":[{\"count\":5,\"rad\":95,\"mouse\":{\"phase\":\"drawing\",\"points\":0,\"status\":\"Trim complete — draw again or continue to Base.\",\"preview\":{\"beforeFaces\":255844,\"afterFaces\":246000,\"removedFaces\":9844,\"beforeFingerprint\":\"geo:202e0bdd\",\"afterFingerprint\":\"geo:a0cc1035\"}},\"afterFaceCount\":246000}],\"winner\":{\"count\":5,\"rad\":95,\"path\":\"mouse-lasso\"}}}"
+    },
+    {
+      "id": "10-trim-lower-warmup",
+      "status": "PASS",
+      "at": "2026-09-17T15:46:47.776Z"
+    },
+    {
+      "id": "11-trim-lower-only",
+      "status": "PASS",
+      "at": "2026-09-17T15:46:47.925Z",
+      "detail": "[\"lower\"]"
+    },
+    {
+      "id": "12-trim-lower",
+      "status": "PASS",
+      "at": "2026-09-17T15:47:45.581Z",
+      "detail": "{\"beforeFingerprint\":\"geo:856046ee\",\"afterFingerprint\":\"geo:be8b517e\",\"beforeFaceCount\":233562,\"afterFaceCount\":229304,\"diag\":{\"tipRank\":0,\"attempts\":[{\"count\":5,\"rad\":95,\"mouse\":{\"phase\":\"drawing\",\"points\":0,\"status\":\"Trim complete — draw again or continue to Base.\",\"preview\":{\"beforeFaces\":233562,\"afterFaces\":229304,\"removedFaces\":4258,\"beforeFingerprint\":\"geo:856046ee\",\"afterFingerprint\":\"geo:be8b517e\"}},\"afterFaceCount\":229304}],\"winner\":{\"count\":5,\"rad\":95,\"path\":\"mouse-lasso\"}}}"
+    },
+    {
+      "id": "13-upper-unchanged-during-lower-trim",
+      "status": "PASS",
+      "at": "2026-09-17T15:47:45.647Z",
+      "detail": "{\"before\":\"geo:a0cc1035\",\"after\":\"geo:a0cc1035\",\"lowerOk\":true}"
+    },
+    {
+      "id": "14-trim-done-opens-base",
+      "status": "PASS",
+      "at": "2026-09-17T15:47:49.933Z"
+    },
+    {
+      "id": "15-no-accept-base",
+      "status": "PASS",
+      "at": "2026-09-17T15:47:49.938Z",
+      "detail": "acceptButtons=0"
+    },
+    {
+      "id": "16-upper-base",
+      "status": "PASS",
+      "at": "2026-09-17T15:48:18.190Z",
+      "detail": "{\"beforeFingerprint\":\"geo:a0cc1035\",\"afterFingerprint\":\"geo:4d95aed1\",\"beforeFaceCount\":246000,\"afterFaceCount\":254140,\"diag\":{\"status\":\"Base accepted — adjust parameters or switch arch\",\"phase\":\"previewing\"}}"
+    },
+    {
+      "id": "17-lower-base",
+      "status": "PASS",
+      "at": "2026-09-17T15:48:53.621Z",
+      "detail": "{\"beforeFingerprint\":\"geo:be8b517e\",\"afterFingerprint\":\"geo:f2a13790\",\"beforeFaceCount\":229304,\"afterFaceCount\":242277,\"diag\":{\"status\":\"Base accepted — adjust parameters or switch arch\",\"phase\":\"previewing\",\"quality\":null},\"clicked\":true}"
+    },
+    {
+      "id": "18-base-done-opens-segment",
+      "status": "PASS",
+      "at": "2026-09-17T15:49:03.412Z",
+      "detail": "{\"ok\":true,\"clicked\":true}"
+    },
+    {
+      "id": "19-mark-teeth-contract",
+      "status": "PASS",
+      "at": "2026-09-17T15:49:46.491Z",
+      "detail": "{\"markerCount\":4,\"guideStep\":\"mark-teeth\",\"sample\":[{\"arch\":\"upper\",\"faceIndex\":250951,\"fingerprint\":\"geo:4d95aed1\",\"hasPosition\":true},{\"arch\":\"upper\",\"faceIndex\":4526,\"fingerprint\":\"geo:4d95aed1\",\"hasPosition\":true}],\"note\":\"markers are session-live; accepted segmentationMeta is persisted\"}"
+    },
+    {
+      "id": "20-auto-segmentation",
+      "status": "PASS",
+      "at": "2026-09-17T15:50:06.749Z",
+      "detail": "{\"phase\":\"preparing\",\"provider\":\"reference-heuristic\",\"instanceCount\":0}"
+    },
+    {
+      "id": "21-adjust",
+      "status": "PASS",
+      "at": "2026-09-17T15:51:32.536Z"
+    },
+    {
+      "id": "22-verify-next-locked",
+      "status": "PASS",
+      "at": "2026-09-17T15:51:46.159Z",
+      "detail": "{\"exists\":true,\"disabled\":true}"
+    },
+    {
+      "id": "23-nav-zoom-pan-cube-home",
+      "status": "PASS",
+      "at": "2026-09-17T15:51:47.372Z",
+      "detail": "{\"cube\":1,\"zoomChanged\":true,\"frontOk\":true,\"homeOk\":true}"
+    },
+    {
+      "id": "24-save-reopen",
+      "status": "PASS",
+      "at": "2026-09-17T15:52:34.652Z",
+      "detail": "{\"saveReopen\":{\"ok\":true,\"caseId\":\"case-1789659419787\"},\"beforeSave\":{\"caseId\":\"case-1789659419787\",\"guideStep\":\"verify-teeth\",\"arches\":[{\"arch\":\"upper\",\"fingerprint\":\"geo:4d95aed1\",\"faces\":254140},{\"arch\":\"lower\",\"fingerprint\":\"geo:f2a13790\",\"faces\":242277}]},\"afterReopen\":{\"caseId\":\"case-1789659419787\",\"guideStep\":\"verify-teeth\",\"segToolbar\":true,\"arches\":[{\"arch\":\"upper\",\"fingerprint\":\"geo:4d95aed1\",\"faces\":254140},{\"arch\":\"lower\",\"fingerprint\":\"geo:f2a13790\",\"faces\":242277}]},\"fpMatch\":true}"
+    }
+  ]
+}

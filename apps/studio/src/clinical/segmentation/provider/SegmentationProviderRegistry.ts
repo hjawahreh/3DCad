@@ -65,7 +65,14 @@ export const createDefaultSegmentationRegistry = (): SegmentationProviderRegistr
   registry.register(new TGNetAdapter());
   registry.register(new DentalMAEAdapter());
   registry.register(createProductionModelProvider());
-  // Production default fixed by segmentation-model-decision.md — never silently switch.
-  registry.setDefault('reference-heuristic');
+  // CLN-SEG-001: Production is preferred only when operational. Otherwise the
+  // reference heuristic remains available strictly as Reference / Development.
+  // Never silently label heuristic output as Production.
+  const production = registry.tryGet('production-clinical-model');
+  if (production?.info.operational === true) {
+    registry.setDefault('production-clinical-model');
+  } else {
+    registry.setDefault('reference-heuristic');
+  }
   return registry;
 };

@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-13T14:45:29.888Z",
+  "at": "2026-09-16T23:36:05.334Z",
   "upper": {
     "before": {
       "triangleCount": 261287,
@@ -38,7 +38,7 @@
       "weldTolerance": 0,
       "geometryFingerprintBefore": "geo:052a19f9",
       "geometryFingerprintAfter": "geo:c828c055",
-      "durationMs": 25572.915394000003,
+      "durationMs": 34410.888576000005,
       "orientationChanged": false,
       "maxDeviation": 0,
       "meanDeviation": 0,
@@ -83,7 +83,7 @@
       "weldTolerance": 0,
       "geometryFingerprintBefore": "geo:4f0579c1",
       "geometryFingerprintAfter": "geo:856046ee",
-      "durationMs": 55877.35393900001,
+      "durationMs": 28950.946895,
       "orientationChanged": false,
       "maxDeviation": 0,
       "meanDeviation": 0,

@@ -171,7 +171,7 @@ export const ClinicalCreateCaseDialog = ({
       }
 
       setPhase('working');
-      setStatusMessage('Preparing case…');
+      setStatusMessage('Creating case…');
       setUpperOk(false);
       setLowerOk(false);
       setFailedArch(undefined);
@@ -232,11 +232,11 @@ export const ClinicalCreateCaseDialog = ({
       setStatusMessage(
         item.arch === 'upper'
           ? large
-            ? 'Loading Upper Arch (large file)…'
-            : 'Loading Upper Arch…'
+            ? 'Loading scans — Upper (large file)…'
+            : 'Loading scans — Upper…'
           : large
-            ? 'Loading Lower Arch (large file)…'
-            : 'Loading Lower Arch…'
+            ? 'Loading scans — Lower (large file)…'
+            : 'Loading scans — Lower…'
       );
       const outcome = await importArch(item.arch, item.pick, true);
       if (!outcome.ok) {
@@ -260,9 +260,9 @@ export const ClinicalCreateCaseDialog = ({
 
     setUpperOk(nextUpperOk);
     setLowerOk(nextLowerOk);
-    setStatusMessage('Validating scans…');
+    setStatusMessage('Preparing geometry…');
     const report = refreshValidation();
-    setStatusMessage('Finalizing case…');
+    setStatusMessage('Ready');
     const saved = await workspace.cases.saveActiveCase(workspace);
     if (!saved.ok) {
       setPhase('partial');

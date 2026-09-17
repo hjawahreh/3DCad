@@ -145,3 +145,29 @@ export const expandFaceColorsToVertexColors = (faceColors: Float32Array): Float3
   }
   return out;
 };
+
+/**
+ * Reconstruct clinical presentation colors from persisted face membership.
+ * Gingiva = faces not owned by any tooth instance.
+ */
+export const buildPersistedMembershipFaceColors = (input: {
+  readonly faceCount: number;
+  readonly instances: readonly {
+    readonly instanceId: string;
+    readonly faceIndices: readonly number[];
+  }[];
+  readonly selectedInstanceId?: string;
+}): Float32Array => {
+  const out = new Float32Array(input.faceCount * 3);
+  for (let f = 0; f < input.faceCount; f += 1) {
+    writeRgb(out, f, SEGMENTATION_SEMANTIC_COLORS.GINGIVA);
+  }
+  input.instances.forEach((inst, idx) => {
+    const hex = instanceColor(idx);
+    const boost = input.selectedInstanceId === inst.instanceId ? 1.18 : 1;
+    for (const f of inst.faceIndices) {
+      if (f >= 0 && f < input.faceCount) writeRgb(out, f, hex, boost);
+    }
+  });
+  return out;
+};

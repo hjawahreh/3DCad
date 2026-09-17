@@ -8,6 +8,10 @@ import type { ReviewActionMeta } from './review/ClinicalSegmentationReview.js';
 import { ClinicalSegmentationWorkflow, type SegmentationPhase } from './ClinicalSegmentationWorkflow.js';
 import type { SegmentationPresentationStatus } from './display/ClinicalSegmentationPresentation.js';
 import type { ClinicalSegmentationValidationReport } from './ClinicalSegmentationValidation.js';
+import type {
+  SegmentationGuideStepId,
+  ToothMarker
+} from './guide/SegmentationGuideSteps.js';
 
 export type SegmentationViewMode =
   | 'semantic'
@@ -33,6 +37,9 @@ export interface SegmentationSessionState {
   readonly errorMessage: string | undefined;
   readonly lastReviewMeta: ReviewActionMeta | undefined;
   readonly sessionStartedAt: number | undefined;
+  /** CLN-WORKFLOW-002 guided step. */
+  readonly guideStep: SegmentationGuideStepId;
+  readonly toothMarkers: readonly ToothMarker[];
 }
 
 export class ClinicalSegmentationSession {
@@ -52,7 +59,12 @@ export class ClinicalSegmentationSession {
   private lastReviewMeta: ReviewActionMeta | undefined;
   private sessionStartedAt: number | undefined;
   private abort: AbortController | undefined;
-
+  private guideStep: SegmentationGuideStepId = 'edit-scans';
+  private toothMarkers: ToothMarker[] = [];
+  /**
+   * CLN-WORKFLOW-002A — markers are session-live only (temporary inference inputs).
+   * Accepted segmentation persists under object.segmentationMeta; markers do not.
+   */
   public getWorkflow(): ClinicalSegmentationWorkflow {
     return this.workflow;
   }
@@ -73,6 +85,8 @@ export class ClinicalSegmentationSession {
     this.abort = new AbortController();
     this.presentation = 'idle';
     this.viewMode = 'instance';
+    this.guideStep = 'edit-scans';
+    this.toothMarkers = [];
     this.workflow.transition('activating');
   }
 
@@ -137,6 +151,24 @@ export class ClinicalSegmentationSession {
     this.lastReviewMeta = meta;
   }
 
+  public setGuideStep(step: SegmentationGuideStepId): void {
+    this.guideStep = step;
+  }
+
+  public addToothMarker(marker: ToothMarker): void {
+    this.toothMarkers = Object.freeze([...this.toothMarkers, marker]) as ToothMarker[];
+  }
+
+  public clearToothMarkers(): void {
+    this.toothMarkers = [];
+  }
+
+  public removeToothMarker(id: string): void {
+    this.toothMarkers = Object.freeze(
+      this.toothMarkers.filter((m) => m.id !== id)
+    ) as ToothMarker[];
+  }
+
   public getState(): SegmentationSessionState {
     return Object.freeze({
       phase: this.workflow.getPhase(),
@@ -153,7 +185,9 @@ export class ClinicalSegmentationSession {
       runtimeMessage: this.runtimeMessage,
       errorMessage: this.errorMessage,
       lastReviewMeta: this.lastReviewMeta,
-      sessionStartedAt: this.sessionStartedAt
+      sessionStartedAt: this.sessionStartedAt,
+      guideStep: this.guideStep,
+      toothMarkers: Object.freeze([...this.toothMarkers])
     });
   }
 
@@ -172,6 +206,8 @@ export class ClinicalSegmentationSession {
     this.presentation = 'idle';
     this.reviewAcknowledged = false;
     this.viewMode = 'instance';
+    this.guideStep = 'edit-scans';
+    this.toothMarkers = [];
     this.workflow.reset();
   }
 }

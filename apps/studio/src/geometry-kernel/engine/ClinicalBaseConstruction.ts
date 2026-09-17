@@ -12,7 +12,7 @@ import {
   type MeshRole,
   type TriangleMesh
 } from '../mesh/TriangleMesh.js';
-import { extractBoundaryLoops } from './TopologyGraph.js';
+import { buildTopology, extractBoundaryLoops } from './TopologyGraph.js';
 import { analyzeMesh } from './MeshAnalysis.js';
 import type { BoundaryLoopCandidate } from './types.js';
 
@@ -421,16 +421,14 @@ const centroidFanUv = (
   }
   cx /= uv.length;
   cy /= uv.length;
-  // Centroid must lie inside the polygon (ray cast).
-  let inside = false;
-  for (let i = 0, j = uv.length - 1; i < uv.length; j = i++) {
-    const pi = uv[i]!;
-    const pj = uv[j]!;
-    if (pi.y > cy !== pj.y > cy && cx < ((pj.x - pi.x) * (cy - pi.y)) / (pj.y - pi.y + 1e-30) + pi.x) {
-      inside = !inside;
-    }
+  const inside = pointInPolygonUv(uv, cx, cy);
+  if (!inside) {
+    // CLN-WORKFLOW-002: lower-arch borders are often non-convex — try an interior seed.
+    const seed = findInteriorUv(uv);
+    if (seed === undefined) return undefined;
+    cx = seed.x;
+    cy = seed.y;
   }
-  if (!inside) return undefined;
   const tris: number[][] = [];
   for (let i = 0; i < uv.length; i += 1) {
     tris.push([uv.length, i, (i + 1) % uv.length]); // index uv.length = centroid sentinel
@@ -438,11 +436,119 @@ const centroidFanUv = (
   return { tris, centroidUv: { x: cx, y: cy } };
 };
 
+const pointInPolygonUv = (
+  uv: readonly { readonly x: number; readonly y: number }[],
+  x: number,
+  y: number
+): boolean => {
+  let inside = false;
+  for (let i = 0, j = uv.length - 1; i < uv.length; j = i++) {
+    const pi = uv[i]!;
+    const pj = uv[j]!;
+    if (pi.y > y !== pj.y > y && x < ((pj.x - pi.x) * (y - pi.y)) / (pj.y - pi.y + 1e-30) + pi.x) {
+      inside = !inside;
+    }
+  }
+  return inside;
+};
+
+/** Find a point strictly inside a (possibly concave) UV polygon. */
+const findInteriorUv = (
+  uv: readonly { readonly x: number; readonly y: number }[]
+): { x: number; y: number } | undefined => {
+  if (uv.length < 3) return undefined;
+  // Midpoints of consecutive edge pairs → offset slightly toward polygon average.
+  let ax = 0;
+  let ay = 0;
+  for (const p of uv) {
+    ax += p.x;
+    ay += p.y;
+  }
+  ax /= uv.length;
+  ay /= uv.length;
+  for (let i = 0; i < uv.length; i += 1) {
+    const a = uv[i]!;
+    const b = uv[(i + 1) % uv.length]!;
+    const c = uv[(i + 2) % uv.length]!;
+    const mx = (a.x + b.x + c.x) / 3;
+    const my = (a.y + b.y + c.y) / 3;
+    // Nudge toward mean to escape the boundary.
+    const sx = mx * 0.85 + ax * 0.15;
+    const sy = my * 0.85 + ay * 0.15;
+    if (pointInPolygonUv(uv, sx, sy)) return { x: sx, y: sy };
+    if (pointInPolygonUv(uv, mx, my)) return { x: mx, y: my };
+  }
+  // Grid search in AABB
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of uv) {
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
+  }
+  for (let gy = 0; gy <= 12; gy += 1) {
+    for (let gx = 0; gx <= 12; gx += 1) {
+      const x = minX + ((maxX - minX) * (gx + 0.5)) / 13;
+      const y = minY + ((maxY - minY) * (gy + 0.5)) / 13;
+      if (pointInPolygonUv(uv, x, y)) return { x, y };
+    }
+  }
+  return undefined;
+};
+
 /** Robust ear-clip in UV (concave fallback). */
 const earClipUv = (
   uv: readonly { readonly x: number; readonly y: number }[]
 ): number[][] | undefined => {
   if (uv.length < 3) return undefined;
+  const tryClip = (ordered: number[]): number[][] | undefined => {
+    const tris: number[][] = [];
+    const remaining = [...ordered];
+    let guard = 0;
+    while (remaining.length > 3 && guard < ordered.length * ordered.length + 64) {
+      guard += 1;
+      let clipped = false;
+      for (let i = 0; i < remaining.length; i += 1) {
+        const i0 = remaining[(i + remaining.length - 1) % remaining.length]!;
+        const i1 = remaining[i]!;
+        const i2 = remaining[(i + 1) % remaining.length]!;
+        const a = uv[i0]!;
+        const b = uv[i1]!;
+        const c = uv[i2]!;
+        const cross = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+        if (cross <= 1e-14) continue;
+        let hasPoint = false;
+        for (let k = 0; k < remaining.length; k += 1) {
+          const rk = remaining[k]!;
+          if (rk === i0 || rk === i1 || rk === i2) continue;
+          const p = uv[rk]!;
+          const d1 = (p.x - b.x) * (a.y - b.y) - (p.y - b.y) * (a.x - b.x);
+          const d2 = (p.x - c.x) * (b.y - c.y) - (p.y - c.y) * (b.x - c.x);
+          const d3 = (p.x - a.x) * (c.y - a.y) - (p.y - a.y) * (c.x - a.x);
+          const hasNeg = d1 < -1e-14 || d2 < -1e-14 || d3 < -1e-14;
+          const hasPos = d1 > 1e-14 || d2 > 1e-14 || d3 > 1e-14;
+          if (!(hasNeg && hasPos)) {
+            hasPoint = true;
+            break;
+          }
+        }
+        if (hasPoint) continue;
+        tris.push([i0, i1, i2]);
+        remaining.splice(i, 1);
+        clipped = true;
+        break;
+      }
+      if (!clipped) return undefined;
+    }
+    if (remaining.length === 3) {
+      tris.push([remaining[0]!, remaining[1]!, remaining[2]!]);
+    }
+    return remaining.length <= 3 && tris.length > 0 ? tris : undefined;
+  };
+
   const idx = uv.map((_, i) => i);
   let area = 0;
   for (let i = 0; i < idx.length; i += 1) {
@@ -451,49 +557,11 @@ const earClipUv = (
     area += a.x * b.y - b.x * a.y;
   }
   if (area < 0) idx.reverse();
-
-  const tris: number[][] = [];
-  const remaining = [...idx];
-  let guard = 0;
-  while (remaining.length > 3 && guard < idx.length * idx.length + 16) {
-    guard += 1;
-    let clipped = false;
-    for (let i = 0; i < remaining.length; i += 1) {
-      const i0 = remaining[(i + remaining.length - 1) % remaining.length]!;
-      const i1 = remaining[i]!;
-      const i2 = remaining[(i + 1) % remaining.length]!;
-      const a = uv[i0]!;
-      const b = uv[i1]!;
-      const c = uv[i2]!;
-      const cross = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-      if (cross <= 1e-12) continue;
-      let hasPoint = false;
-      for (let k = 0; k < remaining.length; k += 1) {
-        const rk = remaining[k]!;
-        if (rk === i0 || rk === i1 || rk === i2) continue;
-        const p = uv[rk]!;
-        const d1 = (p.x - b.x) * (a.y - b.y) - (p.y - b.y) * (a.x - b.x);
-        const d2 = (p.x - c.x) * (b.y - c.y) - (p.y - c.y) * (b.x - c.x);
-        const d3 = (p.x - a.x) * (c.y - a.y) - (p.y - a.y) * (c.x - a.x);
-        const hasNeg = d1 < 0 || d2 < 0 || d3 < 0;
-        const hasPos = d1 > 0 || d2 > 0 || d3 > 0;
-        if (!(hasNeg && hasPos)) {
-          hasPoint = true;
-          break;
-        }
-      }
-      if (hasPoint) continue;
-      tris.push([i0, i1, i2]);
-      remaining.splice(i, 1);
-      clipped = true;
-      break;
-    }
-    if (!clipped) return undefined;
-  }
-  if (remaining.length === 3) {
-    tris.push([remaining[0]!, remaining[1]!, remaining[2]!]);
-  }
-  return remaining.length <= 3 && tris.length > 0 ? tris : undefined;
+  const forward = tryClip(idx);
+  if (forward !== undefined) return forward;
+  // Retry opposite winding for noisy dental borders.
+  idx.reverse();
+  return tryClip(idx);
 };
 
 const countEdgeUses = (indices: Uint32Array): {
@@ -615,6 +683,74 @@ const aabbRectanglePerimeter = (
   return 2 * (sx + sy);
 };
 
+/**
+ * CLN-WORKFLOW-002A — keep only the largest face-connected component.
+ * Real lower scans can carry a tiny disconnected scrap (e.g. one triangle /
+ * 3 boundary edges) that survives clinical-rim closure and falsely fails
+ * watertight. Dropping non-dominant scraps is not a triangulation redesign.
+ */
+const keepLargestFaceComponent = (
+  mesh: TriangleMesh
+): { readonly mesh: TriangleMesh; readonly droppedFaces: number; readonly components: number } => {
+  const topology = buildTopology(mesh);
+  if (topology.componentCount <= 1) {
+    return { mesh, droppedFaces: 0, components: topology.componentCount };
+  }
+  const counts = new Array<number>(topology.componentCount).fill(0);
+  for (let f = 0; f < topology.faceCount; f += 1) {
+    const c = topology.components[f]!;
+    if (c >= 0) counts[c]! += 1;
+  }
+  let best = 0;
+  for (let c = 1; c < counts.length; c += 1) {
+    if (counts[c]! > counts[best]!) best = c;
+  }
+  const keepFaces: number[] = [];
+  for (let f = 0; f < topology.faceCount; f += 1) {
+    if (topology.components[f] === best) keepFaces.push(f);
+  }
+  if (keepFaces.length === topology.faceCount) {
+    return { mesh, droppedFaces: 0, components: topology.componentCount };
+  }
+  const used = new Int32Array(Math.floor(mesh.positions.length / 3)).fill(-1);
+  const positions: number[] = [];
+  const indices: number[] = [];
+  const mapVertex = (vi: number): number => {
+    const existing = used[vi]!;
+    if (existing >= 0) return existing;
+    const ni = positions.length / 3;
+    used[vi] = ni;
+    positions.push(
+      mesh.positions[vi * 3]!,
+      mesh.positions[vi * 3 + 1]!,
+      mesh.positions[vi * 3 + 2]!
+    );
+    return ni;
+  };
+  for (const f of keepFaces) {
+    indices.push(
+      mapVertex(mesh.indices[f * 3]!),
+      mapVertex(mesh.indices[f * 3 + 1]!),
+      mapVertex(mesh.indices[f * 3 + 2]!)
+    );
+  }
+  const pos = new Float32Array(positions);
+  const idx = new Uint32Array(indices);
+  return {
+    mesh: createMesh({
+      id: mesh.id,
+      objectId: mesh.objectId,
+      role: mesh.role,
+      revision: mesh.revision,
+      positions: pos,
+      indices: idx,
+      fingerprint: fingerprintMesh(pos, idx)
+    }),
+    droppedFaces: topology.faceCount - keepFaces.length,
+    components: topology.componentCount
+  };
+};
+
 export const constructClinicalBase = (
   input: ClinicalBaseConstructionInput
 ): ClinicalBaseConstructionResult => {
@@ -624,13 +760,22 @@ export const constructClinicalBase = (
     stages[name] = performance.now() - t0;
   };
   const warnings: string[] = [];
-  const mesh = input.mesh;
   const height = Math.max(0.5, input.height);
   const thickness = Math.max(0.1, input.thickness);
   const offset = Math.max(0, input.offset);
   const maxSamples = input.maxBoundarySamples ?? 8192;
 
   let t0 = performance.now();
+  const dominant = keepLargestFaceComponent(input.mesh);
+  const mesh = dominant.mesh;
+  if (dominant.droppedFaces > 0) {
+    warnings.push(
+      `dropped ${String(dominant.droppedFaces)} faces from ${String(dominant.components - 1)} non-dominant component(s)`
+    );
+  }
+  mark('component-filter', t0);
+
+  t0 = performance.now();
   const selected = selectClinicalBaseBoundary(
     mesh,
     input.preferClinicalFrame === true ? input.clinicalBaseNormal : input.clinicalBaseNormal

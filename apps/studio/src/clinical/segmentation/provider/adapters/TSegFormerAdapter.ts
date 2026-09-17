@@ -10,7 +10,7 @@ export class TSegFormerAdapter implements SegmentationProvider {
       modelVersion: '0.0.0-scaffold',
       operational: false,
       licenseNotes:
-        'Research geometry-guided transformer (MICCAI 2023). Code public; SPDX license / pretrained weights / dataset terms not cleared for redistribution — not enabled.',
+        'Research geometry-guided transformer (MICCAI 2023). Code MIT; pretrained weights / dataset terms not cleared for product — enable only via ProductionModelProvider + configured checkpoint.',
       capabilities: Object.freeze([
         'semantic',
         'instance',

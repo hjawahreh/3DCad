@@ -1,21 +1,21 @@
 /**
- * CLN-WORKSTATION-001 — compact Segmentation panel.
- * Primary: Auto Segmentation (Beta). Secondary: Review / Accept / Reject.
- * Never claims clinical validation accuracy.
+ * CLN-WORKFLOW-002 — guided Segmentation panel.
+ * Edit Scans → Mark Teeth → Auto → Adjust → Verify → Next (Biomech locked).
  */
 
 import type { JSX } from 'react';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
 import { ClinicalArchSwitcher } from '../shell/ClinicalArchSwitcher.js';
 import { useClinicalUiRevision } from '../shell/useClinicalUi.js';
-import type { SegmentationViewMode } from './ClinicalSegmentationSession.js';
-
-const REVIEW_MODES: readonly { readonly id: SegmentationViewMode; readonly label: string }[] =
-  Object.freeze([
-    { id: 'semantic', label: 'Semantic' },
-    { id: 'instance', label: 'Teeth' },
-    { id: 'review', label: 'Review' }
-  ]);
+import { ClinicalToothNumberingPanel } from './ClinicalToothNumberingPanel.js';
+import {
+  SEGMENTATION_GUIDE_STEPS,
+  nextGuideStep,
+  prevGuideStep,
+  type SegmentationGuideStepId
+} from './guide/SegmentationGuideSteps.js';
+import { resolveSegmentationClinicalStatus } from './status/SegmentationClinicalStatus.js';
+import { isNonClinicalSegmentationProvider } from './ClinicalSegmentationIntegrity.js';
 
 export const ClinicalSegmentationToolbar = (props: {
   readonly workspace: ClinicalWorkspace;
@@ -43,34 +43,81 @@ export const ClinicalSegmentationToolbar = (props: {
     state.phase === 'postprocessing';
   const validationFail = state.validationReport?.verdict === 'FAIL';
   const acceptBlocked = state.phase !== 'ready-for-review' || validationFail;
-  const inReview = state.phase === 'ready-for-review' || state.prediction !== undefined;
+  const isReference = isNonClinicalSegmentationProvider(state.providerId);
+  const guideStep = state.guideStep;
+  const stepMeta = SEGMENTATION_GUIDE_STEPS.find((s) => s.id === guideStep);
+  const clinicalStatus = resolveSegmentationClinicalStatus({
+    providerId: state.prediction?.providerId ?? state.providerId,
+    needsClinicalReview: (state.prediction?.confidence.needsReviewCount ?? 0) > 0
+  });
+
+  const go = (step: SegmentationGuideStepId | undefined): void => {
+    if (step === undefined) return;
+    runtime.setGuideStep(step);
+  };
 
   return (
     <div
-      className="clinical-segmentation-toolbar clinical-segmentation-toolbar--workstation"
+      className="clinical-segmentation-toolbar clinical-segmentation-toolbar--workstation clinical-segmentation-toolbar--guided"
       role="toolbar"
       aria-label="Segmentation"
       data-testid="clinical-segmentation-toolbar"
+      data-guide-step={guideStep}
       onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="clinical-segmentation-toolbar__header">
         <span className="clinical-segmentation-toolbar__label">Segment</span>
         <span
-          className="clinical-segmentation-toolbar__disclaimer"
+          className={
+            isReference
+              ? 'clinical-segmentation-toolbar__disclaimer clinical-segmentation-toolbar__disclaimer--reference'
+              : 'clinical-segmentation-toolbar__disclaimer'
+          }
           data-testid="clinical-seg-disclaimer"
         >
-          Auto Segmentation (Beta)
+          {isReference ? 'BETA / REFERENCE' : 'Production Model'}
         </span>
       </div>
+
+      <div className="clinical-segmentation-guide-steps" data-testid="clinical-seg-guide-steps">
+        {SEGMENTATION_GUIDE_STEPS.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            className={
+              s.id === guideStep
+                ? 'clinical-seg-step clinical-seg-step--current'
+                : 'clinical-seg-step'
+            }
+            data-testid={`clinical-seg-step-${s.id}`}
+            disabled={busy}
+            onClick={() => go(s.id)}
+          >
+            {s.shortLabel}
+          </button>
+        ))}
+      </div>
+
+      <p className="clinical-segmentation-toolbar__blurb" data-testid="clinical-seg-blurb">
+        <strong>{stepMeta?.label ?? 'Segment'}</strong> — {stepMeta?.description}
+      </p>
+
+      <span className="clinical-segmentation-toolbar__status" data-testid="clinical-seg-provider-status">
+        {clinicalStatus}
+      </span>
 
       <ClinicalArchSwitcher
         active={activeArch}
         hasUpper={hasUpper}
         hasLower={hasLower}
         disabled={busy}
-        showBoth={false}
+        showBoth={guideStep === 'verify-teeth' || guideStep === 'adjust-boundaries'}
         onSelect={(mode) => {
-          if (mode !== 'upper' && mode !== 'lower') {
+          if (mode !== 'upper' && mode !== 'lower' && mode !== 'both') return;
+          if (mode === 'both') {
+            workspace.archContext.setMode('both');
+            workspace.viewport.showAll();
+            workspace.session.notifyUi();
             return;
           }
           const result = runtime.setActiveArch(mode);
@@ -83,59 +130,142 @@ export const ClinicalSegmentationToolbar = (props: {
         testId="clinical-segmentation-arch"
       />
 
-      <button
-        type="button"
-        className="clinical-btn clinical-btn--primary"
-        disabled={busy}
-        data-testid="clinical-segmentation-run"
-        onClick={() => void runtime.segmentTeeth()}
-      >
-        Auto Segmentation
-      </button>
+      {guideStep === 'mark-teeth' ? (
+        <div className="clinical-segmentation-toolbar__markers" data-testid="clinical-seg-markers">
+          <span>{String(state.toothMarkers.length)} markers</span>
+          <button
+            type="button"
+            className="clinical-btn clinical-btn--tertiary"
+            onClick={() => {
+              runtime.session.clearToothMarkers();
+              workspace.session.notifyUi();
+            }}
+          >
+            Clear markers
+          </button>
+        </div>
+      ) : null}
 
-      {inReview ? (
+      {guideStep === 'auto-segmentation' || guideStep === 'mark-teeth' ? (
+        <button
+          type="button"
+          className="clinical-btn clinical-btn--primary"
+          disabled={busy}
+          data-testid="clinical-segmentation-run"
+          onClick={() => {
+            runtime.setGuideStep('auto-segmentation');
+            void runtime.segmentTeeth();
+          }}
+        >
+          AUTO SEGMENTATION
+        </button>
+      ) : null}
+
+      {(guideStep === 'adjust-boundaries' || guideStep === 'verify-teeth') &&
+      state.prediction !== undefined ? (
         <>
-          <div className="clinical-segmentation-toolbar__modes" role="group" aria-label="Review">
-            {REVIEW_MODES.map((m) => (
+          <ClinicalToothNumberingPanel workspace={workspace} />
+          {guideStep === 'adjust-boundaries' ? (
+            <div className="clinical-segmentation-toolbar__actions">
               <button
-                key={m.id}
                 type="button"
-                className={
-                  state.viewMode === m.id
-                    ? 'clinical-btn clinical-btn--tertiary clinical-btn--active'
-                    : 'clinical-btn clinical-btn--tertiary'
-                }
-                disabled={state.prediction === undefined}
-                data-testid={`clinical-segmentation-mode-${m.id}`}
-                onClick={() => runtime.setViewMode(m.id)}
+                className="clinical-btn clinical-btn--tertiary"
+                disabled={state.selectedInstanceId === undefined}
+                data-testid="clinical-segmentation-mark-unknown"
+                onClick={() => {
+                  if (state.selectedInstanceId)
+                    runtime.markUnknown(state.selectedInstanceId);
+                }}
               >
-                {m.label}
+                Mark Unknown
               </button>
-            ))}
-          </div>
+            </div>
+          ) : null}
+          {guideStep === 'verify-teeth' ? (
+            <div className="clinical-segmentation-toolbar__actions">
+              <button
+                type="button"
+                className="clinical-btn clinical-btn--primary"
+                disabled={acceptBlocked}
+                data-testid="clinical-segmentation-accept"
+                onClick={() => void runtime.accept()}
+              >
+                Accept
+              </button>
+              <button
+                type="button"
+                className="clinical-btn clinical-btn--secondary"
+                disabled={busy}
+                data-testid="clinical-segmentation-retry"
+                onClick={() => void runtime.runInference()}
+              >
+                Retry
+              </button>
+              <button
+                type="button"
+                className="clinical-btn clinical-btn--secondary"
+                disabled={busy}
+                data-testid="clinical-segmentation-reject"
+                onClick={() => runtime.reject()}
+              >
+                Reject
+              </button>
+            </div>
+          ) : null}
+        </>
+      ) : null}
+
+      <div className="clinical-segmentation-toolbar__nav">
+        <button
+          type="button"
+          className="clinical-btn clinical-btn--tertiary"
+          disabled={busy || prevGuideStep(guideStep) === undefined}
+          data-testid="clinical-seg-previous"
+          onClick={() => go(prevGuideStep(guideStep))}
+        >
+          Previous
+        </button>
+        {guideStep === 'verify-teeth' ? (
+          <button
+            type="button"
+            className="clinical-btn clinical-btn--primary clinical-btn--locked"
+            data-testid="clinical-seg-next-biomech"
+            disabled
+            aria-disabled="true"
+            title="Biomechanical planning is locked — not implemented"
+            onClick={(e) => {
+              e.preventDefault();
+              workspace.session.getHost().notifications.push(
+                'info',
+                'Biomechanical planning',
+                'Next stage is locked until biomechanics is enabled.'
+              );
+            }}
+          >
+            NEXT (LOCKED)
+          </button>
+        ) : (
           <button
             type="button"
             className="clinical-btn clinical-btn--primary"
-            disabled={acceptBlocked}
-            title={
-              validationFail ? 'Accept blocked — segmentation validation FAIL' : undefined
-            }
-            data-testid="clinical-segmentation-accept"
-            onClick={() => void runtime.accept()}
-          >
-            Accept
-          </button>
-          <button
-            type="button"
-            className="clinical-btn clinical-btn--secondary"
             disabled={busy}
-            data-testid="clinical-segmentation-reject"
-            onClick={() => runtime.reject()}
+            data-testid="clinical-seg-next"
+            onClick={() => {
+              if (guideStep === 'auto-segmentation' && state.prediction === undefined) {
+                void runtime.segmentTeeth();
+                return;
+              }
+              if (guideStep === 'adjust-boundaries') {
+                go('verify-teeth');
+                return;
+              }
+              go(nextGuideStep(guideStep));
+            }}
           >
-            Reject / Retry
+            Next
           </button>
-        </>
-      ) : null}
+        )}
+      </div>
 
       <button
         type="button"

@@ -29,16 +29,19 @@ import {
   Vector3,
   WebGLRenderer
 } from 'three';
+import * as THREE from 'three';
 import type { Mat4 } from '@cad-studio/scene';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
 import type { ClinicalMeshDescriptor } from '../import/ClinicalMeshDescriptor.js';
 import { useClinicalUiRevision } from '../shell/useClinicalUi.js';
 import type { ClinicalMeshPickHit } from './ClinicalMeshPicker.js';
 import {
+  buildPersistedMembershipFaceColors,
   buildSegmentationFaceColors,
   expandFaceColorsToVertexColors
 } from '../segmentation/display/ClinicalSegmentationColors.js';
 import { instanceWorldCentroid } from '../segmentation/display/ClinicalSegmentationPresentation.js';
+import { extractSemanticBoundaryEdges } from '../segmentation/boundary/ToothBoundaryQuality.js';
 import { inferTrimProjectionAxes } from '../../geometry-kernel/ops/trimMesh.js';
 import { recordClinicalGeometryDevDiag } from '../diagnostics/ClinicalGeometryDevDiagnostics.js';
 
@@ -162,6 +165,7 @@ export const ClinicalMeshViewport = ({
         material: MeshStandardMaterial;
         vizKey: string;
         labelRoot: Group;
+        boundaryRoot: Group;
       }
     >();
 
@@ -263,13 +267,24 @@ export const ClinicalMeshViewport = ({
     let disposed = false;
     let frame = 0;
 
-    const clearLabels = (entry: { labelRoot: Group }): void => {
+    const clearLabels = (entry: { labelRoot: Group; boundaryRoot?: Group }): void => {
       while (entry.labelRoot.children.length > 0) {
         const child = entry.labelRoot.children[0] as Sprite;
         entry.labelRoot.remove(child);
         const mat = child.material as SpriteMaterial;
         mat.map?.dispose();
         mat.dispose();
+      }
+      if (entry.boundaryRoot !== undefined) {
+        while (entry.boundaryRoot.children.length > 0) {
+          const child = entry.boundaryRoot.children[0] as unknown as {
+            geometry: BufferGeometry;
+            material: LineBasicMaterial;
+          };
+          entry.boundaryRoot.remove(entry.boundaryRoot.children[0]!);
+          child.geometry.dispose();
+          child.material.dispose();
+        }
       }
     };
 
@@ -405,6 +420,7 @@ export const ClinicalMeshViewport = ({
         if (!visibleIds.has(id)) {
           root.remove(entry.mesh);
           root.remove(entry.labelRoot);
+          root.remove(entry.boundaryRoot);
           clearLabels(entry);
           entry.mesh.geometry.dispose();
           entry.material.dispose();
@@ -447,9 +463,15 @@ export const ClinicalMeshViewport = ({
           prediction !== undefined &&
           segState !== undefined &&
           (segState.targetObjectId as string | undefined) === id;
-        const vizKey =
-          isSegTarget && prediction !== undefined && segState !== undefined
-            ? `${prediction.predictionId}:${segState.viewMode}:${segState.selectedInstanceId ?? ''}:${String(prediction.instances.length)}`
+        const persisted =
+          !isSegTarget &&
+          obj.segmentationMeta?.status === 'CURRENT' &&
+          obj.segmentationMeta.faceMembership !== undefined &&
+          obj.segmentationMeta.faceMembership.instances.length > 0;
+        const vizKey = isSegTarget
+          ? `${prediction!.predictionId}:${segState!.viewMode}:${segState!.selectedInstanceId ?? ''}:${String(prediction!.instances.length)}`
+          : persisted
+            ? `persisted:${obj.segmentationMeta!.predictionId}:${obj.segmentationMeta!.faceMembership!.membershipFingerprint}`
             : 'plain';
 
         let entry = meshCache.get(id);
@@ -457,6 +479,7 @@ export const ClinicalMeshViewport = ({
           if (entry !== undefined) {
             root.remove(entry.mesh);
             root.remove(entry.labelRoot);
+            root.remove(entry.boundaryRoot);
             clearLabels(entry);
             entry.mesh.geometry.dispose();
             entry.material.dispose();
@@ -475,9 +498,11 @@ export const ClinicalMeshViewport = ({
           });
           const mesh = new Mesh(geometry, material);
           const labelRoot = new Group();
+          const boundaryRoot = new Group();
           root.add(mesh);
           root.add(labelRoot);
-          entry = { mesh, fingerprint, material, vizKey: 'plain', labelRoot };
+          root.add(boundaryRoot);
+          entry = { mesh, fingerprint, material, vizKey: 'plain', labelRoot, boundaryRoot };
           meshCache.set(id, entry);
         }
 
@@ -522,6 +547,69 @@ export const ClinicalMeshViewport = ({
                 sprite.position.set(c[0], c[1] + 1.2, c[2]);
                 entry.labelRoot.add(sprite);
               }
+
+              // Subtle tooth boundaries following segmented surface (not screen-space outlines).
+              const faceToInstance = new Map<number, string>();
+              for (const inst of prediction.instances) {
+                for (const f of inst.faceIndices) faceToInstance.set(f, inst.instanceId);
+              }
+              const edgePairs = extractSemanticBoundaryEdges({
+                indices: triangle.indices,
+                faceLabels: prediction.faceLabels,
+                faceToInstance
+              });
+              if (edgePairs.length >= 2) {
+                const positions = new Float32Array((edgePairs.length / 2) * 6);
+                for (let i = 0; i < edgePairs.length; i += 2) {
+                  const a = edgePairs[i]!;
+                  const b = edgePairs[i + 1]!;
+                  const o = (i / 2) * 6;
+                  positions[o] = triangle.positions[a * 3]!;
+                  positions[o + 1] = triangle.positions[a * 3 + 1]!;
+                  positions[o + 2] = triangle.positions[a * 3 + 2]!;
+                  positions[o + 3] = triangle.positions[b * 3]!;
+                  positions[o + 4] = triangle.positions[b * 3 + 1]!;
+                  positions[o + 5] = triangle.positions[b * 3 + 2]!;
+                }
+                const geom = new BufferGeometry();
+                geom.setAttribute('position', new BufferAttribute(positions, 3));
+                const mat = new LineBasicMaterial({
+                  color: 0x5a5048,
+                  transparent: true,
+                  opacity: 0.55,
+                  depthTest: true
+                });
+                // Runtime LineSegments (types package may omit named export).
+                const LineSegmentsCtor = (
+                  THREE as unknown as {
+                    LineSegments: new (
+                      geometry: BufferGeometry,
+                      material: LineBasicMaterial
+                    ) => THREE.Object3D;
+                  }
+                ).LineSegments;
+                entry.boundaryRoot.add(new LineSegmentsCtor(geom, mat));
+              }
+            }
+          } else if (persisted && obj.segmentationMeta?.faceMembership !== undefined) {
+            const faceCount = Math.floor(triangle.indices.length / 3);
+            const faceColors = buildPersistedMembershipFaceColors({
+              faceCount,
+              instances: obj.segmentationMeta.faceMembership.instances
+            });
+            const vertexColors = expandFaceColorsToVertexColors(faceColors);
+            entry.mesh.geometry = buildNonIndexedColoredGeometry(
+              triangle.positions,
+              triangle.indices,
+              vertexColors
+            );
+            entry.material.vertexColors = true;
+            entry.material.color.setHex(0xffffff);
+            for (const tooth of obj.segmentationMeta.teeth ?? []) {
+              if (tooth.fdi === undefined || tooth.centroid === undefined) continue;
+              const sprite = makeFdiSprite(String(tooth.fdi), tooth.needsReview);
+              sprite.position.set(tooth.centroid[0], tooth.centroid[1] + 1.2, tooth.centroid[2]);
+              entry.labelRoot.add(sprite);
             }
           } else {
             entry.mesh.geometry = buildGeometry(triangle.positions, triangle.indices);
@@ -529,15 +617,17 @@ export const ClinicalMeshViewport = ({
             applyAppearance(entry.material, obj, prefs.displayMode, selection.has(id), prefs.lighting);
           }
           entry.vizKey = vizKey;
-        } else if (!isSegTarget) {
+        } else if (!isSegTarget && !persisted) {
           applyAppearance(entry.material, obj, prefs.displayMode, selection.has(id), prefs.lighting);
         }
 
         const displayTransform = resolveDisplayTransform(obj, workspace);
         applyMat4(entry.mesh, displayTransform);
         applyMat4(entry.labelRoot as unknown as Mesh, displayTransform);
+        applyMat4(entry.boundaryRoot as unknown as Mesh, displayTransform);
         entry.mesh.visible = true;
         entry.labelRoot.visible = true;
+        entry.boundaryRoot.visible = true;
       }
     };
 
@@ -577,7 +667,10 @@ export const ClinicalMeshViewport = ({
     const onPointerUp = (event: PointerEvent): void => {
       if (!workspace.segmentation.isActive()) return;
       const state = workspace.segmentation.session.getState();
-      if (state.phase !== 'ready-for-review' || state.prediction === undefined) return;
+      const allowPick =
+        state.guideStep === 'mark-teeth' ||
+        (state.phase === 'ready-for-review' && state.prediction !== undefined);
+      if (!allowPick) return;
       const rect = canvas.getBoundingClientRect();
       workspace.segmentation.pickToothAt({
         x: event.clientX - rect.left,

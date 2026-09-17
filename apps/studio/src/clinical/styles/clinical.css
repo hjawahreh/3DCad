@@ -634,31 +634,33 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 6px;
+  gap: 8px;
   user-select: none;
 }
 
 .clinical-view-cube__home {
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: rgba(15, 23, 42, 0.88);
   color: var(--studio-text);
   border-radius: 4px;
-  padding: 3px 8px;
+  padding: 4px 10px;
   font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   cursor: pointer;
 }
 
 .clinical-view-cube__home:hover {
-  background: rgba(30, 41, 59, 0.92);
-  border-color: var(--studio-accent);
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(56, 189, 248, 0.75);
+  color: #e0f2fe;
 }
 
 .clinical-view-cube__stage {
-  width: 76px;
-  height: 76px;
-  perspective: 140px;
+  width: 104px;
+  height: 104px;
+  perspective: 220px;
   perspective-origin: 50% 50%;
 }
 
@@ -667,7 +669,7 @@
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
-  transition: transform 0.28s ease-out;
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .clinical-view-cube__face,
@@ -676,46 +678,53 @@
   position: absolute;
   margin: 0;
   padding: 0;
-  border: 1px solid rgba(148, 163, 184, 0.55);
-  background: rgba(15, 23, 42, 0.78);
-  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.65);
+  background: linear-gradient(160deg, rgba(30, 41, 59, 0.94), rgba(15, 23, 42, 0.9));
+  color: #f1f5f9;
   cursor: pointer;
   backface-visibility: hidden;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.35);
 }
 
 .clinical-view-cube__face {
-  width: 46px;
-  height: 46px;
-  left: 15px;
-  top: 15px;
+  width: 54px;
+  height: 54px;
+  left: 19px;
+  top: 19px;
   display: grid;
   place-items: center;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-align: center;
+  line-height: 1.15;
+  padding: 4px;
 }
 
 .clinical-view-cube__face:hover {
-  background: rgba(51, 65, 85, 0.92);
-  border-color: rgba(148, 163, 184, 0.85);
+  background: linear-gradient(160deg, rgba(51, 65, 85, 0.98), rgba(30, 41, 59, 0.95));
+  border-color: rgba(186, 230, 253, 0.9);
+  color: #fff;
 }
 
 .clinical-view-cube__face:active,
 .clinical-view-cube__edge:active,
 .clinical-view-cube__corner:active {
-  background: rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.4);
   border-color: rgba(56, 189, 248, 0.95);
 }
 
 .clinical-view-cube__face--active {
-  background: rgba(56, 189, 248, 0.22);
-  border-color: rgba(56, 189, 248, 0.85);
-  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.35);
+  background: linear-gradient(160deg, rgba(14, 116, 144, 0.55), rgba(56, 189, 248, 0.28));
+  border-color: rgba(125, 211, 252, 0.95);
+  box-shadow:
+    inset 0 0 0 1px rgba(186, 230, 253, 0.45),
+    0 0 10px rgba(56, 189, 248, 0.25);
 }
 
 .clinical-view-cube__edge {
-  background: rgba(30, 41, 59, 0.55);
-  border-color: rgba(148, 163, 184, 0.7);
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(148, 163, 184, 0.8);
 }
 
 .clinical-view-cube__corner {
@@ -724,27 +733,27 @@
 }
 
 .clinical-view-cube__face--front {
-  transform: rotateY(0deg) translateZ(23px);
+  transform: rotateY(0deg) translateZ(27px);
 }
 
 .clinical-view-cube__face--back {
-  transform: rotateY(180deg) translateZ(23px);
+  transform: rotateY(180deg) translateZ(27px);
 }
 
 .clinical-view-cube__face--left {
-  transform: rotateY(90deg) translateZ(23px);
+  transform: rotateY(90deg) translateZ(27px);
 }
 
 .clinical-view-cube__face--right {
-  transform: rotateY(-90deg) translateZ(23px);
+  transform: rotateY(-90deg) translateZ(27px);
 }
 
 .clinical-view-cube__face--top {
-  transform: rotateX(90deg) translateZ(23px);
+  transform: rotateX(90deg) translateZ(27px);
 }
 
 .clinical-view-cube__face--bottom {
-  transform: rotateX(-90deg) translateZ(23px);
+  transform: rotateX(-90deg) translateZ(27px);
 }
 
 .clinical-view-cube__edge {
@@ -762,75 +771,75 @@
 }
 
 .clinical-view-cube__edge--front-top {
-  left: 31px;
-  top: 8px;
-  transform: rotateX(45deg) translateZ(23px);
+  left: 36px;
+  top: 10px;
+  transform: rotateX(45deg) translateZ(27px);
 }
 
 .clinical-view-cube__edge--front-bottom {
-  left: 31px;
-  bottom: 8px;
-  transform: rotateX(-45deg) translateZ(23px);
+  left: 36px;
+  bottom: 10px;
+  transform: rotateX(-45deg) translateZ(27px);
 }
 
 .clinical-view-cube__edge--back-top {
-  left: 31px;
-  top: 8px;
-  transform: rotateY(180deg) rotateX(45deg) translateZ(23px);
+  left: 36px;
+  top: 10px;
+  transform: rotateY(180deg) rotateX(45deg) translateZ(27px);
 }
 
 .clinical-view-cube__edge--back-bottom {
-  left: 31px;
-  bottom: 8px;
-  transform: rotateY(180deg) rotateX(-45deg) translateZ(23px);
+  left: 36px;
+  bottom: 10px;
+  transform: rotateY(180deg) rotateX(-45deg) translateZ(27px);
 }
 
 .clinical-view-cube__edge--left-top {
-  left: 8px;
-  top: 31px;
-  transform: rotateY(90deg) rotateX(45deg) translateZ(23px);
+  left: 10px;
+  top: 36px;
+  transform: rotateY(90deg) rotateX(45deg) translateZ(27px);
 }
 
 .clinical-view-cube__edge--right-top {
-  right: 8px;
-  top: 31px;
-  transform: rotateY(-90deg) rotateX(45deg) translateZ(23px);
+  right: 10px;
+  top: 36px;
+  transform: rotateY(-90deg) rotateX(45deg) translateZ(27px);
 }
 
 .clinical-view-cube__edge--left-bottom {
-  left: 8px;
+  left: 10px;
   bottom: 31px;
-  transform: rotateY(90deg) rotateX(-45deg) translateZ(23px);
+  transform: rotateY(90deg) rotateX(-45deg) translateZ(27px);
 }
 
 .clinical-view-cube__edge--right-bottom {
-  right: 8px;
+  right: 10px;
   bottom: 31px;
-  transform: rotateY(-90deg) rotateX(-45deg) translateZ(23px);
+  transform: rotateY(-90deg) rotateX(-45deg) translateZ(27px);
 }
 
 .clinical-view-cube__edge--front-left {
-  left: 8px;
-  top: 31px;
-  transform: rotateY(45deg) translateZ(23px);
+  left: 10px;
+  top: 36px;
+  transform: rotateY(45deg) translateZ(27px);
 }
 
 .clinical-view-cube__edge--front-right {
-  right: 8px;
-  top: 31px;
-  transform: rotateY(-45deg) translateZ(23px);
+  right: 10px;
+  top: 36px;
+  transform: rotateY(-45deg) translateZ(27px);
 }
 
 .clinical-view-cube__edge--back-left {
-  left: 8px;
-  top: 31px;
-  transform: rotateY(135deg) translateZ(23px);
+  left: 10px;
+  top: 36px;
+  transform: rotateY(135deg) translateZ(27px);
 }
 
 .clinical-view-cube__edge--back-right {
-  right: 8px;
-  top: 31px;
-  transform: rotateY(-135deg) translateZ(23px);
+  right: 10px;
+  top: 36px;
+  transform: rotateY(-135deg) translateZ(27px);
 }
 
 .clinical-view-cube__corner {
@@ -843,49 +852,49 @@
 .clinical-view-cube__corner--ftl {
   left: 6px;
   top: 6px;
-  transform: rotateY(45deg) rotateX(45deg) translateZ(23px);
+  transform: rotateY(45deg) rotateX(45deg) translateZ(27px);
 }
 
 .clinical-view-cube__corner--ftr {
   right: 6px;
   top: 6px;
-  transform: rotateY(-45deg) rotateX(45deg) translateZ(23px);
+  transform: rotateY(-45deg) rotateX(45deg) translateZ(27px);
 }
 
 .clinical-view-cube__corner--fbl {
   left: 6px;
   bottom: 6px;
-  transform: rotateY(45deg) rotateX(-45deg) translateZ(23px);
+  transform: rotateY(45deg) rotateX(-45deg) translateZ(27px);
 }
 
 .clinical-view-cube__corner--fbr {
   right: 6px;
   bottom: 6px;
-  transform: rotateY(-45deg) rotateX(-45deg) translateZ(23px);
+  transform: rotateY(-45deg) rotateX(-45deg) translateZ(27px);
 }
 
 .clinical-view-cube__corner--btl {
   left: 6px;
   top: 6px;
-  transform: rotateY(135deg) rotateX(45deg) translateZ(23px);
+  transform: rotateY(135deg) rotateX(45deg) translateZ(27px);
 }
 
 .clinical-view-cube__corner--btr {
   right: 6px;
   top: 6px;
-  transform: rotateY(-135deg) rotateX(45deg) translateZ(23px);
+  transform: rotateY(-135deg) rotateX(45deg) translateZ(27px);
 }
 
 .clinical-view-cube__corner--bbl {
   left: 6px;
   bottom: 6px;
-  transform: rotateY(135deg) rotateX(-45deg) translateZ(23px);
+  transform: rotateY(135deg) rotateX(-45deg) translateZ(27px);
 }
 
 .clinical-view-cube__corner--bbr {
   right: 6px;
   bottom: 6px;
-  transform: rotateY(-135deg) rotateX(-45deg) translateZ(23px);
+  transform: rotateY(-135deg) rotateX(-45deg) translateZ(27px);
 }
 
 .clinical-orient-gizmo {
@@ -2108,6 +2117,15 @@
   background: rgba(61, 139, 253, 0.16);
 }
 
+.clinical-btn--locked,
+.clinical-btn--locked:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(51, 65, 85, 0.35);
+  color: rgba(226, 232, 240, 0.75);
+}
+
 .clinical-segmentation-overlay {
   pointer-events: none;
   position: absolute;
@@ -2931,4 +2949,206 @@
   pointer-events: auto;
 }
 
+/* CLN-SEG-001 — tooth numbering + clinical status */
+.clinical-segmentation-toolbar__disclaimer--reference {
+  color: #c4a070;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 
+.clinical-segmentation-toolbar__blurb {
+  margin: 0;
+  font-size: 12px;
+  color: var(--studio-muted);
+  max-width: 220px;
+}
+
+.clinical-segmentation-toolbar__status {
+  font-size: 11px;
+  color: var(--studio-muted);
+}
+
+.clinical-segmentation-toolbar__provider {
+  display: flex;
+  gap: 4px;
+}
+
+.clinical-segmentation-toolbar__actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.clinical-segmentation-toolbar__provider-name {
+  font-size: 10px;
+}
+
+.clinical-tooth-numbering {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(12, 16, 22, 0.72);
+  border: 1px solid rgba(180, 170, 155, 0.22);
+  border-radius: 6px;
+  min-width: 280px;
+  max-width: 420px;
+}
+
+.clinical-tooth-numbering__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.clinical-tooth-numbering__status {
+  font-size: 10px;
+  color: var(--studio-muted);
+}
+
+.clinical-tooth-numbering__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clinical-tooth-numbering__arch {
+  font-size: 11px;
+  color: var(--studio-muted);
+  letter-spacing: 0.04em;
+}
+
+.clinical-tooth-numbering__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+}
+
+.clinical-tooth-numbering__cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.clinical-tooth-numbering__midline {
+  color: rgba(200, 190, 175, 0.45);
+  margin: 0 2px;
+  font-weight: 300;
+}
+
+.clinical-tooth-numbering__chip {
+  min-width: 28px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: 3px;
+  border: 1px solid rgba(160, 150, 135, 0.35);
+  background: rgba(40, 36, 32, 0.55);
+  color: rgba(200, 190, 175, 0.45);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+
+.clinical-tooth-numbering__chip--present {
+  background: rgba(232, 221, 208, 0.18);
+  color: #e8ddd0;
+  border-color: rgba(232, 221, 208, 0.4);
+  cursor: pointer;
+}
+
+.clinical-tooth-numbering__chip--present:hover {
+  background: rgba(232, 221, 208, 0.28);
+}
+
+.clinical-tooth-numbering__chip--selected {
+  background: rgba(232, 221, 208, 0.42);
+  border-color: rgba(232, 221, 208, 0.75);
+  color: #fff8f0;
+  font-weight: 600;
+}
+
+.clinical-tooth-numbering__chip--missing {
+  color: rgba(196, 160, 144, 0.85);
+  border-style: dashed;
+  cursor: default;
+}
+
+.clinical-tooth-numbering__chip--inactive {
+  opacity: 0.35;
+}
+
+.clinical-tooth-numbering__selected {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.clinical-tooth-numbering__hint {
+  margin: 0;
+  font-size: 11px;
+}
+
+.clinical-segmentation-overlay--review-compact .clinical-segmentation-overlay__panel {
+  max-width: 260px;
+}
+
+.clinical-segmentation-overlay__pct {
+  display: none;
+}
+
+
+
+/* CLN-WORKFLOW-002 — guided segmentation steps */
+.clinical-segmentation-guide-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.clinical-seg-step {
+  border: 1px solid rgba(160, 150, 135, 0.3);
+  background: rgba(20, 24, 30, 0.55);
+  color: rgba(200, 190, 175, 0.7);
+  font-size: 10px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.clinical-seg-step--current {
+  background: rgba(232, 221, 208, 0.22);
+  border-color: rgba(232, 221, 208, 0.55);
+  color: #f3efe8;
+  font-weight: 600;
+}
+
+.clinical-segmentation-toolbar__nav {
+  display: flex;
+  gap: 6px;
+}
+
+.clinical-segmentation-toolbar__markers {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.clinical-preparing-scan {
+  position: absolute;
+  left: 50%;
+  top: 18%;
+  transform: translateX(-50%);
+  z-index: 12;
+  padding: 12px 18px;
+  background: rgba(12, 16, 22, 0.88);
+  border: 1px solid rgba(200, 190, 175, 0.25);
+  border-radius: 6px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}

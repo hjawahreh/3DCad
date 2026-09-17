@@ -21,7 +21,7 @@ import {
 } from './ClinicalCasePersistence.js';
 import type { RecentCaseEntry } from './RecentCases.js';
 import { deriveClinicalCaseWorkflowStatus } from './ClinicalCaseWorkflowStatus.js';
-import { hydrateClinicalPipelineFromDocument } from './ClinicalCaseResume.js';
+import { hydrateClinicalPipelineFromDocument, resumeClinicalStageTool } from './ClinicalCaseResume.js';
 import {
   cancelClinicalGeometryWarmup,
   startClinicalGeometryWarmup
@@ -350,6 +350,8 @@ export class ClinicalCaseService {
       workspace.viewport.presentClinicalAnteriorView();
     }
     hydrateClinicalPipelineFromDocument(workspace, opened.value);
+    // CLN-WORKFLOW-002A — reopen resumes the inferred guided stage tool (not just meta).
+    resumeClinicalStageTool(workspace);
     // GEO-003: when reopening a prepared case, warm editing context in background.
     if (
       opened.value.preparationMeta?.uiState === 'ready' ||

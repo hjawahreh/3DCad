@@ -165,21 +165,16 @@ export const ClinicalOrientationToolbar = ({
                 session.notifyUi();
                 return;
               }
-              workspace.preparation.notifyOrientationComplete();
-              const prep = workspace.preparation.autoPrepare();
-              if (!prep.ok) {
-                session.getHost().notifications.push('warning', 'Prepare', prep.error.message);
-              } else {
-                session.getHost().notifications.push(
-                  prep.value.uiState === 'warning' ? 'warning' : 'success',
-                  'Preparation',
-                  prep.value.message
-                );
-              }
               session.notifyUi();
+              void (async () => {
+                const { runPostOrientationPipeline } = await import(
+                  './ClinicalPostOrientationPipeline.js'
+                );
+                await runPostOrientationPipeline(workspace);
+              })();
             }}
           >
-            {lowConfidence ? 'Review & Accept' : 'Accept'}
+            {lowConfidence ? 'Review & Accept' : 'Accept Orientation'}
           </button>
         )}
       </div>

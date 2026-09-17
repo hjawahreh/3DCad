@@ -406,4 +406,33 @@ describe('GEO-001D real dental base (normalized fixtures)', () => {
     expect(Object.keys(result.quality.stageTimingsMs).length).toBeGreaterThan(0);
     expect(elapsed).toBeLessThan(120_000);
   }, 180_000);
+
+  it('real lower builds a base without slab/bridge (CLN-WORKFLOW-002A ENGINE PASS gate)', () => {
+    const mesh = loadNormalized(lowerStl, 'lower');
+    const t0 = performance.now();
+    const result = constructClinicalBase({
+      mesh,
+      strategy: 'plane',
+      height: 3,
+      thickness: 1.5,
+      offset: 0.3,
+      clinicalBaseNormal: [0, 1, 0],
+      preferClinicalFrame: true
+    });
+    const elapsed = performance.now() - t0;
+    if (!result.ok) {
+      throw new Error(
+        `${result.code}: ${result.message} blocking=${JSON.stringify(result.quality?.blockingFailures)} quality=${JSON.stringify(result.quality ? { nm: result.quality.nonManifoldEdgeCount, be: result.quality.boundaryEdgeCount, slab: result.quality.slabDetection, bridge: result.quality.diagonalBridgeDetection, match: result.quality.boundaryMatch, stages: result.quality.stageTimingsMs } : null)}`
+      );
+    }
+    expect(result.ok).toBe(true);
+    expect(result.quality.slabDetection.detected).toBe(false);
+    expect(result.quality.diagonalBridgeDetection.rejected).toBe(false);
+    expect(result.quality.boundaryMatch.passed).toBe(true);
+    expect(result.quality.blockingFailures).toEqual([]);
+    expect(result.quality.boundaryEdgeCount).toBe(0);
+    expect(result.quality.nonManifoldEdgeCount).toBe(0);
+    expect(Object.keys(result.quality.stageTimingsMs).length).toBeGreaterThan(0);
+    expect(elapsed).toBeLessThan(120_000);
+  }, 180_000);
 });

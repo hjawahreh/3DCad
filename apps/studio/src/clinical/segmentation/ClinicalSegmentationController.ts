@@ -209,9 +209,6 @@ export class ClinicalSegmentationController {
       return clinicalFailure('lifecycle', 'Segmentation not active');
     }
     const state = this.session.getState();
-    if (state.prediction === undefined || state.phase !== 'ready-for-review') {
-      return clinicalFailure('lifecycle', 'No prediction to select');
-    }
     const preferred = state.targetObjectId as string | undefined;
     const hit = this.meshPicker?.pick({
       screenX: screen.x,
@@ -220,6 +217,40 @@ export class ClinicalSegmentationController {
       canvasHeight: screen.height,
       ...(preferred === undefined ? {} : { preferredObjectId: preferred })
     });
+
+    // CLN-WORKFLOW-002 — Mark Teeth: place surface markers before auto segmentation.
+    if (state.guideStep === 'mark-teeth') {
+      if (
+        hit?.faceIndex === undefined ||
+        !Number.isFinite(hit.worldX) ||
+        !Number.isFinite(hit.worldY) ||
+        !Number.isFinite(hit.worldZ)
+      ) {
+        return clinicalSuccess(undefined);
+      }
+      const doc = this.clinicalSession.getPublicState().activeCase;
+      const obj = doc?.objects.find((o) => o.id === hit.objectId);
+      const arch =
+        obj?.archRole === 'upper' || obj?.archRole === 'lower' ? obj.archRole : 'unknown';
+      const fingerprint = obj?.geometryFingerprint ?? '';
+      this.session.addToothMarker(
+        Object.freeze({
+          id: `mk-${Date.now().toString(36)}-${String(state.toothMarkers.length)}`,
+          arch,
+          position: Object.freeze([hit.worldX, hit.worldY, hit.worldZ] as const),
+          faceIndex: hit.faceIndex,
+          objectId: String(hit.objectId),
+          geometryFingerprint: fingerprint,
+          createdAt: Date.now()
+        })
+      );
+      this.clinicalSession.notifyUi();
+      return clinicalSuccess(undefined);
+    }
+
+    if (state.prediction === undefined || state.phase !== 'ready-for-review') {
+      return clinicalFailure('lifecycle', 'No prediction to select');
+    }
     if (hit?.faceIndex === undefined) {
       this.session.setSelectedInstance(undefined);
       this.clinicalSession.notifyUi();
@@ -227,6 +258,18 @@ export class ClinicalSegmentationController {
     }
     const inst = findInstanceByFace(state.prediction, hit.faceIndex);
     this.session.setSelectedInstance(inst?.instanceId);
+    this.clinicalSession.notifyUi();
+    return clinicalSuccess(undefined);
+  }
+
+  public setGuideStep(step: import('./guide/SegmentationGuideSteps.js').SegmentationGuideStepId): ClinicalResult<void> {
+    if (!this.isActive()) {
+      return clinicalFailure('lifecycle', 'Segmentation not active');
+    }
+    this.session.setGuideStep(step);
+    if (step === 'adjust-boundaries' || step === 'verify-teeth') {
+      this.session.setViewMode('review');
+    }
     this.clinicalSession.notifyUi();
     return clinicalSuccess(undefined);
   }
@@ -362,6 +405,7 @@ export class ClinicalSegmentationController {
       });
       this.session.setViewMode('review');
       this.session.setPrediction(finalized);
+      this.session.setGuideStep('adjust-boundaries');
       const meshFaceCount = Math.floor(mesh.indices.length / 3);
       const validation = validateSegmentationPrediction(finalized, {
         meshFaceCount,

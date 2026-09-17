@@ -1,21 +1,20 @@
 /**
- * CLN-TRIM-002 / GEO-003A — authoritative screen → camera orbit mapping.
+ * CLN-WORKFLOW-002 / GEO-003A — authoritative screen → camera orbit mapping.
  *
  * Single place that converts pointer deltas into Camera Runtime orbit radians.
  * Do not invert signs in Interaction Runtime or OrbitController.
  *
  * Screen coords: +x right, +y down (DOM).
  *
- * Intuitive clinical orbit (grab-the-model / turntable feel):
- *   drag right → view content rotates right → positive yaw (camera swings left)
- *   drag up    → view content rotates up   → positive pitch delta from +dy screen?
+ * Required clinical feel (CLN-WORKFLOW-002):
+ *   mouse RIGHT → camera rotates RIGHT → anatomy moves left across viewport
+ *   mouse LEFT  → camera rotates LEFT
+ *   mouse UP    → camera rotates UP
+ *   mouse DOWN  → camera rotates DOWN
  *
- * After CLN-TRIM-002 manual findings reported GEO-003A signs still inverted.
- * Mapping is therefore:
- *   yaw   = +dx * sensitivity  (drag right → positive yaw → eye.x increases from +Z)
- *   pitch = +dy * sensitivity  (drag up (−dy) → negative pitch → eye.y decreases)
- *
- * Verified: composition-root applies this once — no second inversion.
+ * Mapping (restored to GEO-003A contract — CLN-TRIM-002 positive signs felt reversed):
+ *   yaw   = −dx * sensitivity
+ *   pitch = −dy * sensitivity
  */
 
 export const ORBIT_SENSITIVITY = 0.005;
@@ -30,6 +29,6 @@ export interface OrbitDeltaRadians {
  */
 export const screenDeltaToOrbitRadians = (dx: number, dy: number): OrbitDeltaRadians =>
   Object.freeze({
-    yaw: dx * ORBIT_SENSITIVITY,
-    pitch: dy * ORBIT_SENSITIVITY
+    yaw: -dx * ORBIT_SENSITIVITY,
+    pitch: -dy * ORBIT_SENSITIVITY
   });

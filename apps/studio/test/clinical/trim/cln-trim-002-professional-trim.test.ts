@@ -104,7 +104,7 @@ describe('CLN-TRIM-002 interaction states + guidance', () => {
     expect(trimGuidedMessage('ARMED', 'freehand')).toMatch(/Draw around/i);
     expect(trim.setDrawMode('polyline').ok).toBe(true);
     expect(trim.session.getState().points).toHaveLength(0);
-    expect(trimGuidedMessage('ARMED', 'polyline')).toMatch(/Click points/i);
+    expect(trimGuidedMessage('ARMED', 'polyline')).toMatch(/release to trim/i);
     clinical.runtime.dispose();
     host.dispose();
   });
@@ -200,8 +200,8 @@ describe('CLN-TRIM-002 camera + axes', () => {
   it('19 — orbit direction (single authoritative mapping)', () => {
     const right = screenDeltaToOrbitRadians(20, 0);
     const up = screenDeltaToOrbitRadians(0, -20);
-    expect(right.yaw).toBeGreaterThan(0);
-    expect(up.pitch).toBeLessThan(0);
+    expect(right.yaw).toBeLessThan(0);
+    expect(up.pitch).toBeGreaterThan(0);
   });
 
   it('18 — canonical Anterior face', () => {
@@ -227,7 +227,7 @@ describe('CLN-TRIM-002 camera + axes', () => {
   it('guided EMPTY message hides engine jargon', () => {
     const msg = trimGuidedMessage('EMPTY', 'idle');
     expect(msg.toLowerCase()).not.toMatch(/surfacepath|dijkstra|vtk|fingerprint/);
-    expect(msg).toMatch(/Freehand or Polyline/i);
+    expect(msg).toMatch(/Lasso or Curve/i);
   });
 
   it('IDLE alias maps to EMPTY for drawMode idle', () => {

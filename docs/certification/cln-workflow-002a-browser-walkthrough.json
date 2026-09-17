@@ -1,0 +1,144 @@
+{
+  "ticket": "CLN-WORKFLOW-002A",
+  "at": "2026-09-16T23:21:11.748Z",
+  "mandatoryFail": false,
+  "steps": [
+    {
+      "id": "01-orbit",
+      "status": "PASS",
+      "at": "2026-09-16T22:57:46.877Z",
+      "detail": "{\"ok\":true,\"mapping\":\"yaw=-dx,pitch=-dy (unchanged)\",\"rightDecreasesEyeX\":true,\"leftIncreasesEyeX\":true,\"upIncreasesEyeY\":true,\"downDecreasesEyeY\":true,\"samples\":{\"base\":{\"x\":1.9999999999999993,\"y\":2,\"z\":1.9999999999999996},\"afterRight\":{\"x\":1.7903414972623948,\"y\":2,\"z\":2.1896751638497074},\"afterLeft\":{\"x\":2.1896751638497074,\"y\":2,\"z\":1.7903414972623948},\"afterUp\":{\"x\":1.8488225587560632,\"y\":2.272379874156028,\"z\":1.848822558756063},\"afterDown\":{\"x\":2.1311941023560395,\"y\":1.7076367869560751,\"z\":2.131194102356039}}}"
+    },
+    {
+      "id": "02-import",
+      "status": "PASS",
+      "at": "2026-09-16T22:59:03.070Z"
+    },
+    {
+      "id": "03-auto-orientation",
+      "status": "PASS",
+      "at": "2026-09-16T22:59:17.870Z",
+      "detail": "{\"origin\":\"auto\",\"visible\":[\"upper\",\"lower\"],\"eye\":null,\"target\":null}"
+    },
+    {
+      "id": "04-accept-opens-trim",
+      "status": "PASS",
+      "at": "2026-09-16T23:00:21.176Z"
+    },
+    {
+      "id": "05-trim-warmup",
+      "status": "PASS",
+      "at": "2026-09-16T23:00:22.180Z"
+    },
+    {
+      "id": "06-trim-upper-only",
+      "status": "PASS",
+      "at": "2026-09-16T23:00:22.947Z",
+      "detail": "[\"upper\"]"
+    },
+    {
+      "id": "07-trim-upper-A",
+      "status": "PASS",
+      "at": "2026-09-16T23:05:25.984Z",
+      "detail": "{\"beforeFingerprint\":\"geo:c828c055\",\"afterFingerprint\":\"geo:7a3b0e6e\",\"beforeFaceCount\":261287,\"afterFaceCount\":257913,\"diag\":{\"tipRank\":0,\"attempts\":[{\"count\":5,\"rad\":95,\"mouse\":{\"phase\":\"validating\",\"points\":35,\"status\":\"Boundary area is too small.\",\"preview\":null},\"afterFaceCount\":261287,\"api\":{\"placed\":5,\"ok\":false,\"detail\":\"Trim boundary crosses itself. Adjust the drawing.\",\"status\":\"Trim boundary crosses itself. Adjust the drawing.\",\"preview\":null}},{\"count\":6,\"rad\":130,\"mouse\":{\"phase\":\"drawing\",\"points\":0,\"status\":\"Trim complete — draw again or continue to Base.\",\"preview\":{\"beforeFaces\":261287,\"afterFaces\":257913,\"removedFaces\":3374,\"beforeFingerprint\":\"geo:c828c055\",\"afterFingerprint\":\"geo:7a3b0e6e\"}},\"afterFaceCount\":257913}],\"winner\":{\"count\":6,\"rad\":130,\"path\":\"mouse-lasso\"}}}"
+    },
+    {
+      "id": "08-clear-redraw-1",
+      "status": "PASS",
+      "at": "2026-09-16T23:05:35.705Z",
+      "detail": "{\"points\":0,\"active\":true,\"phase\":\"drawing\",\"status\":\"Cleared — draw again, release to trim.\"}"
+    },
+    {
+      "id": "08-clear-redraw-2",
+      "status": "PASS",
+      "at": "2026-09-16T23:06:29.221Z",
+      "detail": "{\"points\":0,\"active\":true,\"phase\":\"drawing\",\"status\":\"Cleared — draw again, release to trim.\"}"
+    },
+    {
+      "id": "09-trim-upper-B",
+      "status": "PASS",
+      "at": "2026-09-16T23:09:45.199Z",
+      "detail": "{\"beforeFingerprint\":\"geo:7a3b0e6e\",\"afterFingerprint\":\"geo:aa6bc754\",\"beforeFaceCount\":257913,\"afterFaceCount\":256291,\"diag\":{\"tipRank\":2,\"attempts\":[{\"count\":5,\"rad\":95,\"mouse\":{\"phase\":\"drawing\",\"points\":0,\"status\":\"Trim complete — draw again or continue to Base.\",\"preview\":{\"beforeFaces\":257913,\"afterFaces\":256291,\"removedFaces\":1622,\"beforeFingerprint\":\"geo:7a3b0e6e\",\"afterFingerprint\":\"geo:aa6bc754\"}},\"afterFaceCount\":256291}],\"winner\":{\"count\":5,\"rad\":95,\"path\":\"mouse-lasso\"}}}"
+    },
+    {
+      "id": "10-trim-lower-warmup",
+      "status": "PASS",
+      "at": "2026-09-16T23:09:51.633Z"
+    },
+    {
+      "id": "11-trim-lower-only",
+      "status": "PASS",
+      "at": "2026-09-16T23:09:52.263Z",
+      "detail": "[\"lower\"]"
+    },
+    {
+      "id": "12-trim-lower",
+      "status": "PASS",
+      "at": "2026-09-16T23:12:22.103Z",
+      "detail": "{\"beforeFingerprint\":\"geo:856046ee\",\"afterFingerprint\":\"geo:be8b517e\",\"beforeFaceCount\":233562,\"afterFaceCount\":229304,\"diag\":{\"tipRank\":0,\"attempts\":[{\"count\":5,\"rad\":95,\"mouse\":{\"phase\":\"drawing\",\"points\":0,\"status\":\"Trim complete — draw again or continue to Base.\",\"preview\":{\"beforeFaces\":233562,\"afterFaces\":229304,\"removedFaces\":4258,\"beforeFingerprint\":\"geo:856046ee\",\"afterFingerprint\":\"geo:be8b517e\"}},\"afterFaceCount\":229304}],\"winner\":{\"count\":5,\"rad\":95,\"path\":\"mouse-lasso\"}}}"
+    },
+    {
+      "id": "13-upper-unchanged-during-lower-trim",
+      "status": "PASS",
+      "at": "2026-09-16T23:12:22.581Z",
+      "detail": "{\"before\":\"geo:aa6bc754\",\"after\":\"geo:aa6bc754\",\"lowerOk\":true}"
+    },
+    {
+      "id": "14-trim-done-opens-base",
+      "status": "PASS",
+      "at": "2026-09-16T23:12:31.876Z"
+    },
+    {
+      "id": "15-no-accept-base",
+      "status": "PASS",
+      "at": "2026-09-16T23:12:31.882Z",
+      "detail": "acceptButtons=0"
+    },
+    {
+      "id": "16-upper-base",
+      "status": "PASS",
+      "at": "2026-09-16T23:13:41.277Z",
+      "detail": "{\"beforeFingerprint\":\"geo:aa6bc754\",\"afterFingerprint\":\"geo:0b9ae819\",\"beforeFaceCount\":256291,\"afterFaceCount\":267654,\"diag\":{\"status\":\"Base accepted — adjust parameters or switch arch\",\"phase\":\"previewing\"}}"
+    },
+    {
+      "id": "17-lower-base",
+      "status": "PASS",
+      "at": "2026-09-16T23:14:56.363Z",
+      "detail": "{\"beforeFingerprint\":\"geo:be8b517e\",\"afterFingerprint\":\"geo:f2a13790\",\"beforeFaceCount\":229304,\"afterFaceCount\":242277,\"diag\":{\"status\":\"Base accepted — adjust parameters or switch arch\",\"phase\":\"previewing\",\"quality\":null},\"clicked\":true}"
+    },
+    {
+      "id": "18-base-done-opens-segment",
+      "status": "PASS",
+      "at": "2026-09-16T23:15:44.725Z"
+    },
+    {
+      "id": "19-mark-teeth-contract",
+      "status": "PASS",
+      "at": "2026-09-16T23:16:26.070Z",
+      "detail": "{\"markerCount\":0,\"guideStep\":\"mark-teeth\",\"note\":\"markers are session-live; accepted segmentationMeta is persisted\"}"
+    },
+    {
+      "id": "20-auto-segmentation",
+      "status": "PASS",
+      "at": "2026-09-16T23:17:15.920Z",
+      "detail": "guided Auto step reached"
+    },
+    {
+      "id": "21-adjust",
+      "status": "PASS",
+      "at": "2026-09-16T23:20:39.757Z"
+    },
+    {
+      "id": "22-verify-next-locked",
+      "status": "OBSERVE",
+      "at": "2026-09-16T23:21:09.059Z",
+      "detail": "{\"exists\":true,\"disabled\":false}"
+    },
+    {
+      "id": "23-nav-zoom-pan-cube-home",
+      "status": "PASS",
+      "at": "2026-09-16T23:21:11.748Z",
+      "detail": "{\"cube\":1,\"zoomChanged\":true,\"frontOk\":true,\"homeOk\":true}"
+    }
+  ]
+}

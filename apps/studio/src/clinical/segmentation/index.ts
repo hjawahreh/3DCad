@@ -25,6 +25,26 @@ export { CLINICAL_SEGMENTATION_COMMANDS } from './ClinicalSegmentationCommands.j
 export { ClinicalSegmentationOverlay } from './ClinicalSegmentationOverlay.js';
 export { ClinicalSegmentationToolbar } from './ClinicalSegmentationToolbar.js';
 export { ClinicalSegmentationInspector } from './ClinicalSegmentationInspector.js';
+export { ClinicalToothNumberingPanel } from './ClinicalToothNumberingPanel.js';
+export {
+  resolveSegmentationClinicalStatus,
+  type SegmentationClinicalStatus
+} from './status/SegmentationClinicalStatus.js';
+export {
+  resolveProductionModelGate,
+  TSEGFORMER_REPRODUCIBILITY,
+  PRODUCTION_MODEL_NOT_CONFIGURED,
+  type ProductionModelReproducibilityRecord
+} from './runtime/ProductionModelGate.js';
+export { SegmentationWorkerClient } from './runtime/SegmentationWorkerClient.js';
+export {
+  computeToothBoundaryQuality,
+  extractSemanticBoundaryEdges,
+  type ToothBoundaryQuality
+} from './boundary/ToothBoundaryQuality.js';
+export {
+  buildPersistedMembershipFaceColors
+} from './display/ClinicalSegmentationColors.js';
 export {
   runSegmentationBenchmarkSmoke,
   buildSegmentationModelComparison

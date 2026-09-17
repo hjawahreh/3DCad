@@ -4,8 +4,8 @@ import { ClinicalArchSwitcher } from '../shell/ClinicalArchSwitcher.js';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
 
 /**
- * CLN-WORKSTATION-001 — compact Close Base / Extrude panel.
- * Primary: Create Base. One parameter: Height. Done exits (accepts preview when ready).
+ * CLN-WORKFLOW-002 — compact Base panel.
+ * Create Base commits automatically (no separate Accept). Done → Segmentation.
  */
 export const ClinicalCloseBaseToolbar = ({
   workspace
@@ -45,6 +45,43 @@ export const ClinicalCloseBaseToolbar = ({
   const hasUpper = doc?.objects.some((o) => o.archRole === 'upper') === true;
   const hasLower = doc?.objects.some((o) => o.archRole === 'lower') === true;
 
+  const createAndCommit = async (): Promise<void> => {
+    const previewed = await closeBase.autoCloseBase();
+    if (!previewed.ok) {
+      session.getHost().notifications.push('warning', 'Base', previewed.error.message);
+      return;
+    }
+    // CLN-WORKFLOW-002: no separate Accept — commit immediately after successful create.
+    const committed = await closeBase.accept();
+    if (!committed.ok) {
+      session.getHost().notifications.push('warning', 'Base', committed.error.message);
+      return;
+    }
+    session.getHost().notifications.push('success', 'Base', 'Base created');
+    // Fit active arch after result
+    workspace.viewport.fitAll();
+    workspace.viewport.presentClinicalAnteriorView({ preferClinicalFrame: true });
+  };
+
+  const finishBaseStage = async (): Promise<void> => {
+    // Create Base already commits. Done must NOT re-run accept()/geometry —
+    // that blocked the Base→Segment transition for minutes on real scans.
+    closeBase.cancel();
+    const entered = workspace.segmentation.enter();
+    if (!entered.ok) {
+      session.getHost().notifications.push('warning', 'Segment', entered.error.message);
+      return;
+    }
+    workspace.archContext.setMode('both');
+    workspace.viewport.showAll();
+    workspace.viewport.presentCanonicalClinicalView('front');
+    session.getHost().notifications.push(
+      'info',
+      'Segment',
+      'Mark teeth, then run Auto Segmentation.'
+    );
+  };
+
   return (
     <div
       className="clinical-close-base-toolbar clinical-close-base-toolbar--workstation"
@@ -63,6 +100,8 @@ export const ClinicalCloseBaseToolbar = ({
             run(() => {
               if (mode === 'upper' || mode === 'lower') {
                 closeBase.setActiveArch(mode);
+                workspace.viewport.fitAll();
+                workspace.viewport.presentClinicalAnteriorView({ preferClinicalFrame: true });
               }
             })
           }
@@ -96,55 +135,16 @@ export const ClinicalCloseBaseToolbar = ({
           className="clinical-close-base-btn clinical-close-base-btn--primary"
           data-testid="clinical-close-base-auto"
           disabled={processing}
-          onClick={() =>
-            runAsync(async () => {
-              const result = await closeBase.autoCloseBase();
-              if (!result.ok) {
-                session.getHost().notifications.push('warning', 'Base', result.error.message);
-              }
-            })
-          }
+          onClick={() => runAsync(createAndCommit)}
         >
           Create Base
         </button>
-        {state.previewActive ? (
-          <button
-            type="button"
-            className="clinical-close-base-btn clinical-close-base-btn--accept"
-            data-testid="clinical-close-base-accept"
-            disabled={processing}
-            onClick={() =>
-              runAsync(async () => {
-                const result = await closeBase.accept();
-                if (!result.ok) {
-                  session.getHost().notifications.push('warning', 'Base', result.error.message);
-                } else {
-                  session.getHost().notifications.push('success', 'Base', 'Base complete');
-                }
-              })
-            }
-          >
-            Accept
-          </button>
-        ) : null}
         <button
           type="button"
           className="clinical-close-base-btn clinical-close-base-btn--done"
           data-testid="clinical-close-base-done"
           disabled={processing}
-          onClick={() =>
-            runAsync(async () => {
-              if (state.previewActive) {
-                const result = await closeBase.accept();
-                if (!result.ok) {
-                  session.getHost().notifications.push('warning', 'Base', result.error.message);
-                  return;
-                }
-                session.getHost().notifications.push('success', 'Base', 'Base complete');
-              }
-              closeBase.cancel();
-            })
-          }
+          onClick={() => runAsync(finishBaseStage)}
         >
           Done
         </button>

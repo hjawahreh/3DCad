@@ -108,8 +108,8 @@ describe('CLN-WORKSTATION-001', () => {
   it('orbit mapping is single-authoritative and directionally consistent', () => {
     const right = screenDeltaToOrbitRadians(20, 0);
     const up = screenDeltaToOrbitRadians(0, -20);
-    expect(right.yaw).toBeGreaterThan(0);
-    expect(up.pitch).toBeLessThan(0);
+    expect(right.yaw).toBeLessThan(0);
+    expect(up.pitch).toBeGreaterThan(0);
   });
 
   it('Lasso and Curve are stroke modes; Curve uses smooth SurfacePath', () => {

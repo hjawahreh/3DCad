@@ -1,12 +1,14 @@
 /**
- * Segmentation overlay — processing, rebuild, review, failure (Phase 8).
- * Does not expose provider implementation details.
+ * Segmentation overlay — processing, rebuild, review, failure (CLN-SEG-001).
+ * Stages only — no fake percentages. No engineering diagnostics in the primary path.
  */
 
 import type { JSX } from 'react';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
 import { useClinicalUiRevision } from '../shell/useClinicalUi.js';
-import { summarizeReview, toothInspectorModel } from './display/ClinicalSegmentationPresentation.js';
+import { toothInspectorModel } from './display/ClinicalSegmentationPresentation.js';
+import { resolveSegmentationClinicalStatus } from './status/SegmentationClinicalStatus.js';
+import { isNonClinicalSegmentationProvider } from './ClinicalSegmentationIntegrity.js';
 
 const isProcessingPhase = (phase: string): boolean =>
   phase === 'activating' ||
@@ -27,23 +29,15 @@ export const ClinicalSegmentationOverlay = (props: {
   const state = runtime.session.getState();
   const presentation = state.presentation;
   const pred = state.prediction;
-  const summary = pred !== undefined ? summarizeReview(pred) : undefined;
   const doc = workspace.session.getPublicState().activeCase;
   const target = doc?.objects.find((o) => o.id === state.targetObjectId);
   const archLabel =
     target?.archRole === 'upper' ? 'Upper Arch' : target?.archRole === 'lower' ? 'Lower Arch' : 'Active arch';
   const archRole = target?.archRole === 'upper' || target?.archRole === 'lower' ? target.archRole : undefined;
-
-  const progressPct =
-    state.progress !== undefined && state.progress.total > 0
-      ? Math.min(100, Math.round((state.progress.completed / state.progress.total) * 100))
-      : presentation === 'rebuilding'
-        ? 92
-        : isProcessingPhase(state.phase)
-          ? 8
-          : 0;
+  const isReference = isNonClinicalSegmentationProvider(state.providerId);
 
   if (presentation === 'failed' || state.phase === 'failed') {
+    const msg = state.errorMessage ?? 'Segmentation could not be completed.';
     return (
       <div
         className="clinical-segmentation-overlay clinical-segmentation-overlay--failed"
@@ -52,6 +46,7 @@ export const ClinicalSegmentationOverlay = (props: {
       >
         <div className="clinical-segmentation-overlay__panel">
           <strong>Segmentation could not be completed.</strong>
+          <span className="muted">{msg}</span>
           <span className="muted">The original scan is unchanged.</span>
           <div className="clinical-segmentation-overlay__actions">
             <button
@@ -65,42 +60,6 @@ export const ClinicalSegmentationOverlay = (props: {
             <button
               type="button"
               className="clinical-btn clinical-btn--secondary"
-              data-testid="clinical-segmentation-choose-model"
-              onClick={() => {
-                const ops = runtime.registry.listOperational();
-                const cur = state.providerId;
-                const idx = ops.findIndex((p) => p.info.id === cur);
-                const next = ops[(idx + 1) % Math.max(1, ops.length)];
-                if (next !== undefined) {
-                  runtime.setProvider(next.info.id);
-                  workspace.session.getHost().notifications.push(
-                    'info',
-                    'Segmentation',
-                    `Provider: ${next.info.displayName}`
-                  );
-                }
-              }}
-            >
-              Choose Another Model
-            </button>
-            <button
-              type="button"
-              className="clinical-btn clinical-btn--tertiary"
-              data-testid="clinical-segmentation-diagnostics"
-              onClick={() => {
-                const snap = runtime.diagnostics.snapshot();
-                workspace.session.getHost().notifications.push(
-                  'info',
-                  'Segmentation diagnostics',
-                  JSON.stringify(snap)
-                );
-              }}
-            >
-              Review Diagnostics
-            </button>
-            <button
-              type="button"
-              className="clinical-btn clinical-btn--tertiary"
               onClick={() => runtime.cancel()}
             >
               Cancel
@@ -117,26 +76,19 @@ export const ClinicalSegmentationOverlay = (props: {
         className="clinical-segmentation-overlay clinical-segmentation-overlay--processing"
         data-testid="clinical-segmentation-overlay"
         data-phase={state.phase}
+        data-processing="true"
       >
         <div className="clinical-segmentation-overlay__hero">
-          <p className="clinical-segmentation-overlay__eyebrow">Segmenting case</p>
-          <h2>Reconstructing dental anatomy</h2>
-          <p className="clinical-segmentation-overlay__stage">
-            {state.progress?.message ?? 'Preparing dental surface'}
+          <p className="clinical-segmentation-overlay__eyebrow">
+            {isReference ? 'REFERENCE HEURISTIC' : 'AUTO SEGMENTATION'}
           </p>
-          <div
-            className="clinical-segmentation-overlay__bar"
-            role="progressbar"
-            aria-valuenow={progressPct}
-            aria-valuemin={0}
-            aria-valuemax={100}
+          <h2>Identifying teeth and gingiva</h2>
+          <p
+            className="clinical-segmentation-overlay__stage"
+            data-testid="clinical-segmentation-stage"
           >
-            <div
-              className="clinical-segmentation-overlay__bar-fill"
-              style={{ width: `${String(progressPct)}%` }}
-            />
-          </div>
-          <p className="clinical-segmentation-overlay__pct">{String(progressPct)}%</p>
+            {state.progress?.message ?? 'Preparing model'}
+          </p>
           <p className="muted">{archLabel}</p>
         </div>
       </div>
@@ -152,96 +104,30 @@ export const ClinicalSegmentationOverlay = (props: {
       >
         <div className="clinical-segmentation-overlay__hero">
           <p className="clinical-segmentation-overlay__eyebrow">Rebuilding…</p>
-          <h2>Reconstructing teeth and gingiva</h2>
-          <div
-            className="clinical-segmentation-overlay__bar"
-            role="progressbar"
-            aria-valuenow={92}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <div className="clinical-segmentation-overlay__bar-fill" style={{ width: '92%' }} />
-          </div>
+          <h2>Rebuilding tooth regions</h2>
         </div>
       </div>
     );
   }
 
-  if (state.phase === 'ready-for-review' && summary !== undefined && pred !== undefined) {
+  if (state.phase === 'ready-for-review' && pred !== undefined) {
     const selected = pred.instances.find((i) => i.instanceId === state.selectedInstanceId);
+    const status = resolveSegmentationClinicalStatus({
+      providerId: pred.providerId,
+      needsClinicalReview: pred.confidence.needsReviewCount > 0
+    });
     return (
       <div
-        className="clinical-segmentation-overlay clinical-segmentation-overlay--review"
+        className="clinical-segmentation-overlay clinical-segmentation-overlay--review clinical-segmentation-overlay--review-compact"
         data-testid="clinical-segmentation-overlay"
         data-phase="ready-for-review"
       >
         <div className="clinical-segmentation-overlay__panel">
-          <strong>Segmentation complete</strong>
-          <span>
-            Detected: <b>{String(summary.toothCount)}</b> teeth
+          <strong>Review</strong>
+          <span data-testid="clinical-seg-review-status">{status}</span>
+          <span className="muted">
+            {String(pred.instances.length)} teeth · use Tooth Numbering to select
           </span>
-          <span>
-            Needs review: <b>{String(summary.needsReviewCount)}</b>
-          </span>
-          {summary.needsReviewCount > 0 && !state.reviewAcknowledged ? (
-            <span className="clinical-segmentation-overlay__warn" data-testid="clinical-segmentation-review-required">
-              Review required
-            </span>
-          ) : null}
-          {summary.needsReviewCount > 0 && !state.reviewAcknowledged ? (
-            <button
-              type="button"
-              className="clinical-btn clinical-btn--secondary"
-              onClick={() => runtime.acknowledgeReview()}
-            >
-              Acknowledge Review Required
-            </button>
-          ) : null}
-          {summary.unknownCount > 0 ? (
-            <span className="clinical-segmentation-overlay__warn">
-              Unknown: {String(summary.unknownCount)}
-            </span>
-          ) : null}
-          {summary.missingCount > 0 ? (
-            <span className="muted">Missing slots: {String(summary.missingCount)}</span>
-          ) : null}
-          <span className="muted">{summary.qualityLabel}</span>
-          <p className="clinical-segmentation-overlay__hint">Review Teeth</p>
-          <ul className="clinical-segmentation-tooth-list" data-testid="clinical-segmentation-tooth-list">
-            {pred.instances.map((t) => {
-              const fdi = t.identification.fdi;
-              const label = fdi !== undefined ? String(fdi) : '—';
-              const needs =
-                t.identification.status === 'UNCERTAIN' ||
-                t.identification.status === 'UNKNOWN' ||
-                t.confidence < 0.5;
-              return (
-                <li key={t.instanceId}>
-                  <button
-                    type="button"
-                    className={
-                      state.selectedInstanceId === t.instanceId
-                        ? 'clinical-link clinical-link--active'
-                        : 'clinical-link'
-                    }
-                    onClick={() => runtime.selectInstance(t.instanceId)}
-                  >
-                    {needs ? (
-                      <span
-                        className="clinical-segmentation-badge clinical-segmentation-badge--warn"
-                        title="Needs review"
-                      >
-                        !
-                      </span>
-                    ) : (
-                      <span className="clinical-segmentation-badge">·</span>
-                    )}{' '}
-                    {label}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
           {selected !== undefined ? (
             <div
               className="clinical-segmentation-overlay__selected"
@@ -251,11 +137,8 @@ export const ClinicalSegmentationOverlay = (props: {
                 const model = toothInspectorModel(selected, archRole);
                 return (
                   <>
-                    <strong>{model.title}</strong>
-                    <span>Identity {model.identity}</span>
-                    <span>Confidence {model.confidenceLabel}</span>
-                    <span>Arch {model.archLabel}</span>
-                    <span>Review {model.reviewState}</span>
+                    <strong>FDI {model.identity}</strong>
+                    <span>Confidence: {model.confidenceLabel}</span>
                   </>
                 );
               })()}

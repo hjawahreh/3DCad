@@ -31,3 +31,33 @@ export const hydrateClinicalPipelineFromDocument = (
     if (s === stage) break;
   }
 };
+
+/**
+ * CLN-WORKFLOW-002A — one-click resume into the inferred guided stage tool.
+ * Geometry is already hydrated; this only re-enters the clinician-facing tool.
+ */
+export const resumeClinicalStageTool = (workspace: ClinicalWorkspace): void => {
+  const doc = workspace.session.getPublicState().activeCase;
+  if (doc === undefined) return;
+  const stage = inferPreparationStageFromDocument(doc);
+  workspace.archContext.setMode('both');
+  workspace.viewport.showAll();
+  workspace.viewport.presentCanonicalClinicalView('front');
+
+  if (stage === 'ready-for-segmentation' || stage === 'ready-for-movement') {
+    workspace.segmentation.enter();
+    return;
+  }
+  if (stage === 'ready-for-close-base') {
+    workspace.closeBase.enter();
+    workspace.closeBase.setActiveArch('upper');
+    return;
+  }
+  if (stage === 'ready-for-trim') {
+    workspace.archContext.setMode('upper');
+    workspace.trim.enter();
+    workspace.trim.setActiveArch('upper');
+    return;
+  }
+  // orientation-complete / earlier → leave on clinical anterior BOTH for Orient/Prepare.
+};

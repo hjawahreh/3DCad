@@ -80,6 +80,12 @@ export class ClinicalSegmentationRuntime {
     return this.controller.pickToothAt(screen);
   }
 
+  public setGuideStep(
+    step: import('./guide/SegmentationGuideSteps.js').SegmentationGuideStepId
+  ): ClinicalResult<void> {
+    return this.controller.setGuideStep(step);
+  }
+
   public async runInference(): Promise<ClinicalResult<void>> {
     return this.controller.runInference();
   }

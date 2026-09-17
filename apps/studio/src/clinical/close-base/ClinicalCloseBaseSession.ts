@@ -162,7 +162,10 @@ export class ClinicalCloseBaseSession {
       toolStatus: 'committed',
       previewActive: false,
       previewInvalidated: false,
-      statusMessage: 'Close Base committed'
+      progressMessage: undefined,
+      progressCompleted: 0,
+      progressTotal: 0,
+      statusMessage: 'Base accepted — adjust parameters or switch arch'
     });
   }
 
@@ -199,6 +202,9 @@ export class ClinicalCloseBaseSession {
       previewStartedAt: input.now,
       interactionMode: 'manual',
       autoEstimate: undefined,
+      progressMessage: undefined,
+      progressCompleted: 0,
+      progressTotal: 0,
       statusMessage: 'Base accepted — adjust parameters or switch arch'
     });
   }

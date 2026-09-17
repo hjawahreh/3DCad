@@ -242,8 +242,8 @@ export class ClinicalTrimController {
     if (current !== target.value.objectId) {
       this.session.retarget(target.value.objectId);
     }
-    this.applyArchPresentation(target.value.objectId, { fit: false });
-    // Framing follows visible arch; clinical transform is unchanged.
+    this.applyArchPresentation(target.value.objectId, { fit: true });
+    // Framing follows visible arch — always fit when switching arches (CLN-WORKFLOW-002).
     this.viewport?.presentClinicalAnteriorView({ preferClinicalFrame: true });
     this.clinicalSession.notifyUi();
     return clinicalSuccess(undefined);
@@ -293,7 +293,7 @@ export class ClinicalTrimController {
     }
     this.session.resumeDrawingAfterPreview();
     this.session.setDrawMode(mode);
-    if (isStrokeTrimMode(mode) || mode === 'plane') {
+    if (mode !== 'idle' && (isStrokeTrimMode(mode) || mode === 'plane')) {
       this.preferences.update({ drawMode: mode });
     }
     this.clinicalSession.notifyUi();
@@ -1324,20 +1324,12 @@ export class ClinicalTrimController {
     if (this.viewport === undefined) {
       return;
     }
-    const mode = this.archContext?.getMode() ?? 'upper';
-    if (mode === 'both') {
-      const shown = this.viewport.showAll();
-      if (!shown.ok) {
-        return;
-      }
-      this.trimIsolationActive = true;
-    } else {
-      const isolated = this.viewport.isolate(objectId);
-      if (!isolated.ok) {
-        return;
-      }
-      this.trimIsolationActive = true;
+    // CLN-WORKFLOW-002: Trim never shows BOTH — isolate the active arch only.
+    const isolated = this.viewport.isolate(objectId);
+    if (!isolated.ok) {
+      return;
     }
+    this.trimIsolationActive = true;
     if (options?.fit === true) {
       this.viewport.fitAll();
     }

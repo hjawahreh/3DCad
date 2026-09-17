@@ -1,0 +1,5 @@
+# CLN-SEG-001 — production segmentation worker deps
+numpy>=1.22
+# Install torch separately to match your CUDA/CPU platform when enabling a checkpoint:
+#   pip install torch==1.9.0+cu111 -f https://download.pytorch.org/whl/torch_stable.html
+# scikit-learn is used by upstream TSegFormer training/eval utilities when CAD_TSEGFORMER_ROOT is set.

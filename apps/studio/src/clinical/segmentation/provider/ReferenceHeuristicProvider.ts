@@ -1,12 +1,10 @@
 /**
- * Deterministic reference segmentation provider (Phase 7 production default).
+ * Deterministic REFERENCE HEURISTIC segmentation provider (development / engineering).
  *
- * Geometry-heuristic inference — NOT a research NN. Selected as production default
- * after license/runtime review of TSegFormer / MeshSegNet / TGNet / DentalMAE
- * (see docs/architecture/segmentation-model-decision.md).
+ * Geometry-heuristic inference — NOT a research NN and NOT clinically accurate.
+ * Available only as Reference / Development. Never present as Production Segmentation.
  *
- * Produces real instance labels + FDI candidates from mesh analysis.
- * Does not mutate source mesh topology.
+ * See docs/architecture/segmentation-model-decision.md and CLN-SEG-001.
  */
 
 import type { TriangleMesh } from '../../../geometry-kernel/mesh/TriangleMesh.js';
@@ -50,12 +48,12 @@ const yieldTick = (): Promise<void> =>
 export class ReferenceHeuristicProvider implements SegmentationProvider {
   public readonly info: SegmentationProviderInfo = Object.freeze({
     id: 'reference-heuristic',
-    displayName: 'Reference Geometry Inference (CPU)',
+    displayName: 'REFERENCE HEURISTIC (Development)',
     modelId: 'clinical-reference-seg',
     modelVersion: '1.1.0',
     operational: true,
     licenseNotes:
-      'First-party CAD Studio clinical reference geometry inference — not a research NN weight set',
+      'First-party reference / development geometry heuristic — NOT a production clinical model and NOT clinically accurate',
     capabilities: Object.freeze([
       'semantic',
       'instance',

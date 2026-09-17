@@ -36,12 +36,12 @@ export const USER_PROGRESS_STAGES = Object.freeze([
   'Detecting teeth',
   'Separating gingiva',
   'Identifying teeth',
-  'Building tooth regions'
+  'Rebuilding tooth regions'
 ] as const);
 
 /** Map provider progress copy → operator-facing stages (no provider internals). */
 export const toUserFacingProgressMessage = (raw: string | undefined): string => {
-  if (raw === undefined || raw.length === 0) return 'PROCESSING…';
+  if (raw === undefined || raw.length === 0) return 'Preparing model';
   const lower = raw.toLowerCase();
   if (lower.includes('prepar') || lower.includes('scan') || lower.includes('mesh')) {
     return 'Preparing model';
@@ -67,11 +67,12 @@ export const toUserFacingProgressMessage = (raw: string | undefined): string => 
     lower.includes('boundar') ||
     lower.includes('region') ||
     lower.includes('reconstr') ||
-    lower.includes('build')
+    lower.includes('build') ||
+    lower.includes('rebuild')
   ) {
-    return 'Building tooth regions';
+    return 'Rebuilding tooth regions';
   }
-  return 'PROCESSING…';
+  return 'Preparing model';
 };
 
 export const summarizeReview = (prediction: SegmentationPrediction): SegmentationReviewSummary => {
@@ -141,9 +142,9 @@ export const toothInspectorModel = (
     reviewState = 'Needs review';
   } else if (conf.band === 'low') reviewState = 'Low confidence';
   return Object.freeze({
-    title: fdi !== undefined ? `Tooth ${String(fdi)}` : 'Tooth (unidentified)',
+    title: fdi !== undefined ? `FDI ${String(fdi)}` : 'Tooth (unidentified)',
     identity: fdi !== undefined ? String(fdi) : '—',
-    confidenceLabel: conf.label.replace(' confidence', '').replace(/^./, (c) => c.toUpperCase()),
+    confidenceLabel: conf.label,
     archLabel: arch === 'lower' ? 'Lower' : arch === 'upper' ? 'Upper' : '—',
     reviewState
   });

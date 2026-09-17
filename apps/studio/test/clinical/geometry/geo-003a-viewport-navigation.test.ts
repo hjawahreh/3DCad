@@ -84,46 +84,46 @@ const sessionLookingAnterior = () => {
   return created.value;
 };
 
-describe('GEO-003A / CLN-TRIM-002 mouse orbit mapping', () => {
+describe('GEO-003A / CLN-WORKFLOW-002 mouse orbit mapping', () => {
   it('maps drag right/left/up/down to intuitive camera basis changes', () => {
-    // Drag right (+dx) → content rotates right → yaw positive → eye.x increases from +Z anterior.
+    // Drag right (+dx) → camera rotates right → yaw negative → eye.x decreases from +Z anterior.
     {
       const session = sessionLookingAnterior();
       const { yaw, pitch } = screenDeltaToOrbitRadians(20, 0);
-      expect(yaw).toBeGreaterThan(0);
+      expect(yaw).toBeLessThan(0);
       expect(Math.abs(pitch)).toBe(0);
       expect(session.orbit(yaw, pitch).ok).toBe(true);
       const eye = session.getSnapshot().eye;
-      expect(eye.x).toBeGreaterThan(0);
+      expect(eye.x).toBeLessThan(0);
       expect(eye.z).toBeGreaterThan(0);
     }
 
-    // Drag left (−dx) → yaw negative → eye.x decreases.
+    // Drag left (−dx) → yaw positive → eye.x increases.
     {
       const session = sessionLookingAnterior();
       const { yaw, pitch } = screenDeltaToOrbitRadians(-20, 0);
-      expect(yaw).toBeLessThan(0);
+      expect(yaw).toBeGreaterThan(0);
       expect(session.orbit(yaw, pitch).ok).toBe(true);
-      expect(session.getSnapshot().eye.x).toBeLessThan(0);
+      expect(session.getSnapshot().eye.x).toBeGreaterThan(0);
     }
 
-    // Drag up (−dy) → view rotates up → pitch negative → eye.y decreases (top tips toward viewer).
+    // Drag up (−dy) → camera rotates up → pitch positive → eye.y increases.
     {
       const session = sessionLookingAnterior();
       const { yaw, pitch } = screenDeltaToOrbitRadians(0, -20);
-      expect(pitch).toBeLessThan(0);
+      expect(pitch).toBeGreaterThan(0);
       expect(Math.abs(yaw)).toBe(0);
       expect(session.orbit(yaw, pitch).ok).toBe(true);
-      expect(session.getSnapshot().eye.y).toBeLessThan(0);
+      expect(session.getSnapshot().eye.y).toBeGreaterThan(0);
     }
 
-    // Drag down (+dy) → view rotates down → eye.y increases.
+    // Drag down (+dy) → camera rotates down → eye.y decreases.
     {
       const session = sessionLookingAnterior();
       const { yaw, pitch } = screenDeltaToOrbitRadians(0, 20);
-      expect(pitch).toBeGreaterThan(0);
+      expect(pitch).toBeLessThan(0);
       expect(session.orbit(yaw, pitch).ok).toBe(true);
-      expect(session.getSnapshot().eye.y).toBeGreaterThan(0);
+      expect(session.getSnapshot().eye.y).toBeLessThan(0);
     }
   });
 
@@ -131,8 +131,8 @@ describe('GEO-003A / CLN-TRIM-002 mouse orbit mapping', () => {
     const a = screenDeltaToOrbitRadians(10, -10);
     const b = screenDeltaToOrbitRadians(10, -10);
     expect(a).toEqual(b);
-    expect(a.yaw).toBeGreaterThan(0);
-    expect(a.pitch).toBeLessThan(0);
+    expect(a.yaw).toBeLessThan(0);
+    expect(a.pitch).toBeGreaterThan(0);
   });
 });
 

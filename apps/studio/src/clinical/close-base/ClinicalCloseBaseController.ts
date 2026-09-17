@@ -129,7 +129,8 @@ export class ClinicalCloseBaseController {
     if (current !== target.value.objectId) {
       this.session.retarget(target.value.objectId);
     }
-    this.applyIsolation(target.value.objectId, { fit: false });
+    this.applyIsolation(target.value.objectId, { fit: true });
+    this.viewport?.presentClinicalAnteriorView({ preferClinicalFrame: true });
     this.clinicalSession.notifyUi();
     return clinicalSuccess(undefined);
   }

@@ -93,8 +93,11 @@ export {
   TEETH_SEG22_GINGIVA_LABEL,
   adaptTeethSeg22PointLabels,
   evaluateTeethSeg22Benchmark,
+  serializeTeethSeg22Benchmark,
+  formatTeethSeg22MetricsReport,
   type TeethSeg22AdaptedInstances,
-  type TeethSeg22PointCloudLabeling
+  type TeethSeg22PointCloudLabeling,
+  type TeethSeg22BenchmarkSerialization
 } from './benchmark/TeethSeg22Adapter.js';
 
 export {

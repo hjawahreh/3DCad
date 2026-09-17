@@ -74,13 +74,15 @@ export class ConfidenceCalibrationTracker {
 
 export const describeConfidence = (value: number): { band: ConfidenceBand; label: string } => {
   const band = confidenceBand(value);
+  // Documented thresholds (prediction/types.ts confidenceBand):
+  // high ≥ 0.85 → High; moderate ≥ 0.65 → Medium; low ≥ 0.4 → Low; else Needs review
   const label =
     band === 'high'
-      ? 'High confidence'
+      ? 'High'
       : band === 'moderate'
-        ? 'Moderate confidence'
+        ? 'Medium'
         : band === 'low'
-          ? 'Low confidence'
+          ? 'Low'
           : 'Needs review';
   return { band, label };
 };
