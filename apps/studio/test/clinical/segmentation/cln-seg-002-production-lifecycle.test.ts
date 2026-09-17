@@ -92,6 +92,10 @@ describe('CLN-SEG-002 worker request/response validation', () => {
       validateWorkerInferResult({
         result: {
           segmentationGeometryFingerprint: 'geo:other',
+          geometryRevision: 1,
+          arch: 'unknown',
+          inferenceRunId: 'seg-00000001',
+          inferenceTimestamp: 1,
           FDILabel: [0, 0, 0],
           confidence: [0.5, 0.5, 0.5],
           toothInstances: [],
@@ -102,6 +106,7 @@ describe('CLN-SEG-002 worker request/response validation', () => {
         },
         expectedFingerprint: 'geo:mine',
         expectedRevision: 1,
+        expectedArch: 'unknown',
         faceCount: 3
       })
     ).toThrow(/fingerprint mismatch/i);
@@ -111,6 +116,10 @@ describe('CLN-SEG-002 worker request/response validation', () => {
     const validated = validateWorkerInferResult({
       result: {
         segmentationGeometryFingerprint: 'geo:mine',
+        geometryRevision: 2,
+        arch: 'upper',
+        inferenceRunId: 'seg-00000002',
+        inferenceTimestamp: 2,
         FDILabel: [11, 0, 0],
         confidence: [0.9, 0.5, 0.5],
         toothInstances: [],
@@ -134,9 +143,48 @@ describe('CLN-SEG-002 worker request/response validation', () => {
       },
       expectedFingerprint: 'geo:mine',
       expectedRevision: 2,
+      expectedArch: 'upper',
       faceCount: 3
     });
     expect(validated.checkpointFingerprint).toBe('abc123');
+  });
+
+  it.each([
+    ['geometry revision', { geometryRevision: 7 }, /revision mismatch/i],
+    ['arch', { arch: 'lower' }, /arch mismatch/i],
+    ['run id', { inferenceRunId: '' }, /inferenceRunId/i],
+    ['timestamp', { inferenceTimestamp: Number.NaN }, /inferenceTimestamp/i]
+  ])('rejects invalid worker %s binding', (_name, override, message) => {
+    const result = {
+      segmentationGeometryFingerprint: 'geo:mine',
+      geometryRevision: 2,
+      arch: 'upper',
+      inferenceRunId: 'seg-00000003',
+      inferenceTimestamp: 3,
+      FDILabel: [11],
+      confidence: [0.9],
+      toothInstances: [],
+      runtimeMs: 12,
+      modelMetadata: {},
+      sampleToSource: { sampleCount: 1, vertexIndex: [0], faceIndex: [0] },
+      preprocessing: { inputVertexCount: 3, inputTriangleCount: 1 },
+      vertexLabel: [],
+      instanceLabel: [],
+      gingivaLabel: 0,
+      missingCandidates: [],
+      stages: {},
+      device: 'CPU',
+      ...override
+    };
+    expect(() =>
+      validateWorkerInferResult({
+        result,
+        expectedFingerprint: 'geo:mine',
+        expectedRevision: 2,
+        expectedArch: 'upper',
+        faceCount: 1
+      })
+    ).toThrow(message);
   });
 });
 
@@ -171,9 +219,7 @@ describe('CLN-SEG-002 biomechanics honesty', () => {
           sourceEntityId: 'e',
           displayState: 'default' as const,
           archRole: 'upper' as const,
-          transform: Object.freeze([
-            1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1
-          ]),
+          transform: Object.freeze([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]),
           geometryFingerprint: 'geo:u',
           geometryRevision: 1,
           segmentationMeta: {

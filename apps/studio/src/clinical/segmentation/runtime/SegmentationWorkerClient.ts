@@ -65,6 +65,11 @@ export interface SegmentationWorkerToothInstance {
 
 export interface SegmentationWorkerInferResult {
   readonly segmentationGeometryFingerprint: string;
+  /** Echoed request binding. A response without these fields is never usable. */
+  readonly geometryRevision: number;
+  readonly arch: 'upper' | 'lower' | 'unknown';
+  readonly inferenceRunId: string;
+  readonly inferenceTimestamp: number;
   readonly vertexLabel: readonly number[];
   readonly instanceLabel: readonly number[];
   readonly FDILabel: readonly number[];
@@ -201,6 +206,7 @@ export class SegmentationWorkerClient {
       result: json,
       expectedFingerprint: request.geometryFingerprint,
       expectedRevision: request.sourceRevision,
+      expectedArch: request.archRole ?? 'unknown',
       faceCount
     });
   }

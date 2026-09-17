@@ -1,0 +1,47 @@
+{
+  "ticket": "CLN-SEG-001",
+  "overall": "FAIL",
+  "productionConfigured": false,
+  "providerUsed": null,
+  "clinicalStatus": null,
+  "teeth": 0,
+  "faceMembership": 0,
+  "realModel": "FAIL",
+  "clinicalClaimed": false,
+  "steps": [
+    {
+      "id": "00-production-gate",
+      "status": "OBSERVE",
+      "at": "2026-09-17T18:28:54.899Z",
+      "detail": "Segmentation worker unavailable (Failed to fetch)"
+    },
+    {
+      "id": "01-import",
+      "status": "PASS",
+      "at": "2026-09-17T18:29:25.032Z"
+    },
+    {
+      "id": "02-orientation",
+      "status": "PASS",
+      "at": "2026-09-17T18:29:38.313Z"
+    },
+    {
+      "id": "03-prepare",
+      "status": "PASS",
+      "at": "2026-09-17T18:29:44.685Z"
+    },
+    {
+      "id": "04-trim-base",
+      "status": "OBSERVE",
+      "at": "2026-09-17T18:29:57.179Z",
+      "detail": "Fixture path may skip full trim/base geometry; stage advanced for segmentation UI"
+    },
+    {
+      "id": "walkthrough",
+      "status": "FAIL",
+      "at": "2026-09-17T18:30:00.235Z",
+      "detail": "page.evaluate: Error: Advance preparation to Ready For Segmentation\n    at eval (eval at evaluate (:311:30), <anonymous>:6:24)\n    at UtilityScript.evaluate (<anonymous>:313:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+    }
+  ],
+  "shotsDir": "/home/hjawahreh/Desktop/Projects/CAD /docs/certification/cln-seg-001-browser-shots"
+}

@@ -7,11 +7,7 @@ import type { FdiNumber } from '../fdi/FdiNumbering.js';
 
 export type SemanticLabel = 'GINGIVA' | 'TOOTH' | 'UNKNOWN';
 
-export type IdentificationStatus =
-  | 'IDENTIFIED'
-  | 'UNCERTAIN'
-  | 'UNKNOWN'
-  | 'NOT_APPLICABLE';
+export type IdentificationStatus = 'IDENTIFIED' | 'UNCERTAIN' | 'UNKNOWN' | 'NOT_APPLICABLE';
 
 export type ToothPresence = 'PRESENT' | 'MISSING' | 'UNCERTAIN' | 'NOT_EVALUABLE';
 
@@ -92,6 +88,9 @@ export interface SegmentationPrediction {
    * Persisted into segmentationMeta.inferenceMetadata / checkpointFingerprint on accept.
    */
   readonly inferenceProvenance?: {
+    readonly arch: 'upper' | 'lower' | 'unknown';
+    readonly inferenceRunId: string;
+    readonly inferenceTimestamp: number;
     readonly checkpointFingerprint?: string;
     readonly checkpointSource?: string;
     readonly device?: string;

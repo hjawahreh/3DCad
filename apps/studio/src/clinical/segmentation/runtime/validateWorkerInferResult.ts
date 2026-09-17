@@ -41,6 +41,7 @@ export const validateWorkerInferResult = (input: {
   readonly result: unknown;
   readonly expectedFingerprint: string;
   readonly expectedRevision: number;
+  readonly expectedArch: 'upper' | 'lower' | 'unknown';
   readonly faceCount: number;
 }): ValidatedWorkerInferResult => {
   const raw = input.result as Partial<SegmentationWorkerInferResult> | null;
@@ -48,7 +49,10 @@ export const validateWorkerInferResult = (input: {
     throw new SegmentationError('INFERENCE_FAILED', 'Worker returned empty inference payload');
   }
   if (typeof raw.segmentationGeometryFingerprint !== 'string') {
-    throw new SegmentationError('INFERENCE_FAILED', 'Worker result missing segmentationGeometryFingerprint');
+    throw new SegmentationError(
+      'INFERENCE_FAILED',
+      'Worker result missing segmentationGeometryFingerprint'
+    );
   }
   if (raw.segmentationGeometryFingerprint !== input.expectedFingerprint) {
     throw new SegmentationError(
@@ -56,7 +60,23 @@ export const validateWorkerInferResult = (input: {
       `Worker fingerprint mismatch: got ${raw.segmentationGeometryFingerprint}, expected ${input.expectedFingerprint}`
     );
   }
-  if (!Array.isArray(raw.FDILabel) || raw.FDILabel.length < input.faceCount || !raw.FDILabel.every((n) => typeof n === 'number' && Number.isFinite(n))) {
+  if (raw.geometryRevision !== input.expectedRevision) {
+    throw new SegmentationError('INFERENCE_FAILED', 'Worker geometry revision mismatch');
+  }
+  if (raw.arch !== input.expectedArch) {
+    throw new SegmentationError('INFERENCE_FAILED', 'Worker arch mismatch');
+  }
+  if (typeof raw.inferenceRunId !== 'string' || raw.inferenceRunId.length < 8) {
+    throw new SegmentationError('INFERENCE_FAILED', 'Worker inferenceRunId missing or invalid');
+  }
+  if (typeof raw.inferenceTimestamp !== 'number' || !Number.isFinite(raw.inferenceTimestamp)) {
+    throw new SegmentationError('INFERENCE_FAILED', 'Worker inferenceTimestamp missing or invalid');
+  }
+  if (
+    !Array.isArray(raw.FDILabel) ||
+    raw.FDILabel.length < input.faceCount ||
+    !raw.FDILabel.every((n) => typeof n === 'number' && Number.isFinite(n))
+  ) {
     const labelLen = Array.isArray(raw.FDILabel) ? String(raw.FDILabel.length) : 'n/a';
     throw new SegmentationError(
       'INFERENCE_FAILED',
@@ -95,9 +115,6 @@ export const validateWorkerInferResult = (input: {
         : typeof meta.checkpointHash === 'string'
           ? meta.checkpointHash
           : undefined;
-
-  // Soft revision hint — worker may omit; fingerprint is the hard bind.
-  void input.expectedRevision;
 
   return Object.freeze({
     result: raw as SegmentationWorkerInferResult,

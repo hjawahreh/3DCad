@@ -7,7 +7,11 @@ import {
   withClinicalObjects,
   type ClinicalDocumentSnapshot
 } from '../document/ClinicalDocument.js';
-import type { ClinicalObjectId, ClinicalArchRole, ClinicalMeshDescriptor } from '../import/ClinicalMeshDescriptor.js';
+import type {
+  ClinicalObjectId,
+  ClinicalArchRole,
+  ClinicalMeshDescriptor
+} from '../import/ClinicalMeshDescriptor.js';
 import type { ClinicalSceneBuilder } from '../import/ClinicalSceneBuilder.js';
 import type { ClinicalSession } from '../runtime/session.js';
 import { clinicalFailure, clinicalSuccess, type ClinicalResult } from '../runtime/types.js';
@@ -82,10 +86,7 @@ export class ClinicalSegmentationManager {
     const previous = doc;
     const objects = doc.objects.map((obj) => {
       if (obj.id !== input.objectId) return obj;
-      const faceMembership = buildFaceMembershipFromPrediction(
-        input.prediction,
-        obj.faceCount
-      );
+      const faceMembership = buildFaceMembershipFromPrediction(input.prediction, obj.faceCount);
       const nextObj: ClinicalMeshDescriptor = Object.freeze({
         ...obj,
         geometryFingerprint: input.prediction.geometryFingerprint,
@@ -101,14 +102,20 @@ export class ClinicalSegmentationManager {
           caseBand: input.prediction.confidence.caseBand,
           geometryFingerprint: input.prediction.geometryFingerprint,
           sourceRevision: input.prediction.sourceRevision,
+          ...(input.prediction.inferenceProvenance !== undefined
+            ? {
+                arch: input.prediction.inferenceProvenance.arch,
+                inferenceRunId: input.prediction.inferenceProvenance.inferenceRunId,
+                inferenceTimestamp: input.prediction.inferenceProvenance.inferenceTimestamp
+              }
+            : {}),
           needsReviewCount: input.prediction.confidence.needsReviewCount,
           status: 'CURRENT' as const,
           acceptedAt: input.now,
           faceMembership,
           ...(input.prediction.inferenceProvenance?.checkpointFingerprint !== undefined
             ? {
-                checkpointFingerprint:
-                  input.prediction.inferenceProvenance.checkpointFingerprint
+                checkpointFingerprint: input.prediction.inferenceProvenance.checkpointFingerprint
               }
             : {}),
           ...(input.prediction.inferenceProvenance !== undefined
@@ -122,12 +129,6 @@ export class ClinicalSegmentationManager {
                     : {}),
                   ...(input.prediction.inferenceProvenance.sampleCount !== undefined
                     ? { sampleCount: input.prediction.inferenceProvenance.sampleCount }
-                    : {}),
-                  ...(input.prediction.inferenceProvenance.checkpointSource !== undefined
-                    ? {
-                        checkpointSource:
-                          input.prediction.inferenceProvenance.checkpointSource
-                      }
                     : {}),
                   preprocessingVersion: input.prediction.preprocessingVersion,
                   postprocessingVersion: input.prediction.postprocessingVersion,

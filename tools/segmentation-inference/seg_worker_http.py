@@ -10,6 +10,7 @@ and /infer returns 503 "Production model not configured."
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import sys
 import threading
@@ -37,6 +38,17 @@ _STATE: dict[str, Any] = {
     "model": None,
     "load_error": None,
 }
+
+
+def _checkpoint_fingerprint() -> str:
+    """Compact identity only; do not return the checkpoint path to the client."""
+    if not CHECKPOINT or not Path(CHECKPOINT).is_file():
+        return ""
+    digest = hashlib.sha256()
+    with Path(CHECKPOINT).open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 # Documented class-index → FDI map for TSegFormer-style 0..32 labels.
 # 0 = gingiva. Classes 1..32 map permanent FDI without inventing missing teeth.
@@ -376,6 +388,11 @@ def _infer_payload(body: dict[str, Any]) -> dict[str, Any]:
     positions = np.asarray(body["positions"], dtype=np.float32).reshape(-1, 3)
     indices = np.asarray(body["indices"], dtype=np.int64).reshape(-1, 3)
     fp = str(body["geometryFingerprint"])
+    revision = int(body["sourceRevision"])
+    arch = body.get("archRole") or "unknown"
+    if arch not in ("upper", "lower", "unknown"):
+        raise ValueError("invalid archRole")
+    inference_run_id = f"seg-{time.time_ns():x}"
     sample_count = int(body.get("sampleCount") or 10000)
     arch_role = body.get("archRole")
 
@@ -408,6 +425,10 @@ def _infer_payload(body: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "segmentationGeometryFingerprint": fp,
+        "geometryRevision": revision,
+        "arch": arch,
+        "inferenceRunId": inference_run_id,
+        "inferenceTimestamp": int(time.time() * 1000),
         "vertexLabel": vertex_label.tolist(),
         "instanceLabel": inst_face.tolist(),
         "FDILabel": fdi_face.tolist(),
@@ -420,7 +441,7 @@ def _infer_payload(body: dict[str, Any]) -> dict[str, Any]:
             "modelVersion": MODEL_VERSION,
             "repository": "https://github.com/huiminxiong/TSegFormer",
             "license": "MIT (code)",
-            "checkpoint": CHECKPOINT,
+            "checkpointFingerprint": _checkpoint_fingerprint(),
             "device": _STATE["device"],
             "coldLoadMs": _STATE["cold_load_ms"],
             "warm": True,

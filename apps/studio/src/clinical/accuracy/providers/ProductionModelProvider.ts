@@ -210,8 +210,7 @@ class ProductionModelProviderImpl implements SegmentationProvider {
       providerId: this.info.id,
       modelId: this.modelId,
       modelVersion: this.modelVersion,
-      faceCount,
-      checkpointSource: this.gate.checkpointSource
+      faceCount
     });
   }
 

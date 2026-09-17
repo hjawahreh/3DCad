@@ -136,10 +136,7 @@ export class ClinicalSegmentationController {
     return report;
   }
 
-  private applyReviewPrediction(
-    prediction: SegmentationPrediction,
-    meta: ReviewActionMeta
-  ): void {
+  private applyReviewPrediction(prediction: SegmentationPrediction, meta: ReviewActionMeta): void {
     this.session.setPrediction(prediction);
     this.session.setReviewMeta(meta);
     this.session.setReviewAcknowledged(false);
@@ -285,7 +282,9 @@ export class ClinicalSegmentationController {
     return clinicalSuccess(undefined);
   }
 
-  public setGuideStep(step: import('./guide/SegmentationGuideSteps.js').SegmentationGuideStepId): ClinicalResult<void> {
+  public setGuideStep(
+    step: import('./guide/SegmentationGuideSteps.js').SegmentationGuideStepId
+  ): ClinicalResult<void> {
     if (!this.isActive()) {
       return clinicalFailure('lifecycle', 'Segmentation not active');
     }
@@ -340,11 +339,13 @@ export class ClinicalSegmentationController {
       return clinicalFailure('lifecycle', 'Segmentation not active');
     }
     this.session.setReviewAcknowledged(true);
-    this.clinicalSession.getHost().notifications.push(
-      'info',
-      'Segmentation',
-      'Review required acknowledged — uncertain teeth remain flagged'
-    );
+    this.clinicalSession
+      .getHost()
+      .notifications.push(
+        'info',
+        'Segmentation',
+        'Review required acknowledged — uncertain teeth remain flagged'
+      );
     this.clinicalSession.notifyUi();
     return clinicalSuccess(undefined);
   }
@@ -371,26 +372,19 @@ export class ClinicalSegmentationController {
 
     if (!provider.info.operational) {
       if (isProduction) {
-        lifecycle.force(
-          'NOT_CONFIGURED',
-          'Production model not configured.'
-        );
+        lifecycle.force('NOT_CONFIGURED', 'Production model not configured.');
       } else {
         lifecycle.force('FAILED', 'Selected provider is not operational');
       }
       this.session.getWorkflow().transition('failed');
       this.session.setPresentation('failed');
       this.session.setError(
-        isProduction
-          ? 'Production model not configured.'
-          : 'MODEL_UNAVAILABLE'
+        isProduction ? 'Production model not configured.' : 'MODEL_UNAVAILABLE'
       );
       this.clinicalSession.notifyUi();
       return clinicalFailure(
         'unavailable',
-        isProduction
-          ? 'Production model not configured.'
-          : 'Selected provider is not operational'
+        isProduction ? 'Production model not configured.' : 'Selected provider is not operational'
       );
     }
 
@@ -498,9 +492,7 @@ export class ClinicalSegmentationController {
       }
 
       const finalized =
-        provider.postprocess !== undefined
-          ? await provider.postprocess(prediction)
-          : prediction;
+        provider.postprocess !== undefined ? await provider.postprocess(prediction) : prediction;
       this.session.getWorkflow().transition('postprocessing');
       this.session.setPresentation('rebuilding');
       this.session.setProgress({
@@ -611,6 +603,23 @@ export class ClinicalSegmentationController {
     if (doc === undefined) {
       return clinicalFailure('not-found', 'No active case');
     }
+    const liveObject = doc.objects.find((o) => o.id === state.targetObjectId);
+    const expectedArch = liveObject?.archRole ?? 'unknown';
+    if (
+      liveObject === undefined ||
+      state.prediction.geometryFingerprint !== liveObject.geometryFingerprint ||
+      state.prediction.sourceRevision !== liveObject.geometryRevision ||
+      (!isNonClinicalSegmentationProvider(state.prediction.providerId) &&
+        state.prediction.inferenceProvenance?.arch !== expectedArch)
+    ) {
+      this.session
+        .getProductionLifecycle()
+        .force(
+          'STALE',
+          'Segmentation result no longer matches the current clinical geometry or arch'
+        );
+      return clinicalFailure('validation', 'Stale segmentation result cannot be accepted');
+    }
     this.session.getWorkflow().transition('committing');
     const host = this.clinicalSession.getHost();
     host.runtimes.tools.clearActiveIfTerminal();
@@ -673,7 +682,12 @@ export class ClinicalSegmentationController {
     }
     this.diagnostics.recordAccept(state.prediction.instances.length);
     this.metrics.recordAccepted();
-    this.manager.republishDocument(host, this.sceneBuilder, applied.value.next, 'segmentation-accept');
+    this.manager.republishDocument(
+      host,
+      this.sceneBuilder,
+      applied.value.next,
+      'segmentation-accept'
+    );
 
     const caseComplete = isCaseSegmentationComplete(applied.value.next);
     // CLN-SEG-002 — never unlock biomechanics solely because a heuristic exists.
@@ -750,11 +764,9 @@ export class ClinicalSegmentationController {
     this.session.getProductionLifecycle().force('REJECTED');
     this.clinicalSession.getTools().deactivate();
     this.diagnostics.recordRejected();
-    this.clinicalSession.getHost().notifications.push(
-      'info',
-      'Segmentation',
-      'Rejected — document unchanged'
-    );
+    this.clinicalSession
+      .getHost()
+      .notifications.push('info', 'Segmentation', 'Rejected — document unchanged');
     this.clinicalSession.notifyUi();
     return clinicalSuccess(undefined);
   }

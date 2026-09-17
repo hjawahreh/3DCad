@@ -66,12 +66,7 @@ export const mapWorkerResultToPrediction = (input: {
     .map((t) => {
       const fdi = asFdi(t.fdi);
       const presence: ToothPresence = t.missingCandidate ? 'MISSING' : 'PRESENT';
-      const idStatus =
-        fdi === undefined
-          ? 'UNKNOWN'
-          : t.lowConfidence
-            ? 'UNCERTAIN'
-            : 'IDENTIFIED';
+      const idStatus = fdi === undefined ? 'UNKNOWN' : t.lowConfidence ? 'UNCERTAIN' : 'IDENTIFIED';
       return Object.freeze({
         instanceId: t.instanceId,
         faceIndices: Object.freeze([...t.faceMembership]),
@@ -86,9 +81,7 @@ export const mapWorkerResultToPrediction = (input: {
           fdi,
           confidence: t.confidence,
           candidates:
-            fdi !== undefined
-              ? Object.freeze([{ fdi, score: t.confidence }])
-              : Object.freeze([])
+            fdi !== undefined ? Object.freeze([{ fdi, score: t.confidence }]) : Object.freeze([])
         })
       } satisfies ToothInstancePrediction);
     });
@@ -104,9 +97,7 @@ export const mapWorkerResultToPrediction = (input: {
     );
 
   const instanceMean =
-    instances.length === 0
-      ? 0
-      : instances.reduce((s, i) => s + i.confidence, 0) / instances.length;
+    instances.length === 0 ? 0 : instances.reduce((s, i) => s + i.confidence, 0) / instances.length;
   const faceMean =
     faceLabels.length === 0
       ? 0
@@ -163,6 +154,9 @@ export const mapWorkerResultToPrediction = (input: {
       inputTriangleCount: result.preprocessing.inputTriangleCount
     }),
     inferenceProvenance: Object.freeze({
+      arch: result.arch,
+      inferenceRunId: result.inferenceRunId,
+      inferenceTimestamp: result.inferenceTimestamp,
       ...(checkpointFingerprint !== undefined ? { checkpointFingerprint } : {}),
       ...(input.checkpointSource !== undefined ? { checkpointSource: input.checkpointSource } : {}),
       device: result.device,

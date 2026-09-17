@@ -15,8 +15,7 @@ export interface ClinicalBounds {
 
 export type ClinicalObjectId = string & { readonly __brand: 'ClinicalObjectId' };
 
-export const asClinicalObjectId = (value: string): ClinicalObjectId =>
-  value as ClinicalObjectId;
+export const asClinicalObjectId = (value: string): ClinicalObjectId => value as ClinicalObjectId;
 
 /** Object transform in treatment space — orientation only mutates this, never topology. */
 export type ClinicalTransform = Mat4;
@@ -65,6 +64,10 @@ export interface ClinicalMeshDescriptor {
     readonly geometryFingerprint: string;
     /** Geometry revision membership was computed against. */
     readonly sourceRevision: number;
+    /** Worker request identity for a production result. */
+    readonly arch?: 'upper' | 'lower' | 'unknown';
+    readonly inferenceRunId?: string;
+    readonly inferenceTimestamp?: number;
     readonly needsReviewCount?: number;
     readonly validationVerdict?: 'PASS' | 'WARNING' | 'FAIL';
     /** Explicit integrity status — CURRENT until geometry mutation / mismatch. */
