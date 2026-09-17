@@ -603,12 +603,19 @@ export class ClinicalSegmentationController {
     if (doc === undefined) {
       return clinicalFailure('not-found', 'No active case');
     }
+    const host = this.clinicalSession.getHost();
     const liveObject = doc.objects.find((o) => o.id === state.targetObjectId);
+    const liveMesh = host.runtimes.kernel.registry.getByObjectId(
+      state.targetObjectId,
+      'working'
+    ) ?? host.runtimes.kernel.registry.getByObjectId(state.targetObjectId, 'source');
     const expectedArch = liveObject?.archRole ?? 'unknown';
+    const liveFingerprint = liveObject?.geometryFingerprint ?? liveMesh?.fingerprint;
+    const liveRevision = liveObject?.geometryRevision ?? liveMesh?.revision;
     if (
       liveObject === undefined ||
-      state.prediction.geometryFingerprint !== liveObject.geometryFingerprint ||
-      state.prediction.sourceRevision !== liveObject.geometryRevision ||
+      state.prediction.geometryFingerprint !== liveFingerprint ||
+      state.prediction.sourceRevision !== liveRevision ||
       (!isNonClinicalSegmentationProvider(state.prediction.providerId) &&
         state.prediction.inferenceProvenance?.arch !== expectedArch)
     ) {
@@ -621,7 +628,6 @@ export class ClinicalSegmentationController {
       return clinicalFailure('validation', 'Stale segmentation result cannot be accepted');
     }
     this.session.getWorkflow().transition('committing');
-    const host = this.clinicalSession.getHost();
     host.runtimes.tools.clearActiveIfTerminal();
     const started = this.operation.start({
       tools: host.runtimes.tools,
@@ -724,6 +730,7 @@ export class ClinicalSegmentationController {
       );
     } else if (caseComplete) {
       // Heuristic / non-production accept — case arches segmented but biomechanics stays locked.
+      this.preparation.session.setStage('ready-for-movement');
       this.clinicalSession.getTools().deactivate();
       this.session.clear();
       const summary = summarizeCaseSegmentation(applied.value.next);

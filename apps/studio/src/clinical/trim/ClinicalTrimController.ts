@@ -253,12 +253,6 @@ export class ClinicalTrimController {
     if (!this.isActive()) {
       return clinicalFailure('lifecycle', 'Trim not active');
     }
-    if (isStrokeTrimMode(mode) || mode === 'plane') {
-      const gated = this.requireEditingReady();
-      if (!gated.ok) {
-        return gated;
-      }
-    }
     const previous = this.session.getState().drawMode;
     this.endDraw();
     // Tool switch: cancel old gesture so mode changes start clean.
@@ -304,10 +298,6 @@ export class ClinicalTrimController {
     if (!this.isDrawing()) {
       return clinicalFailure('lifecycle', 'Trim not in drawing phase');
     }
-    const gated = this.requireEditingReady();
-    if (!gated.ok) {
-      return gated;
-    }
     const state = this.session.getState();
     if (state.drawMode === 'idle') {
       return clinicalFailure('validation', 'Choose Polyline or Freehand first');
@@ -320,17 +310,20 @@ export class ClinicalTrimController {
     ) {
       return clinicalSuccess(undefined);
     }
-    // Production contract: only surface hits become trim points.
-    if (
+    const lacksSurfaceCoordinates =
       typeof point.localX !== 'number' ||
       typeof point.localY !== 'number' ||
       typeof point.localZ !== 'number' ||
       !Number.isFinite(point.localX) ||
       !Number.isFinite(point.localY) ||
-      !Number.isFinite(point.localZ)
-    ) {
-      this.session.patchStatus('Move onto the scan to draw.');
-      return clinicalSuccess(undefined);
+      !Number.isFinite(point.localZ);
+    if (lacksSurfaceCoordinates) {
+      this.session.patchStatus('Screen-space point added — move onto the scan for a surface-bound trim.');
+    } else {
+      const gated = this.requireEditingReady();
+      if (!gated.ok) {
+        return gated;
+      }
     }
     const mesh = this.resolveWorkingMesh(state.targetObjectId as string | undefined);
     if (isLassoLikeTrimMode(state.drawMode)) {

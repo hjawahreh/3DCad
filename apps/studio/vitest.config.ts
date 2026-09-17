@@ -28,6 +28,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['test/**/*.test.ts'],
-    globals: false
+    globals: false,
+    globalSetup: ['./test/vtk-worker-global-setup.ts']
   }
 });

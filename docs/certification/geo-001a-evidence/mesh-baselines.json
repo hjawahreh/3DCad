@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-16T23:36:49.255Z",
+  "at": "2026-09-17T20:51:13.285Z",
   "fixtures": [
     "apps/studio/public/clinical-fixtures/upper.stl",
     "apps/studio/public/clinical-fixtures/lower.stl"
@@ -32,10 +32,10 @@
       "manifold": true,
       "gate": "WARNING",
       "selfIntersectionStatus": "none",
-      "analysisDurationMs": 9932.013876999998,
-      "topologyBuildMs": 10611.163781999996,
-      "spatialIndexMs": 47607.776289,
-      "analysisWallMs": 9972.800914,
+      "analysisDurationMs": 6025.712942000002,
+      "topologyBuildMs": 6043.750622999996,
+      "spatialIndexMs": 28027.382339000003,
+      "analysisWallMs": 6026.580632000001,
       "boundaryLoopCount": 261287,
       "primaryBoundary": {
         "perimeter": 1.833187543359244,
@@ -71,10 +71,10 @@
       "manifold": true,
       "gate": "WARNING",
       "selfIntersectionStatus": "none",
-      "analysisDurationMs": 7330.227570000003,
-      "topologyBuildMs": 6549.841741000004,
-      "spatialIndexMs": 32270.984776000012,
-      "analysisWallMs": 7330.260104000001,
+      "analysisDurationMs": 4973.892274000002,
+      "topologyBuildMs": 4844.344126999997,
+      "spatialIndexMs": 24422.849634000013,
+      "analysisWallMs": 4973.923858000002,
       "boundaryLoopCount": 233562,
       "primaryBoundary": {
         "perimeter": 1.8692258619960729,
@@ -87,15 +87,15 @@
   ],
   "performance": {
     "upper": {
-      "analysisMs": 9972.800914,
-      "topologyBuildMs": 10611.163781999996,
-      "spatialIndexMs": 47607.776289,
+      "analysisMs": 6026.580632000001,
+      "topologyBuildMs": 6043.750622999996,
+      "spatialIndexMs": 28027.382339000003,
       "triangleCount": 261287
     },
     "lower": {
-      "analysisMs": 7330.260104000001,
-      "topologyBuildMs": 6549.841741000004,
-      "spatialIndexMs": 32270.984776000012,
+      "analysisMs": 4973.923858000002,
+      "topologyBuildMs": 4844.344126999997,
+      "spatialIndexMs": 24422.849634000013,
       "triangleCount": 233562
     }
   }

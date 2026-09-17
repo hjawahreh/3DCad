@@ -12,34 +12,34 @@
     {
       "id": "00-production-gate",
       "status": "OBSERVE",
-      "at": "2026-09-17T18:28:54.899Z",
+      "at": "2026-09-17T20:53:42.117Z",
       "detail": "Segmentation worker unavailable (Failed to fetch)"
     },
     {
       "id": "01-import",
       "status": "PASS",
-      "at": "2026-09-17T18:29:25.032Z"
+      "at": "2026-09-17T20:54:47.133Z"
     },
     {
       "id": "02-orientation",
       "status": "PASS",
-      "at": "2026-09-17T18:29:38.313Z"
+      "at": "2026-09-17T20:55:04.020Z"
     },
     {
       "id": "03-prepare",
       "status": "PASS",
-      "at": "2026-09-17T18:29:44.685Z"
+      "at": "2026-09-17T20:55:13.617Z"
     },
     {
       "id": "04-trim-base",
       "status": "OBSERVE",
-      "at": "2026-09-17T18:29:57.179Z",
+      "at": "2026-09-17T20:55:34.700Z",
       "detail": "Fixture path may skip full trim/base geometry; stage advanced for segmentation UI"
     },
     {
       "id": "walkthrough",
       "status": "FAIL",
-      "at": "2026-09-17T18:30:00.235Z",
+      "at": "2026-09-17T20:55:38.448Z",
       "detail": "page.evaluate: Error: Advance preparation to Ready For Segmentation\n    at eval (eval at evaluate (:311:30), <anonymous>:6:24)\n    at UtilityScript.evaluate (<anonymous>:313:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
     }
   ],

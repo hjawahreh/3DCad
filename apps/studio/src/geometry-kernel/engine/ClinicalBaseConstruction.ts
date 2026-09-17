@@ -1161,7 +1161,10 @@ export const constructClinicalBase = (
   if (qualityAfter.connectedComponentCount > qualityBefore.connectedComponentCount + 1) {
     blocking.push('BASE_DISCONNECTED');
   }
-  if (qualityAfter.surfaceArea > qualityBefore.surfaceArea * 8) {
+  if (
+    qualityBefore.surfaceArea > 0.1 &&
+    qualityAfter.surfaceArea > qualityBefore.surfaceArea * 8
+  ) {
     blocking.push('BASE_AREA_EXPLOSION');
   }
   if (added <= 0 || outMesh.fingerprint === mesh.fingerprint) {

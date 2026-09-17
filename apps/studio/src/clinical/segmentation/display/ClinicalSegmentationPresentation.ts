@@ -62,6 +62,9 @@ export const toUserFacingProgressMessage = (raw: string | undefined): string => 
   if (lower.includes('identif')) {
     return 'Identifying teeth';
   }
+  if (lower.includes('onnx-runtime') || lower.includes('webgpu')) {
+    return 'PROCESSING…';
+  }
   if (
     lower.includes('refin') ||
     lower.includes('boundar') ||
