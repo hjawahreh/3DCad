@@ -72,6 +72,19 @@ export interface ClinicalMeshDescriptor {
     readonly staleReason?: string;
     readonly acceptedAt?: number;
     readonly invalidatedAt?: number;
+    /** CLN-SEG-002 — checkpoint identity when production inference was accepted. */
+    readonly checkpointFingerprint?: string;
+    /** CLN-SEG-002 — compact inference runtime metadata (no mesh buffers). */
+    readonly inferenceMetadata?: {
+      readonly device?: string;
+      readonly runtimeMs?: number;
+      readonly sampleCount?: number;
+      readonly checkpointSource?: string;
+      readonly preprocessingVersion?: string;
+      readonly postprocessingVersion?: string;
+      readonly identificationVersion?: string;
+      readonly stages?: Readonly<Record<string, number>>;
+    };
     /** Persisted face membership bound to geometryFingerprint/sourceRevision. */
     readonly faceMembership?: {
       readonly version: 'face-membership-v1';

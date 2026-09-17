@@ -9,6 +9,10 @@ import { useClinicalUiRevision } from '../shell/useClinicalUi.js';
 import { toothInspectorModel } from './display/ClinicalSegmentationPresentation.js';
 import { resolveSegmentationClinicalStatus } from './status/SegmentationClinicalStatus.js';
 import { isNonClinicalSegmentationProvider } from './ClinicalSegmentationIntegrity.js';
+import {
+  productionLifecycleToReviewKind,
+  productionLifecycleUiLabel
+} from './runtime/ProductionSegmentationLifecycle.js';
 
 const isProcessingPhase = (phase: string): boolean =>
   phase === 'activating' ||
@@ -38,14 +42,20 @@ export const ClinicalSegmentationOverlay = (props: {
 
   if (presentation === 'failed' || state.phase === 'failed') {
     const msg = state.errorMessage ?? 'Segmentation could not be completed.';
+    const lifecycleLabel = productionLifecycleUiLabel(state.productionLifecycle);
     return (
       <div
         className="clinical-segmentation-overlay clinical-segmentation-overlay--failed"
         data-testid="clinical-segmentation-overlay"
         data-phase="failed"
+        data-lifecycle={state.productionLifecycle}
+        data-review-kind={productionLifecycleToReviewKind(state.productionLifecycle)}
       >
         <div className="clinical-segmentation-overlay__panel">
           <strong>Segmentation could not be completed.</strong>
+          <span className="muted" data-testid="clinical-seg-lifecycle-label">
+            {lifecycleLabel}
+          </span>
           <span className="muted">{msg}</span>
           <span className="muted">The original scan is unchanged.</span>
           <div className="clinical-segmentation-overlay__actions">
@@ -76,18 +86,30 @@ export const ClinicalSegmentationOverlay = (props: {
         className="clinical-segmentation-overlay clinical-segmentation-overlay--processing"
         data-testid="clinical-segmentation-overlay"
         data-phase={state.phase}
+        data-lifecycle={state.productionLifecycle}
+        data-review-kind={productionLifecycleToReviewKind(state.productionLifecycle)}
         data-processing="true"
       >
         <div className="clinical-segmentation-overlay__hero">
           <p className="clinical-segmentation-overlay__eyebrow">
-            {isReference ? 'REFERENCE HEURISTIC' : 'AUTO SEGMENTATION'}
+            {isReference
+              ? 'REFERENCE HEURISTIC'
+              : state.productionLifecycle === 'INITIALIZING'
+                ? 'LOADING MODEL'
+                : 'AUTO SEGMENTATION'}
           </p>
           <h2>Identifying teeth and gingiva</h2>
           <p
             className="clinical-segmentation-overlay__stage"
             data-testid="clinical-segmentation-stage"
           >
-            {state.progress?.message ?? 'Preparing model'}
+            {state.progress?.message ??
+              (state.productionLifecycle === 'INITIALIZING'
+                ? 'Loading production model…'
+                : 'Preparing model')}
+          </p>
+          <p className="muted" data-testid="clinical-seg-lifecycle-label">
+            {productionLifecycleUiLabel(state.productionLifecycle)}
           </p>
           <p className="muted">{archLabel}</p>
         </div>
@@ -121,10 +143,15 @@ export const ClinicalSegmentationOverlay = (props: {
         className="clinical-segmentation-overlay clinical-segmentation-overlay--review clinical-segmentation-overlay--review-compact"
         data-testid="clinical-segmentation-overlay"
         data-phase="ready-for-review"
+        data-lifecycle={state.productionLifecycle}
+        data-review-kind={productionLifecycleToReviewKind(state.productionLifecycle)}
       >
         <div className="clinical-segmentation-overlay__panel">
           <strong>Review</strong>
           <span data-testid="clinical-seg-review-status">{status}</span>
+          <span className="muted" data-testid="clinical-seg-lifecycle-label">
+            {productionLifecycleUiLabel(state.productionLifecycle)}
+          </span>
           <span className="muted">
             {String(pred.instances.length)} teeth · use Tooth Numbering to select
           </span>

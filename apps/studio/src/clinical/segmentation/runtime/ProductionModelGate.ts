@@ -50,7 +50,7 @@ export const TSEGFORMER_REPRODUCIBILITY: ProductionModelReproducibilityRecord = 
   trainingDataset: 'Private intraoral-scan corpus (paper); local ./data JSON features in upstream',
   datasetLicense: 'Not available / not cleared for redistribution',
   modelVersion: 'miccai-2023-paper',
-  runtimeVersion: 'pytorch-worker-v1 (isolated; not React)',
+  runtimeVersion: 'isolated-python-worker-v1 (not React)',
   checkpointClearedForProduct: false,
   datasetClearedForProduct: false,
   availability: 'unavailable',

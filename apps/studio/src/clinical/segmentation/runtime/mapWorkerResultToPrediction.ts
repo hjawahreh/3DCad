@@ -16,6 +16,7 @@ import {
 import type { FdiNumber } from '../fdi/FdiNumbering.js';
 import { isFdiNumber } from '../fdi/FdiNumbering.js';
 import type { SegmentationWorkerInferResult } from './SegmentationWorkerClient.js';
+import type { ValidatedWorkerInferResult } from './validateWorkerInferResult.js';
 
 const asFdi = (value: number | null | undefined): FdiNumber | undefined => {
   if (value === null || value === undefined || value === 0) return undefined;
@@ -23,7 +24,7 @@ const asFdi = (value: number | null | undefined): FdiNumber | undefined => {
 };
 
 export const mapWorkerResultToPrediction = (input: {
-  readonly result: SegmentationWorkerInferResult;
+  readonly result: SegmentationWorkerInferResult | ValidatedWorkerInferResult;
   readonly objectId: string;
   readonly sourceRevision: number;
   readonly geometryFingerprint: string;
@@ -31,8 +32,15 @@ export const mapWorkerResultToPrediction = (input: {
   readonly modelId: string;
   readonly modelVersion: string;
   readonly faceCount: number;
+  readonly checkpointSource?: string;
 }): SegmentationPrediction => {
-  const { result, faceCount } = input;
+  const validated =
+    'checkpointFingerprint' in input.result && 'result' in input.result
+      ? (input.result as ValidatedWorkerInferResult)
+      : undefined;
+  const result = validated?.result ?? (input.result as SegmentationWorkerInferResult);
+  const checkpointFingerprint = validated?.checkpointFingerprint;
+  const { faceCount } = input;
   if (result.segmentationGeometryFingerprint !== input.geometryFingerprint) {
     throw new Error(
       `Worker fingerprint mismatch: got ${result.segmentationGeometryFingerprint}, expected ${input.geometryFingerprint}`
@@ -153,6 +161,16 @@ export const mapWorkerResultToPrediction = (input: {
       sampleCount: result.sampleToSource.sampleCount,
       inputVertexCount: result.preprocessing.inputVertexCount,
       inputTriangleCount: result.preprocessing.inputTriangleCount
+    }),
+    inferenceProvenance: Object.freeze({
+      ...(checkpointFingerprint !== undefined ? { checkpointFingerprint } : {}),
+      ...(input.checkpointSource !== undefined ? { checkpointSource: input.checkpointSource } : {}),
+      device: result.device,
+      runtimeMs: result.runtimeMs,
+      workerModelName: String(result.modelMetadata.modelName ?? input.modelId),
+      workerModelVersion: String(result.modelMetadata.modelVersion ?? input.modelVersion),
+      sampleCount: result.sampleToSource.sampleCount,
+      stages: Object.freeze({ ...result.stages })
     })
   });
 };

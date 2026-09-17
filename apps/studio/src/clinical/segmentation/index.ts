@@ -38,6 +38,19 @@ export {
 } from './runtime/ProductionModelGate.js';
 export { SegmentationWorkerClient } from './runtime/SegmentationWorkerClient.js';
 export {
+  ProductionSegmentationLifecycle,
+  productionLifecycleUiLabel,
+  productionLifecycleToReviewKind,
+  resolveProductionLifecycleBootstrap,
+  PRODUCTION_INFERENCE_WATCHDOG_MS,
+  type ProductionSegmentationLifecycleState,
+  type ProductionReviewStatusKind
+} from './runtime/ProductionSegmentationLifecycle.js';
+export {
+  validateWorkerInferRequest,
+  validateWorkerInferResult
+} from './runtime/validateWorkerInferResult.js';
+export {
   computeToothBoundaryQuality,
   extractSemanticBoundaryEdges,
   type ToothBoundaryQuality

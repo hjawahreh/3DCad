@@ -12,6 +12,10 @@ import type {
   SegmentationGuideStepId,
   ToothMarker
 } from './guide/SegmentationGuideSteps.js';
+import {
+  ProductionSegmentationLifecycle,
+  type ProductionSegmentationLifecycleState
+} from './runtime/ProductionSegmentationLifecycle.js';
 
 export type SegmentationViewMode =
   | 'semantic'
@@ -40,10 +44,14 @@ export interface SegmentationSessionState {
   /** CLN-WORKFLOW-002 guided step. */
   readonly guideStep: SegmentationGuideStepId;
   readonly toothMarkers: readonly ToothMarker[];
+  /** CLN-SEG-002 — authoritative production lifecycle (review honesty). */
+  readonly productionLifecycle: ProductionSegmentationLifecycleState;
+  readonly productionLifecycleDetail: string | undefined;
 }
 
 export class ClinicalSegmentationSession {
   private readonly workflow = new ClinicalSegmentationWorkflow();
+  private readonly productionLifecycle = new ProductionSegmentationLifecycle();
   private targetObjectId: ClinicalObjectId | undefined;
   private providerId = 'reference-heuristic';
   private identificationThreshold = 0.65;
@@ -69,6 +77,10 @@ export class ClinicalSegmentationSession {
     return this.workflow;
   }
 
+  public getProductionLifecycle(): ProductionSegmentationLifecycle {
+    return this.productionLifecycle;
+  }
+
   public getAbortController(): AbortController | undefined {
     return this.abort;
   }
@@ -77,6 +89,7 @@ export class ClinicalSegmentationSession {
     readonly objectId: ClinicalObjectId;
     readonly providerId: string;
     readonly now: number;
+    readonly productionLifecycle?: ProductionSegmentationLifecycleState;
   }): void {
     this.clear();
     this.targetObjectId = input.objectId;
@@ -88,6 +101,7 @@ export class ClinicalSegmentationSession {
     this.guideStep = 'edit-scans';
     this.toothMarkers = [];
     this.workflow.transition('activating');
+    this.productionLifecycle.reset(input.productionLifecycle ?? 'NOT_CONFIGURED');
   }
 
   public retarget(objectId: ClinicalObjectId): void {
@@ -187,7 +201,9 @@ export class ClinicalSegmentationSession {
       lastReviewMeta: this.lastReviewMeta,
       sessionStartedAt: this.sessionStartedAt,
       guideStep: this.guideStep,
-      toothMarkers: Object.freeze([...this.toothMarkers])
+      toothMarkers: Object.freeze([...this.toothMarkers]),
+      productionLifecycle: this.productionLifecycle.getState(),
+      productionLifecycleDetail: this.productionLifecycle.getDetail()
     });
   }
 
@@ -209,5 +225,6 @@ export class ClinicalSegmentationSession {
     this.guideStep = 'edit-scans';
     this.toothMarkers = [];
     this.workflow.reset();
+    this.productionLifecycle.reset('NOT_CONFIGURED');
   }
 }

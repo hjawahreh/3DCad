@@ -4,6 +4,11 @@
  */
 
 import { SegmentationError } from '../errors.js';
+import {
+  validateWorkerInferRequest,
+  validateWorkerInferResult,
+  type ValidatedWorkerInferResult
+} from './validateWorkerInferResult.js';
 
 const DEFAULT_URL = 'http://127.0.0.1:8766';
 
@@ -146,7 +151,8 @@ export class SegmentationWorkerClient {
   public async infer(
     request: SegmentationWorkerInferRequest,
     signal?: AbortSignal
-  ): Promise<SegmentationWorkerInferResult> {
+  ): Promise<ValidatedWorkerInferResult> {
+    validateWorkerInferRequest(request);
     const payload = {
       geometryFingerprint: request.geometryFingerprint,
       sourceRevision: request.sourceRevision,
@@ -189,6 +195,13 @@ export class SegmentationWorkerClient {
       );
     }
 
-    return (await res.json()) as SegmentationWorkerInferResult;
+    const faceCount = Math.floor(request.indices.length / 3);
+    const json: unknown = await res.json();
+    return validateWorkerInferResult({
+      result: json,
+      expectedFingerprint: request.geometryFingerprint,
+      expectedRevision: request.sourceRevision,
+      faceCount
+    });
   }
 }

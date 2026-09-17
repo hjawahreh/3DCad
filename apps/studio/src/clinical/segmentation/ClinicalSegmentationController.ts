@@ -48,6 +48,15 @@ import {
   summarizeCaseSegmentation
 } from '../case/ClinicalPipelineStatus.js';
 import {
+  evaluateSegmentationIntegrity,
+  isNonClinicalSegmentationProvider
+} from './ClinicalSegmentationIntegrity.js';
+import {
+  PRODUCTION_INFERENCE_WATCHDOG_MS,
+  resolveProductionLifecycleBootstrap
+} from './runtime/ProductionSegmentationLifecycle.js';
+import { resolveProductionModelGate } from './runtime/ProductionModelGate.js';
+import {
   isSegmentationAcceptBlocked,
   validateSegmentationPrediction,
   type ClinicalSegmentationValidationReport
@@ -155,10 +164,24 @@ export class ClinicalSegmentationController {
       return activated;
     }
     const provider = this.registry.getDefault();
+    const doc = this.clinicalSession.getPublicState().activeCase;
+    const targetObj = doc?.objects.find((o) => o.id === target.value.objectId);
+    const integrity =
+      targetObj !== undefined ? evaluateSegmentationIntegrity(targetObj) : undefined;
+    const gate = resolveProductionModelGate();
+    const prodProvider = this.registry.tryGet('production-clinical-model');
+    const bootstrap = resolveProductionLifecycleBootstrap({
+      providerId: provider.info.id,
+      productionConfigured: gate.availability !== 'unavailable',
+      productionOperational: prodProvider?.info.operational === true,
+      ...(integrity?.status !== undefined ? { documentStatus: integrity.status } : {}),
+      isHeuristicProvider: isNonClinicalSegmentationProvider(provider.info.id)
+    });
     this.session.begin({
       objectId: target.value.objectId,
       providerId: provider.info.id,
-      now: Date.now()
+      now: Date.now(),
+      productionLifecycle: bootstrap
     });
     // Isolation is explicit via ClinicalArchSwitcher (setActiveArch) — avoid
     // mutating document visibility (and revision) on every enter.
@@ -331,13 +354,44 @@ export class ClinicalSegmentationController {
     if (state.targetObjectId === undefined) {
       return clinicalFailure('lifecycle', 'Segmentation not active');
     }
+    const lifecycle = this.session.getProductionLifecycle();
+    // Sync STALE from document before allowing a new run.
+    const doc = this.clinicalSession.getPublicState().activeCase;
+    const targetObj = doc?.objects.find((o) => o.id === state.targetObjectId);
+    if (targetObj !== undefined) {
+      const integrity = evaluateSegmentationIntegrity(targetObj);
+      if (integrity.status === 'STALE') {
+        lifecycle.force('STALE', integrity.reason);
+      }
+    }
+
     const provider = this.registry.get(state.providerId);
+    const isProduction = provider.info.id === 'production-clinical-model';
+    const isHeuristic = isNonClinicalSegmentationProvider(provider.info.id);
+
     if (!provider.info.operational) {
+      if (isProduction) {
+        lifecycle.force(
+          'NOT_CONFIGURED',
+          'Production model not configured.'
+        );
+      } else {
+        lifecycle.force('FAILED', 'Selected provider is not operational');
+      }
       this.session.getWorkflow().transition('failed');
       this.session.setPresentation('failed');
-      this.session.setError('MODEL_UNAVAILABLE');
+      this.session.setError(
+        isProduction
+          ? 'Production model not configured.'
+          : 'MODEL_UNAVAILABLE'
+      );
       this.clinicalSession.notifyUi();
-      return clinicalFailure('unavailable', 'Selected provider is not operational');
+      return clinicalFailure(
+        'unavailable',
+        isProduction
+          ? 'Production model not configured.'
+          : 'Selected provider is not operational'
+      );
     }
 
     const host = this.clinicalSession.getHost();
@@ -347,6 +401,7 @@ export class ClinicalSegmentationController {
       host.runtimes.kernel.registry.getByObjectId(objectId, 'working') ??
       host.runtimes.kernel.registry.getByObjectId(objectId, 'source');
     if (mesh === undefined) {
+      lifecycle.force('FAILED', 'No mesh available for segmentation');
       this.session.getWorkflow().transition('failed');
       this.session.setPresentation('failed');
       this.session.setError('No mesh available for segmentation');
@@ -355,6 +410,7 @@ export class ClinicalSegmentationController {
     }
 
     const signal = this.session.getAbortController()?.signal ?? new AbortController().signal;
+    let watchdog: ReturnType<typeof setTimeout> | undefined;
     try {
       this.session.setPresentation('segmenting');
       this.session.setError(undefined);
@@ -364,8 +420,25 @@ export class ClinicalSegmentationController {
         total: 6,
         message: 'Preparing dental surface'
       });
+      if (isProduction) {
+        lifecycle.force('INITIALIZING');
+      }
       this.clinicalSession.notifyUi();
       await provider.initialize();
+      // Re-check operational after initialize (production health).
+      if (isProduction && !provider.info.operational) {
+        lifecycle.force('NOT_CONFIGURED', 'Production model not configured.');
+        throw new Error('Production model not configured.');
+      }
+      if (isProduction) {
+        lifecycle.transition('READY') || lifecycle.force('READY');
+        lifecycle.transition('INFERENCING') || lifecycle.force('INFERENCING');
+      }
+      // Reference never enters production COMPLETED/ACCEPTED.
+      if (isHeuristic) {
+        lifecycle.force('NOT_CONFIGURED', 'Reference heuristic — not a production result');
+      }
+
       this.session.setRuntimeMessage(provider.runtimeInformation().message);
       const valid = provider.validateInput(mesh);
       if (!valid.ok) {
@@ -373,6 +446,19 @@ export class ClinicalSegmentationController {
       }
       const preprocess = await provider.preprocess(mesh, signal);
       this.session.getWorkflow().transition('inferencing');
+
+      watchdog = setTimeout(() => {
+        if (lifecycle.checkWatchdog()) {
+          this.session.getAbortController()?.abort();
+          provider.cancel();
+          this.session.getWorkflow().transition('failed');
+          this.session.setPresentation('failed');
+          this.session.setError(lifecycle.getDetail() ?? 'Inference watchdog exceeded');
+          this.session.setPrediction(undefined);
+          this.clinicalSession.notifyUi();
+        }
+      }, PRODUCTION_INFERENCE_WATCHDOG_MS);
+
       const archRole = docObjectArchRole(this.clinicalSession, objectId);
       const prediction = await provider.infer({
         objectId,
@@ -384,6 +470,9 @@ export class ClinicalSegmentationController {
         ...(archRole !== undefined ? { archRole } : {}),
         signal,
         report: (p) => {
+          if (lifecycle.checkWatchdog()) {
+            throw new Error(lifecycle.getDetail() ?? 'Inference watchdog exceeded');
+          }
           this.session.setProgress({
             completed: p.completed,
             total: p.total,
@@ -392,6 +481,22 @@ export class ClinicalSegmentationController {
           this.clinicalSession.notifyUi();
         }
       });
+      // Hard bind: refuse result that does not match the mesh we sent.
+      if (
+        prediction.geometryFingerprint !== mesh.fingerprint ||
+        prediction.sourceRevision !== mesh.revision
+      ) {
+        throw new Error(
+          'Segmentation result geometry fingerprint/revision mismatch — refusing stale bind'
+        );
+      }
+      // Never promote heuristic to production COMPLETED.
+      if (isProduction && !isNonClinicalSegmentationProvider(prediction.providerId)) {
+        lifecycle.transition('COMPLETED') || lifecycle.force('COMPLETED');
+      } else if (isHeuristic) {
+        lifecycle.force('NOT_CONFIGURED', 'Reference heuristic result — not production');
+      }
+
       const finalized =
         provider.postprocess !== undefined
           ? await provider.postprocess(prediction)
@@ -450,6 +555,12 @@ export class ClinicalSegmentationController {
         : err instanceof Error
           ? err.message
           : 'INFERENCE_FAILED';
+      const notConfigured = /not configured|MODEL_UNAVAILABLE/i.test(message);
+      if (isProduction && notConfigured) {
+        lifecycle.force('NOT_CONFIGURED', message);
+      } else {
+        lifecycle.force('FAILED', message);
+      }
       this.session.getWorkflow().transition('failed');
       this.session.setPresentation('failed');
       this.session.setError(message);
@@ -458,6 +569,8 @@ export class ClinicalSegmentationController {
       this.metrics.recordFailed();
       this.clinicalSession.notifyUi();
       return clinicalFailure('validation', message);
+    } finally {
+      if (watchdog !== undefined) clearTimeout(watchdog);
     }
   }
 
@@ -551,12 +664,27 @@ export class ClinicalSegmentationController {
     host.runtimes.tools.clearActiveIfTerminal();
     this.operation.dispose();
     this.session.getWorkflow().transition('complete');
+    if (!isNonClinicalSegmentationProvider(state.prediction.providerId)) {
+      this.session.getProductionLifecycle().force('ACCEPTED');
+    } else {
+      this.session
+        .getProductionLifecycle()
+        .force('NOT_CONFIGURED', 'Accepted reference result — not production ACCEPTED');
+    }
     this.diagnostics.recordAccept(state.prediction.instances.length);
     this.metrics.recordAccepted();
     this.manager.republishDocument(host, this.sceneBuilder, applied.value.next, 'segmentation-accept');
 
     const caseComplete = isCaseSegmentationComplete(applied.value.next);
-    if (caseComplete) {
+    // CLN-SEG-002 — never unlock biomechanics solely because a heuristic exists.
+    const movementOk =
+      caseComplete &&
+      !isNonClinicalSegmentationProvider(state.prediction.providerId) &&
+      applied.value.next.objects.every((o) => {
+        if (o.segmentationMeta === undefined) return true;
+        return !isNonClinicalSegmentationProvider(o.segmentationMeta.providerId);
+      });
+    if (movementOk) {
       this.preparation.session.setStage('ready-for-movement');
       const withMilestone =
         applied.value.next.preparationMeta !== undefined
@@ -579,6 +707,16 @@ export class ClinicalSegmentationController {
         'success',
         'Segmentation Complete',
         `${String(summary.totalTeeth)} teeth · Needs review ${String(summary.totalNeedsReview)}`
+      );
+    } else if (caseComplete) {
+      // Heuristic / non-production accept — case arches segmented but biomechanics stays locked.
+      this.clinicalSession.getTools().deactivate();
+      this.session.clear();
+      const summary = summarizeCaseSegmentation(applied.value.next);
+      host.notifications.push(
+        'info',
+        'Segmentation Accepted (Reference)',
+        `${String(summary.totalTeeth)} teeth · Biomechanics remains locked (non-production provider)`
       );
     } else {
       const summary = summarizeCaseSegmentation(applied.value.next);
@@ -605,8 +743,11 @@ export class ClinicalSegmentationController {
   public reject(): ClinicalResult<void> {
     this.operation.cancel();
     this.clinicalSession.getHost().runtimes.tools.cancelActive();
+    this.session.getProductionLifecycle().force('REJECTED');
     this.session.getWorkflow().cancel();
     this.session.clear();
+    // clear() resets lifecycle to NOT_CONFIGURED — restore REJECTED for honesty until next enter
+    this.session.getProductionLifecycle().force('REJECTED');
     this.clinicalSession.getTools().deactivate();
     this.diagnostics.recordRejected();
     this.clinicalSession.getHost().notifications.push(

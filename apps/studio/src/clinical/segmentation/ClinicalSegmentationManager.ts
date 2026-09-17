@@ -105,6 +105,39 @@ export class ClinicalSegmentationManager {
           status: 'CURRENT' as const,
           acceptedAt: input.now,
           faceMembership,
+          ...(input.prediction.inferenceProvenance?.checkpointFingerprint !== undefined
+            ? {
+                checkpointFingerprint:
+                  input.prediction.inferenceProvenance.checkpointFingerprint
+              }
+            : {}),
+          ...(input.prediction.inferenceProvenance !== undefined
+            ? {
+                inferenceMetadata: Object.freeze({
+                  ...(input.prediction.inferenceProvenance.device !== undefined
+                    ? { device: input.prediction.inferenceProvenance.device }
+                    : {}),
+                  ...(input.prediction.inferenceProvenance.runtimeMs !== undefined
+                    ? { runtimeMs: input.prediction.inferenceProvenance.runtimeMs }
+                    : {}),
+                  ...(input.prediction.inferenceProvenance.sampleCount !== undefined
+                    ? { sampleCount: input.prediction.inferenceProvenance.sampleCount }
+                    : {}),
+                  ...(input.prediction.inferenceProvenance.checkpointSource !== undefined
+                    ? {
+                        checkpointSource:
+                          input.prediction.inferenceProvenance.checkpointSource
+                      }
+                    : {}),
+                  preprocessingVersion: input.prediction.preprocessingVersion,
+                  postprocessingVersion: input.prediction.postprocessingVersion,
+                  identificationVersion: input.prediction.identificationVersion,
+                  ...(input.prediction.inferenceProvenance.stages !== undefined
+                    ? { stages: input.prediction.inferenceProvenance.stages }
+                    : {})
+                })
+              }
+            : {}),
           ...(input.validationVerdict !== undefined
             ? { validationVerdict: input.validationVerdict }
             : {}),

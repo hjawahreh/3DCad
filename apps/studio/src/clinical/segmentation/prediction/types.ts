@@ -87,6 +87,20 @@ export interface SegmentationPrediction {
   readonly confidence: CaseConfidenceSummary;
   readonly warnings: readonly string[];
   readonly metrics: Readonly<Record<string, number>>;
+  /**
+   * CLN-SEG-002 — production inference provenance (optional; reference omits).
+   * Persisted into segmentationMeta.inferenceMetadata / checkpointFingerprint on accept.
+   */
+  readonly inferenceProvenance?: {
+    readonly checkpointFingerprint?: string;
+    readonly checkpointSource?: string;
+    readonly device?: string;
+    readonly runtimeMs?: number;
+    readonly workerModelName?: string;
+    readonly workerModelVersion?: string;
+    readonly sampleCount?: number;
+    readonly stages?: Readonly<Record<string, number>>;
+  };
 }
 
 export const PREPROCESSING_VERSION = 'seg-pre-1.0.0';

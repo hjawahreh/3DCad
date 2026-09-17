@@ -16,6 +16,10 @@ import {
 } from './guide/SegmentationGuideSteps.js';
 import { resolveSegmentationClinicalStatus } from './status/SegmentationClinicalStatus.js';
 import { isNonClinicalSegmentationProvider } from './ClinicalSegmentationIntegrity.js';
+import {
+  productionLifecycleToReviewKind,
+  productionLifecycleUiLabel
+} from './runtime/ProductionSegmentationLifecycle.js';
 
 export const ClinicalSegmentationToolbar = (props: {
   readonly workspace: ClinicalWorkspace;
@@ -104,6 +108,15 @@ export const ClinicalSegmentationToolbar = (props: {
 
       <span className="clinical-segmentation-toolbar__status" data-testid="clinical-seg-provider-status">
         {clinicalStatus}
+      </span>
+      <span
+        className="clinical-segmentation-toolbar__lifecycle muted"
+        data-testid="clinical-seg-production-lifecycle"
+        data-lifecycle={state.productionLifecycle}
+        data-review-kind={productionLifecycleToReviewKind(state.productionLifecycle)}
+      >
+        {productionLifecycleUiLabel(state.productionLifecycle)}
+        {state.productionLifecycleDetail ? ` · ${state.productionLifecycleDetail}` : ''}
       </span>
 
       <ClinicalArchSwitcher
