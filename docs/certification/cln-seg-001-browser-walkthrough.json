@@ -1,10 +1,10 @@
 {
   "ticket": "CLN-SEG-001",
-  "overall": "FAIL",
+  "overall": "PASS WITH OBSERVATIONS",
   "productionConfigured": false,
-  "providerUsed": null,
-  "clinicalStatus": null,
-  "teeth": 0,
+  "providerUsed": "reference-heuristic",
+  "clinicalStatus": "Reference Segmentation",
+  "teeth": 13,
   "faceMembership": 0,
   "realModel": "FAIL",
   "clinicalClaimed": false,
@@ -12,35 +12,73 @@
     {
       "id": "00-production-gate",
       "status": "OBSERVE",
-      "at": "2026-09-17T20:53:42.117Z",
+      "at": "2026-09-17T21:39:55.256Z",
       "detail": "Segmentation worker unavailable (Failed to fetch)"
     },
     {
       "id": "01-import",
       "status": "PASS",
-      "at": "2026-09-17T20:54:47.133Z"
+      "at": "2026-09-17T21:40:57.453Z"
     },
     {
       "id": "02-orientation",
       "status": "PASS",
-      "at": "2026-09-17T20:55:04.020Z"
+      "at": "2026-09-17T21:41:14.086Z"
     },
     {
       "id": "03-prepare",
       "status": "PASS",
-      "at": "2026-09-17T20:55:13.617Z"
+      "at": "2026-09-17T21:41:21.344Z"
     },
     {
       "id": "04-trim-base",
-      "status": "OBSERVE",
-      "at": "2026-09-17T20:55:34.700Z",
-      "detail": "Fixture path may skip full trim/base geometry; stage advanced for segmentation UI"
+      "status": "PASS",
+      "at": "2026-09-17T21:43:44.103Z"
     },
     {
-      "id": "walkthrough",
-      "status": "FAIL",
-      "at": "2026-09-17T20:55:38.448Z",
-      "detail": "page.evaluate: Error: Advance preparation to Ready For Segmentation\n    at eval (eval at evaluate (:311:30), <anonymous>:6:24)\n    at UtilityScript.evaluate (<anonymous>:313:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+      "id": "05-reference-label",
+      "status": "PASS",
+      "at": "2026-09-17T21:43:49.607Z",
+      "detail": "BETA / REFERENCE"
+    },
+    {
+      "id": "06-segmentation",
+      "status": "PASS",
+      "at": "2026-09-17T21:45:23.881Z"
+    },
+    {
+      "id": "07-no-false-production",
+      "status": "PASS",
+      "at": "2026-09-17T21:45:25.566Z",
+      "detail": "provider=reference-heuristic"
+    },
+    {
+      "id": "08-segment-edit",
+      "status": "PASS",
+      "at": "2026-09-17T21:46:09.251Z"
+    },
+    {
+      "id": "09-mark-teeth",
+      "status": "PASS",
+      "at": "2026-09-17T21:46:09.870Z",
+      "detail": "Real surface marker placed"
+    },
+    {
+      "id": "10-auto-segmentation",
+      "status": "PASS",
+      "at": "2026-09-17T21:47:08.640Z",
+      "detail": "Reference provider executed"
+    },
+    {
+      "id": "11-reopen",
+      "status": "PASS",
+      "at": "2026-09-17T21:47:14.273Z"
+    },
+    {
+      "id": "manual-review-required",
+      "status": "OBSERVE",
+      "at": "2026-09-17T21:47:14.273Z",
+      "detail": "Automated shots are not sufficient — perform manual visual review on a real scan"
     }
   ],
   "shotsDir": "/home/hjawahreh/Desktop/Projects/CAD /docs/certification/cln-seg-001-browser-shots"

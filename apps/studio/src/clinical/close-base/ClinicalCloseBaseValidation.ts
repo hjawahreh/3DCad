@@ -43,6 +43,7 @@ export interface CloseBaseQualitySnapshot {
   readonly codes: readonly string[];
   readonly warnings: readonly string[];
   readonly boundaryEdges: number;
+  readonly nonManifoldEdges: number;
   readonly degenerateCount: number;
 }
 
@@ -232,7 +233,9 @@ export class ClinicalCloseBaseValidation {
     }
     // Reference close-base can emit non-manifold wall junctions; treat as warning, not a hard gate.
     // Block only on corrupt input or extreme degenerates.
-    const hardFail = input.quality.codes.includes('INPUT_INVALID');
+    const hardFail =
+      input.quality.codes.includes('INPUT_INVALID') ||
+      (input.requireCommitEligibility && input.quality.nonManifoldEdges > 0);
     const degenerateFail =
       input.quality.degenerateCount >
       Math.max(128, Math.floor(input.quality.boundaryEdges * 4) + 64);
@@ -245,7 +248,9 @@ export class ClinicalCloseBaseValidation {
         ? input.quality.ok
           ? 'Mesh quality acceptable'
           : input.quality.warnings[0] ?? 'Mesh quality warnings present (non-blocking)'
-        : input.quality.warnings[0] ?? 'Mesh quality is not acceptable for Close Base'
+        : input.quality.nonManifoldEdges > 0
+          ? `Non-manifold edges: ${String(input.quality.nonManifoldEdges)}`
+          : input.quality.warnings[0] ?? 'Mesh quality is not acceptable for Close Base'
     });
   }
 
@@ -262,16 +267,15 @@ export class ClinicalCloseBaseValidation {
         message: 'Boundary check deferred'
       });
     }
-    // Surface fill may leave no open edges; plane/offset expect open boundary before, closed after commit.
-    if (input.parameters.strategy === 'surface' && input.quality.boundaryEdges === 0) {
+    if (!input.requireCommitEligibility) {
       return freezeCheck({
         id: 'boundary-closure',
         label: 'Boundary closure',
         passed: true,
-        message: 'No open boundary — mesh may already be closed'
+        message: 'Boundary check deferred until commit validation'
       });
     }
-    const passed = input.quality.boundaryEdges >= 0;
+    const passed = input.quality.boundaryEdges === 0;
     return freezeCheck({
       id: 'boundary-closure',
       label: 'Boundary closure',

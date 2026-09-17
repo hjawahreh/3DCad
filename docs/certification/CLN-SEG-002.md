@@ -1,7 +1,7 @@
 # CLN-SEG-002 Production Segmentation Bring-Up & Review Gate
 
-**Date:** 2026-09-17  
-**Scope:** Engineering lifecycle honesty for production segmentation (no clinical validation claim).  
+**Date:** 2026-09-17
+**Scope:** Engineering lifecycle honesty for production segmentation (no clinical validation claim).
 **Architecture:** `docs/architecture/CLN-SEG-002-production-lifecycle.md`
 
 ## Objectives closed

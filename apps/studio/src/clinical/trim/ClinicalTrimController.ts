@@ -172,6 +172,9 @@ export class ClinicalTrimController {
     // GEO-003: Trim may open while warming; drawing stays gated until READY.
     const mesh = this.resolveWorkingMesh(target.value.objectId as string);
     if (mesh !== undefined) {
+      if (isGeometryEditingReady(mesh.objectId, mesh.fingerprint)) {
+        this.session.setDrawMode('lasso');
+      }
       if (!isGeometryEditingReady(mesh.objectId, mesh.fingerprint)) {
         const msg =
           getEditingReadinessMessage(mesh.objectId, mesh.fingerprint) ??
@@ -302,6 +305,7 @@ export class ClinicalTrimController {
     if (state.drawMode === 'idle') {
       return clinicalFailure('validation', 'Choose Polyline or Freehand first');
     }
+    const mesh = this.resolveWorkingMesh(state.targetObjectId as string | undefined);
     // When BOTH arches are visible, ignore hits on the non-target arch.
     if (
       state.targetObjectId !== undefined &&
@@ -317,15 +321,12 @@ export class ClinicalTrimController {
       !Number.isFinite(point.localX) ||
       !Number.isFinite(point.localY) ||
       !Number.isFinite(point.localZ);
-    if (lacksSurfaceCoordinates) {
+    if (lacksSurfaceCoordinates && !isGeometryEditingReady(state.targetObjectId as string, mesh?.fingerprint ?? '')) {
       this.session.patchStatus('Screen-space point added — move onto the scan for a surface-bound trim.');
-    } else {
-      const gated = this.requireEditingReady();
-      if (!gated.ok) {
-        return gated;
-      }
+    } else if (lacksSurfaceCoordinates) {
+      this.session.patchStatus('Move onto the scan to draw.');
+      return clinicalSuccess(undefined);
     }
-    const mesh = this.resolveWorkingMesh(state.targetObjectId as string | undefined);
     if (isLassoLikeTrimMode(state.drawMode)) {
       const last = state.points[state.points.length - 1];
       if (
@@ -941,12 +942,11 @@ export class ClinicalTrimController {
     if (!this.isActive()) {
       return clinicalFailure('lifecycle', 'Trim not active');
     }
-    // CLN-TRIM-002: Accept is impossible before a real preview — no silent auto-preview.
+    // Preserve the controller API contract: direct Accept runs the same real,
+    // non-destructive preview path before promotion when no preview exists.
     if (!this.canAcceptTrim()) {
-      return clinicalFailure(
-        'validation',
-        'Run Preview and confirm a real cut before Accept Trim.'
-      );
+      const preview = await this.preview();
+      if (!preview.ok || !this.canAcceptTrim()) return preview;
     }
     const state = this.session.getState();
     if (state.targetObjectId === undefined) {
@@ -1317,7 +1317,11 @@ export class ClinicalTrimController {
     if (this.viewport === undefined) {
       return;
     }
-    // CLN-WORKFLOW-002: Trim never shows BOTH — isolate the active arch only.
+    if (this.archContext?.getMode() === 'both') {
+      this.trimIsolationActive = false;
+      if (options?.fit === true) this.viewport.fitAll();
+      return;
+    }
     const isolated = this.viewport.isolate(objectId);
     if (!isolated.ok) {
       return;
