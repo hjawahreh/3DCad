@@ -3471,6 +3471,28 @@
   border-radius: 6px;
 }
 
+.clinical-create-case__validation-details {
+  margin-top: 10px;
+  border-top: 1px solid var(--workstation-line, rgba(148, 163, 184, 0.16));
+  padding-top: 8px;
+  color: var(--studio-muted);
+  font-size: 11px;
+}
+
+.clinical-create-case__validation-details summary {
+  cursor: pointer;
+  color: #c6d0d8;
+}
+
+.clinical-create-case__validation-details[open] {
+  max-height: 180px;
+  overflow: auto;
+}
+
+.clinical-create-case__next-note {
+  margin: 10px 0 0;
+}
+
 @media (max-width: 900px) {
   .clinical-shell--workstation .clinical-header {
     grid-template-columns: auto 1fr auto;
