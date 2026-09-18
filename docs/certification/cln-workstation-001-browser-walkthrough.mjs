@@ -91,26 +91,24 @@ const peripheralPatch = (hits, count = 6) => {
   const scored = hits
     .map((p) => ({ ...p, r: Math.hypot(p.x - cx, p.y - cy) }))
     .sort((a, b) => b.r - a.r);
-  // Compact peripheral lobe — angular sort around local centroid (convex-ish, avoids self-cross).
-  const tip = scored[0];
-  const local = scored
-    .filter((p) => Math.hypot(p.x - tip.x, p.y - tip.y) < Math.max(100, tip.r * 0.4))
-    .slice(0, 24);
-  if (local.length < count) return scored.slice(0, count);
-  const lx = local.reduce((s, p) => s + p.x, 0) / local.length;
-  const ly = local.reduce((s, p) => s + p.y, 0) / local.length;
-  const byAngle = [...local].sort(
-    (a, b) => Math.atan2(a.y - ly, a.x - lx) - Math.atan2(b.y - ly, b.x - lx)
-  );
-  // Evenly sample around the angular ring for a simple closed polygon.
-  const out = [];
-  for (let i = 0; i < count; i += 1) {
-    const idx = Math.floor((i * byAngle.length) / count) % byAngle.length;
-    out.push(byAngle[idx]);
+  // Build a simple convex hull from real surface hits so the lasso cannot
+  // self-intersect and turn the evidence run into a UI error-state test.
+  const sorted = [...scored].sort((a, b) => a.x - b.x || a.y - b.y);
+  const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lower = [];
+  for (const point of sorted) {
+    while (lower.length >= 2 && cross(lower.at(-2), lower.at(-1), point) <= 0) lower.pop();
+    lower.push(point);
   }
-  // Deduplicate consecutive duplicates.
-  const dedup = out.filter((p, i, arr) => i === 0 || p.x !== arr[i - 1].x || p.y !== arr[i - 1].y);
-  return dedup.length >= 4 ? dedup : byAngle.slice(0, count);
+  const upper = [];
+  for (let i = sorted.length - 1; i >= 0; i -= 1) {
+    const point = sorted[i];
+    while (upper.length >= 2 && cross(upper.at(-2), upper.at(-1), point) <= 0) upper.pop();
+    upper.push(point);
+  }
+  const hull = lower.slice(0, -1).concat(upper.slice(0, -1));
+  if (hull.length < count) return hull;
+  return Array.from({ length: count }, (_, i) => hull[Math.floor((i * hull.length) / count)]);
 };
 
 const waitWarm = async (page) => {
