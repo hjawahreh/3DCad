@@ -13,6 +13,7 @@ export interface GeometryQualityStats {
   readonly vertexCount: number;
   readonly triangleCount: number;
   readonly boundaryEdges: number;
+  readonly nonManifoldEdges: number;
   readonly components: number;
   readonly degenerateCount: number;
   readonly duplicateVertexEstimate: number;
@@ -95,6 +96,7 @@ export const runGeometryQualityPipeline = (
         vertexCount,
         triangleCount,
         boundaryEdges: 0,
+        nonManifoldEdges: 0,
         components: 0,
         degenerateCount: 0,
         duplicateVertexEstimate: 0
@@ -190,13 +192,14 @@ export const runGeometryQualityPipeline = (
     }
   }
   let boundaryEdges = 0;
+  let nonManifoldEdges = 0;
   for (const count of edgeUse.values()) {
     if (count === 1) {
       boundaryEdges += 1;
     } else if (count > 2) {
+      nonManifoldEdges += 1;
       codes.push('TOPOLOGY_INVALID');
       warnings.push('Non-manifold edge detected');
-      break;
     }
   }
 
@@ -236,6 +239,7 @@ export const runGeometryQualityPipeline = (
         vertexCount,
         triangleCount,
         boundaryEdges,
+        nonManifoldEdges,
         components,
         degenerateCount,
         duplicateVertexEstimate
@@ -303,6 +307,7 @@ export const runGeometryQualityPipeline = (
       vertexCount,
       triangleCount,
       boundaryEdges,
+      nonManifoldEdges,
       components,
       degenerateCount,
       duplicateVertexEstimate

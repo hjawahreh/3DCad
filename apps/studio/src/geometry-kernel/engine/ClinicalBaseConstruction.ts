@@ -1060,6 +1060,80 @@ export const constructClinicalBase = (
       }
     }
   }
+
+  // A trimmed scan can retain the original scan rim alongside the new trim
+  // boundary. Close each extracted boundary loop with the same clinical base
+  // plane so no source boundary remains open after the primary loop is built.
+  const secondaryLoops = selected.all.filter(
+    (loop) => loop.candidate.id !== analyzed.candidate.id && loop.pointCount >= 3
+  );
+  for (const loop of secondaryLoops) {
+    const ring = cleanLoopIndices(mesh, loop.candidate.vertexIndices);
+    if (ring.length < 3) continue;
+    const ringPoints = ring.map((vi) => vertexPoint(mesh, vi));
+    const ringBottom = ringPoints.map((p) => {
+      const d = planeDistance(p, origin, planeNormal);
+      const shift = d - basePlaneOffset;
+      return [
+        p[0] - planeNormal[0] * shift,
+        p[1] - planeNormal[1] * shift,
+        p[2] - planeNormal[2] * shift
+      ] as [number, number, number];
+    });
+    const ringStart = Math.floor(positions.length / 3);
+    for (const p of ringBottom) positions.push(p[0], p[1], p[2]);
+    const ringUv = ringPoints.map((p) => {
+      const d = planeDistance(p, origin, planeNormal);
+      return projectToPlaneUv(
+        [
+          p[0] - planeNormal[0] * d,
+          p[1] - planeNormal[1] * d,
+          p[2] - planeNormal[2] * d
+        ],
+        origin,
+        basis.u,
+        basis.v
+      );
+    });
+    const ringFan = centroidFanUv(ringUv);
+    const ringEar = ringFan === undefined ? earClipUv(ringUv) : undefined;
+    if (ringFan === undefined && (ringEar === undefined || ringEar.length === 0)) continue;
+    let ringCentroid = -1;
+    if (ringFan !== undefined) {
+      const cx = ringBottom.reduce((sum, p) => sum + p[0], 0) / ringBottom.length;
+      const cy = ringBottom.reduce((sum, p) => sum + p[1], 0) / ringBottom.length;
+      const cz = ringBottom.reduce((sum, p) => sum + p[2], 0) / ringBottom.length;
+      ringCentroid = Math.floor(positions.length / 3);
+      positions.push(cx, cy, cz);
+    }
+    for (let i = 0; i < ring.length; i += 1) {
+      const a = ringStart + i;
+      const b = ringStart + ((i + 1) % ring.length);
+      const c = ringStart + ring.length + i;
+      const d = ringStart + ring.length + ((i + 1) % ring.length);
+      void c;
+      void d;
+      // Secondary loops use the original ring as the top wall boundary and the
+      // appended ring as the base boundary.
+      indices.push(ring[i]!, ring[(i + 1) % ring.length]!, b);
+      indices.push(ring[i]!, b, a);
+      added += 2;
+    }
+    const ringFill = ringFan?.tris ?? ringEar!;
+    for (const tri of ringFill) {
+      if (ringFan !== undefined && ringCentroid >= 0) {
+        const map = (value: number) => (value === ring.length ? ringCentroid : ringStart + value);
+        indices.push(map(tri[0]!), map(tri[2]!), map(tri[1]!));
+      } else {
+        indices.push(
+          ringStart + tri[0]!,
+          ringStart + tri[2]!,
+          ringStart + tri[1]!
+        );
+      }
+      added += 1;
+    }
+  }
   mark('wall-generation', t0);
 
   t0 = performance.now();

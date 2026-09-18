@@ -222,6 +222,7 @@ export class ClinicalCloseBaseValidation {
 
   private checkGeometryQuality(input: {
     readonly quality?: CloseBaseQualitySnapshot;
+    readonly requireCommitEligibility: boolean;
   }): CloseBaseValidationCheckResult {
     if (input.quality === undefined) {
       return freezeCheck({

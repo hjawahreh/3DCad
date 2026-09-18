@@ -198,6 +198,37 @@ describe('validation', () => {
     clinical.runtime.dispose();
     host.dispose();
   });
+
+  it('blocks non-manifold or open output at commit validation', async () => {
+    const { host, clinical } = await boot();
+    await prepareCloseBaseReady(clinical);
+    expect(clinical.workspace.closeBase.enter().ok).toBe(true);
+    const validator = new ClinicalCloseBaseValidation();
+    const report = validator.validate({
+      session: clinical.session,
+      preparation: clinical.workspace.preparation,
+      parameters: DEFAULT_CLOSE_BASE_PARAMETERS,
+      targetObjectId: asClinicalObjectId('jaw'),
+      kernelAvailable: true,
+      operationAvailable: true,
+      kernelFingerprint: 'geo:preview',
+      requireCommitEligibility: true,
+      now: 21003,
+      quality: {
+        ok: true,
+        codes: [],
+        warnings: [],
+        boundaryEdges: 1,
+        nonManifoldEdges: 1,
+        degenerateCount: 0
+      }
+    });
+    expect(report.passed).toBe(false);
+    expect(report.checks.find((c) => c.id === 'geometry-quality')?.passed).toBe(false);
+    expect(report.checks.find((c) => c.id === 'boundary-closure')?.passed).toBe(false);
+    clinical.runtime.dispose();
+    host.dispose();
+  });
 });
 
 describe('preview', () => {

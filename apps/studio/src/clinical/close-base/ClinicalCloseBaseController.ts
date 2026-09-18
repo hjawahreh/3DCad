@@ -809,7 +809,7 @@ export class ClinicalCloseBaseController {
         codes: report.codes,
         warnings: report.warnings,
         boundaryEdges: report.stats.boundaryEdges,
-        nonManifoldEdges: report.stats.nonManifoldEdgeCount,
+        nonManifoldEdges: report.stats.nonManifoldEdges,
         degenerateCount: report.stats.degenerateCount
       };
     } catch {
