@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { useClinicalUiRevision } from '../shell/useClinicalUi.js';
 import { ClinicalArchSwitcher } from '../shell/ClinicalArchSwitcher.js';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
@@ -15,6 +15,7 @@ export const ClinicalCloseBaseToolbar = ({
   const session = workspace.session;
   useClinicalUiRevision(session);
   const closeBase = workspace.closeBase;
+  const [baseCreated, setBaseCreated] = useState(false);
   const state = useSyncExternalStore(
     (cb) => closeBase.session.subscribe(cb),
     () => closeBase.session.getState(),
@@ -48,15 +49,24 @@ export const ClinicalCloseBaseToolbar = ({
   const createAndCommit = async (): Promise<void> => {
     const previewed = await closeBase.autoCloseBase();
     if (!previewed.ok) {
-      session.getHost().notifications.push('warning', 'Base', previewed.error.message);
+      session.getHost().notifications.push(
+        'warning',
+        'Base',
+        'Unable to create the clinical base. The scan boundary needs review.'
+      );
       return;
     }
     // CLN-WORKFLOW-002: no separate Accept — commit immediately after successful create.
     const committed = await closeBase.accept();
     if (!committed.ok) {
-      session.getHost().notifications.push('warning', 'Base', committed.error.message);
+      session.getHost().notifications.push(
+        'warning',
+        'Base',
+        'Unable to create the clinical base. The scan boundary needs review.'
+      );
       return;
     }
+    setBaseCreated(true);
     session.getHost().notifications.push('success', 'Base', 'Base created');
     // Fit active arch after result
     workspace.viewport.fitAll();
@@ -99,6 +109,7 @@ export const ClinicalCloseBaseToolbar = ({
           onSelect={(mode) =>
             run(() => {
               if (mode === 'upper' || mode === 'lower') {
+                setBaseCreated(false);
                 closeBase.setActiveArch(mode);
                 workspace.viewport.fitAll();
                 workspace.viewport.presentClinicalAnteriorView({ preferClinicalFrame: true });
@@ -143,7 +154,7 @@ export const ClinicalCloseBaseToolbar = ({
           type="button"
           className="clinical-close-base-btn clinical-close-base-btn--done"
           data-testid="clinical-close-base-done"
-          disabled={processing}
+          disabled={processing || !baseCreated}
           onClick={() => runAsync(finishBaseStage)}
         >
           Done
