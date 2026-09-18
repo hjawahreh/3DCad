@@ -123,6 +123,24 @@ export const ClinicalViewCube = ({
     workspace.viewport.presentClinicalCubeView('front');
   }, [workspace]);
 
+  const onStageClickCapture = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const face = target.dataset.clinicalFace as ClinicalViewCubeFace | undefined;
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = (event.clientX - rect.left) / Math.max(1, rect.width);
+      const y = (event.clientY - rect.top) / Math.max(1, rect.height);
+      const screenFace: ClinicalViewCubeFace | undefined =
+        y < 0.28 ? 'top' : y > 0.72 ? 'bottom' : x < 0.28 ? 'left' : x > 0.72 ? 'right' : undefined;
+      const resolved = screenFace ?? face ?? 'front';
+      event.preventDefault();
+      event.stopPropagation();
+      onFace(resolved);
+    },
+    [onFace]
+  );
+
   if (doc === undefined || snapshot === undefined || !workspace.viewport.isReady()) {
     return null;
   }
@@ -151,7 +169,7 @@ export const ClinicalViewCube = ({
       >
         Home
       </button>
-      <div className="clinical-view-cube__stage">
+      <div className="clinical-view-cube__stage" onClickCapture={onStageClickCapture}>
         <div className="clinical-view-cube__cube" style={{ transform }}>
           {(Object.keys(FACE_LABELS) as ClinicalViewCubeFace[]).map((face) => (
             <button
