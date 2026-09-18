@@ -17,7 +17,7 @@ const FACE_LABELS: Readonly<Record<ClinicalViewCubeFace, string>> = Object.freez
   back: 'POSTERIOR',
   left: 'LEFT',
   right: 'RIGHT',
-  top: 'OCCLUSAL',
+  top: 'UPPER',
   bottom: 'LOWER'
 });
 
@@ -26,7 +26,7 @@ const FACE_TITLES: Readonly<Record<ClinicalViewCubeFace, string>> = Object.freez
   back: 'Posterior',
   left: 'Left',
   right: 'Right',
-  top: 'Upper / Occlusal',
+  top: 'Upper arch',
   bottom: 'Lower'
 });
 
