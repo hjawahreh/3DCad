@@ -755,7 +755,7 @@
 
 .clinical-view-cube__stage {
   width: 150px;
-  height: 132px;
+  height: 156px;
   perspective: none;
   perspective-origin: 50% 50%;
 }
@@ -785,8 +785,8 @@
 
 .clinical-view-cube__face--top { top: 4px !important; }
 .clinical-view-cube__face--front { top: 29px !important; }
-.clinical-view-cube__face--back { top: 54px !important; }
-.clinical-view-cube__face--bottom { top: 79px !important; }
+.clinical-view-cube__face--back { top: 79px !important; }
+.clinical-view-cube__face--bottom { top: 104px !important; }
 .clinical-view-cube__face--left,
 .clinical-view-cube__face--right {
   top: 29px !important;
@@ -797,6 +797,25 @@
 }
 .clinical-view-cube__face--left { left: 1px !important; }
 .clinical-view-cube__face--right { left: 121px !important; }
+.clinical-view-cube__home-face {
+  position: absolute;
+  left: 31px;
+  top: 54px;
+  width: 88px;
+  height: 24px;
+  border: 1px solid rgba(216, 179, 106, 0.72);
+  border-radius: 2px;
+  background: linear-gradient(145deg, rgba(73, 57, 34, 0.98), rgba(35, 29, 22, 0.98));
+  color: var(--studio-gold-bright);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+.clinical-view-cube__home-face:hover {
+  border-color: #fff4d6;
+  color: #fff4d6;
+}
 .clinical-view-cube__edge,
 .clinical-view-cube__corner { display: none; }
 

@@ -160,17 +160,17 @@ export const ClinicalViewCube = ({
       onClick={isolatePointer}
       onWheel={isolatePointer}
     >
-      <button
-        type="button"
-        className="clinical-view-cube__home"
-        data-testid="clinical-view-cube-home"
-        title="Clinical default (anterior)"
-        onClick={onHome}
-      >
-        Home
-      </button>
       <div className="clinical-view-cube__stage" onClickCapture={onStageClickCapture}>
         <div className="clinical-view-cube__cube" style={{ transform }}>
+          <button
+            type="button"
+            className="clinical-view-cube__home-face"
+            data-testid="clinical-view-cube-home"
+            title="Clinical default (anterior)"
+            onClick={onHome}
+          >
+            HOME
+          </button>
           {(Object.keys(FACE_LABELS) as ClinicalViewCubeFace[]).map((face) => (
             <button
               key={face}
