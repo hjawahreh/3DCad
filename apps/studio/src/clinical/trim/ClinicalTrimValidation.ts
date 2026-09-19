@@ -62,13 +62,16 @@ export class ClinicalTrimValidation {
     readonly kernelAvailable: boolean;
     readonly now: number;
   }): TrimValidationReport {
+    const boundaryChecks =
+      input.points.length > MIN_BOUNDARY_POINTS
+        ? [this.checkClosedBoundary(input), this.checkMinimumPoints(input)]
+        : [this.checkMinimumPoints(input), this.checkClosedBoundary(input)];
     const checks: TrimValidationCheckResult[] = [
       this.checkModelAvailable(input),
       this.checkTargetArch(input),
       this.checkPreparationStage(input),
       this.checkFiniteValues(input),
-      this.checkMinimumPoints(input),
-      this.checkClosedBoundary(input),
+      ...boundaryChecks,
       this.checkSelfIntersection(input),
       this.checkBoundaryArea(input),
       this.checkTargetSurface(input),

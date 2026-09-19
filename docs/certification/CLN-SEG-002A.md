@@ -1,6 +1,6 @@
 # CLN-SEG-002A — Remaining Production Segmentation Gates
 
-**Date:** 2026-09-17  
+**Date:** 2026-09-17
 **Status:** **PASS WITH OBSERVATIONS**
 
 ## Implementation
@@ -63,3 +63,12 @@ Production clinical validation is **NOT established**. This is an engineering in
 
 1. A configured, product-cleared checkpoint and reachable worker are required to complete production inference and capture its browser/timing evidence.
 2. The browser walkthrough requires follow-up because its legacy fixture shortcut did not transition the workflow from Trim/Base to Segmentation; it produced only the prepared-model screenshot.
+
+## CLN-SEG-002B follow-up
+
+The close-validation follow-up is documented in `CLN-SEG-002B.md`. The VTK
+worker is now started by Vitest global setup with a real local Python fallback,
+and the setup returns its teardown hook. Focused segmentation, Trim workflow,
+close-base, and regression-corpus tests pass. The full-suite result remains
+FAIL because legacy Trim expectations and the GEO-003 performance budget still
+need reconciliation; no browser PASS is claimed here.

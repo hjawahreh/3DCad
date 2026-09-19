@@ -298,13 +298,18 @@ export const ClinicalCreateCaseDialog = ({
             <li>Lower Arch imported{lower ? ` · ${lower.fileName}` : ''}</li>
             <li>Source geometry preserved</li>
           </ul>
-          {validation !== undefined ? (
-            <ClinicalCaseValidationPanel report={validation} compact />
-          ) : (
-            <p className="muted">Validation report unavailable — re-import if issues appear.</p>
-          )}
-          <p className="muted">
-            Next: Orientation, then automatic preparation. Orientation has not been applied yet.
+          <details className="clinical-create-case__validation-details">
+            <summary>
+              {validation?.verdict === 'WARNING' ? 'Review scan notes' : 'View import details'}
+            </summary>
+            {validation !== undefined ? (
+              <ClinicalCaseValidationPanel report={validation} compact />
+            ) : (
+              <p className="muted">Validation report unavailable.</p>
+            )}
+          </details>
+          <p className="muted clinical-create-case__next-note">
+            Ready for Orientation. Preparation follows after Accept.
           </p>
         </div>
         <div className="overlay-actions" style={{ paddingLeft: 0, paddingRight: 0 }}>

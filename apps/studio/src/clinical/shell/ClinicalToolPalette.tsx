@@ -82,26 +82,35 @@ export const ClinicalToolPalette = ({
     basing ||
     segmenting;
 
+  const activeTool = activeId === undefined ? undefined : activeId;
+  const activeToolLabel =
+    activeId === 'orient'
+      ? 'Orient Scan'
+      : activeId === 'trim'
+        ? 'Trim'
+        : activeId === 'close-base'
+          ? 'Base'
+          : activeId === 'segmentation'
+            ? 'Segment'
+            : 'Select a workflow stage';
+
   return (
     <nav className="clinical-tool-palette" data-testid="clinical-tool-palette" aria-label="Clinical tools">
-      <button
-        type="button"
-        className={
-          activeId === 'orient'
-            ? 'clinical-tool-palette__btn clinical-tool-palette__btn--active'
-            : 'clinical-tool-palette__btn'
-        }
-        data-testid="clinical-palette-orient"
-        title="Orient Scan"
-        onClick={() => invoke('clinical.tool.orient')}
-      >
-        <span className="clinical-tool-palette__icon" aria-hidden="true">
-          ⌖
-        </span>
-        <span className="clinical-tool-palette__label">Orient</span>
-      </button>
+      {activeId === 'orient' ? (
+        <button
+          type="button"
+          className="clinical-tool-palette__btn clinical-tool-palette__btn--active"
+          data-testid="clinical-palette-orient"
+          title="Orient Scan"
+          aria-current="step"
+          onClick={() => invoke('clinical.tool.orient')}
+        >
+          <span className="clinical-tool-palette__icon" aria-hidden="true">⌖</span>
+          <span className="clinical-tool-palette__label">Orient</span>
+        </button>
+      ) : null}
 
-      {ACTIVE_TOOLS.map((tool) => {
+      {ACTIVE_TOOLS.filter((tool) => activeTool === tool.id).map((tool) => {
         const locked = !canEdit && tool.id !== 'trim';
         const trimLocked =
           tool.id === 'trim' &&
@@ -129,6 +138,11 @@ export const ClinicalToolPalette = ({
           </button>
         );
       })}
+
+      <div className="clinical-tool-palette__context" aria-live="polite">
+        <span className="clinical-tool-palette__context-kicker">Current tool</span>
+        <strong>{activeToolLabel}</strong>
+      </div>
 
       <div className="clinical-tool-palette__divider" aria-hidden="true" />
 

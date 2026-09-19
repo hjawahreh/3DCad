@@ -402,6 +402,10 @@ describe('GEO-001D real dental base (normalized fixtures)', () => {
     expect(result.quality.diagonalBridgeDetection.rejected).toBe(false);
     expect(result.quality.boundaryMatch.passed).toBe(true);
     expect(result.quality.blockingFailures).toEqual([]);
+    expect(result.quality.boundaryEdgeCount).toBe(0);
+    expect(result.quality.nonManifoldEdgeCount).toBe(0);
+    expect(result.quality.watertight).toBe(true);
+    expect(result.quality.manifold).toBe(true);
     // Document dominant stage without fabricating progress %.
     expect(Object.keys(result.quality.stageTimingsMs).length).toBeGreaterThan(0);
     expect(elapsed).toBeLessThan(120_000);
@@ -432,6 +436,8 @@ describe('GEO-001D real dental base (normalized fixtures)', () => {
     expect(result.quality.blockingFailures).toEqual([]);
     expect(result.quality.boundaryEdgeCount).toBe(0);
     expect(result.quality.nonManifoldEdgeCount).toBe(0);
+    expect(result.quality.watertight).toBe(true);
+    expect(result.quality.manifold).toBe(true);
     expect(Object.keys(result.quality.stageTimingsMs).length).toBeGreaterThan(0);
     expect(elapsed).toBeLessThan(120_000);
   }, 180_000);

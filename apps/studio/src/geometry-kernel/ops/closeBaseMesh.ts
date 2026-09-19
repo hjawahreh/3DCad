@@ -86,6 +86,10 @@ export const closeBaseMesh = (mesh: TriangleMesh, options: CloseBaseOptions): Cl
   if (options.shouldAbort?.() === true) {
     throw new GeometryKernelError('CANCELLED', 'Close Base cancelled');
   }
+  const maxElapsedMs = options.maxElapsedMs ?? CLOSE_BASE_MAX_ELAPSED_MS;
+  if (maxElapsedMs <= 0) {
+    throw new GeometryKernelError('VALIDATION_FAILED', 'Close Base time budget exceeded');
+  }
 
   const axis =
     options.preferRequestedOrientation === true

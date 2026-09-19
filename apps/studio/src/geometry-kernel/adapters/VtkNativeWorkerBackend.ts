@@ -41,8 +41,27 @@ export interface VtkWorkerConfig {
   readonly meshPathHint?: string;
 }
 
-const defaultPython = (): string =>
-  process.env.CAD_VTK_PYTHON ?? '/tmp/cad-geom-bench/bin/python';
+const defaultPython = (): string => {
+  if (process.env.CAD_VTK_PYTHON && process.env.CAD_VTK_PYTHON.length > 0) {
+    return process.env.CAD_VTK_PYTHON;
+  }
+
+  const preferred = ['/tmp/cad-geom-bench/bin/python', 'python3', 'python'];
+  for (const candidate of preferred) {
+    if (candidate === '/tmp/cad-geom-bench/bin/python' && existsSync(candidate)) {
+      return candidate;
+    }
+    const probe = spawnSync(candidate, ['--version'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    if (!probe.error && probe.status === 0) {
+      return candidate;
+    }
+  }
+
+  return 'python3';
+};
 
 const defaultScript = (root: string): string =>
   join(root, 'tools/geometry-backend-bench/vtk_clinical_spike.py');

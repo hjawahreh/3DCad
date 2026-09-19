@@ -9,6 +9,7 @@ import { ClinicalHeader } from './ClinicalHeader.js';
 import { ClinicalRightPanel } from './ClinicalRightPanel.js';
 import { ClinicalStatusBar } from './ClinicalStatusBar.js';
 import { ClinicalToolPalette } from './ClinicalToolPalette.js';
+import { ClinicalWorkflowBar } from './ClinicalWorkflowBar.js';
 import { useClinicalLayout } from './useClinicalLayout.js';
 
 /**
@@ -41,6 +42,7 @@ export const ClinicalShell = ({ workspace }: { readonly workspace: ClinicalWorks
   return (
     <div className="clinical-shell clinical-shell--workstation" data-testid="clinical-shell">
       <ClinicalHeader workspace={workspace} onTogglePalette={togglePalette} />
+      <ClinicalWorkflowBar workspace={workspace} />
       <div className="clinical-body clinical-body--workstation">
         <aside
           className="clinical-panel clinical-panel--palette"

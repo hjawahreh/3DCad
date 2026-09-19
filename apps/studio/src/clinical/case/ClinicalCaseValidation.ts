@@ -244,6 +244,7 @@ export const validateClinicalCase = (
               vertexCount: 0,
               triangleCount: 0,
               boundaryEdges: 0,
+              nonManifoldEdges: 0,
               components: 0,
               degenerateCount: 0,
               duplicateVertexEstimate: 0

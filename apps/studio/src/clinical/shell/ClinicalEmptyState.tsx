@@ -48,11 +48,16 @@ export const ClinicalEmptyState = ({
   return (
     <div className="clinical-empty-state" data-testid="clinical-empty-state" role="region" aria-label="Start a case">
       <div className="clinical-empty-state__card">
-        <p className="clinical-empty-state__eyebrow">CAD Studio · Clinical</p>
-        <h2>{doc === undefined ? 'No cases yet' : 'No scan loaded'}</h2>
+        <div className="clinical-empty-state__signal" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+        <p className="clinical-empty-state__eyebrow">Clinical workstation</p>
+        <h2>{doc === undefined ? 'Open a case to begin' : 'Ready for scans'}</h2>
         <p className="clinical-empty-state__copy">
           {doc === undefined
-            ? 'Create your first patient case to begin.'
+            ? 'Create a patient case, then bring the scan into the viewport.'
             : 'Import Upper and Lower Arch scans to continue.'}
         </p>
         <div className="clinical-empty-state__actions">
