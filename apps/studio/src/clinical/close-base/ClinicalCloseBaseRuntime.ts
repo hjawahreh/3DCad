@@ -111,6 +111,10 @@ export class ClinicalCloseBaseRuntime {
     return this.controller.autoCloseBase();
   }
 
+  public autoCreateBase() {
+    return this.controller.autoCreateBase();
+  }
+
   public submit() {
     return this.controller.submit();
   }

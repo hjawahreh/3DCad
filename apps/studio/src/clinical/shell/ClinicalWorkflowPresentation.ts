@@ -513,22 +513,11 @@ const primaryFor = (
       if (autoPreview) {
         return {
           primary: Object.freeze({
-            id: 'accept-base',
-            label: 'Accept Base',
-            commandId: 'clinical.closeBase.accept'
+            id: 'creating-base',
+            label: 'Creating Base…',
+            disabled: true
           }),
-          secondary: Object.freeze([
-            Object.freeze({
-              id: 'adjust-base',
-              label: 'Adjust',
-              commandId: 'clinical.closeBase.manual'
-            }),
-            Object.freeze({
-              id: 'cancel-base',
-              label: 'Cancel',
-              commandId: 'clinical.closeBase.cancel'
-            })
-          ])
+          secondary: Object.freeze([])
         };
       }
       if (context.closingBase && context.closeBasePreviewReady) {

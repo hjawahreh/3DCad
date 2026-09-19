@@ -311,6 +311,11 @@ export const registerClinicalCommands = (
       const prep = workspace.preparation.autoPrepare();
       if (!prep.ok) {
         host.notifications.push('warning', 'Prepare', prep.error.message);
+        return;
+      }
+      const trim = workspace.trim.enter();
+      if (!trim.ok) {
+        host.notifications.push('warning', 'Trim', trim.error.message);
       }
     })
   });
@@ -784,7 +789,7 @@ export const registerClinicalCommands = (
     category: 'application',
     enabled: true,
     run: wrap(async () => {
-      const result = await workspace.closeBase.autoCloseBase();
+      const result = await workspace.closeBase.autoCreateBase();
       if (!result.ok) {
         host.notifications.push('warning', 'Close Base', result.error.message);
       }

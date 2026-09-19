@@ -159,14 +159,14 @@ export const ClinicalSegmentationToolbar = (props: {
         </div>
       ) : null}
 
-      {guideStep === 'auto-segmentation' || guideStep === 'mark-teeth' ? (
+      {guideStep === 'auto-segmentation' ? (
         <button
           type="button"
           className="clinical-btn clinical-btn--primary"
-          disabled={busy}
+          disabled={busy || state.toothMarkers.length === 0}
           data-testid="clinical-segmentation-run"
+          title={state.toothMarkers.length === 0 ? 'Mark at least one tooth first' : 'Run automatic segmentation'}
           onClick={() => {
-            runtime.setGuideStep('auto-segmentation');
             void runtime.segmentTeeth();
           }}
         >
@@ -264,6 +264,14 @@ export const ClinicalSegmentationToolbar = (props: {
             disabled={busy}
             data-testid="clinical-seg-next"
             onClick={() => {
+              if (guideStep === 'mark-teeth' && state.toothMarkers.length === 0) {
+                workspace.session.getHost().notifications.push(
+                  'warning',
+                  'Mark Teeth',
+                  'Mark at least one tooth before continuing to Auto Segmentation.'
+                );
+                return;
+              }
               if (guideStep === 'auto-segmentation' && state.prediction === undefined) {
                 void runtime.segmentTeeth();
                 return;

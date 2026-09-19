@@ -67,7 +67,7 @@ export class ClinicalSegmentationSession {
   private lastReviewMeta: ReviewActionMeta | undefined;
   private sessionStartedAt: number | undefined;
   private abort: AbortController | undefined;
-  private guideStep: SegmentationGuideStepId = 'edit-scans';
+  private guideStep: SegmentationGuideStepId = 'mark-teeth';
   private toothMarkers: ToothMarker[] = [];
   /**
    * CLN-WORKFLOW-002A — markers are session-live only (temporary inference inputs).
@@ -98,7 +98,7 @@ export class ClinicalSegmentationSession {
     this.abort = new AbortController();
     this.presentation = 'idle';
     this.viewMode = 'instance';
-    this.guideStep = 'edit-scans';
+    this.guideStep = 'mark-teeth';
     this.toothMarkers = [];
     this.workflow.transition('activating');
     this.productionLifecycle.reset(input.productionLifecycle ?? 'NOT_CONFIGURED');
@@ -222,7 +222,7 @@ export class ClinicalSegmentationSession {
     this.presentation = 'idle';
     this.reviewAcknowledged = false;
     this.viewMode = 'instance';
-    this.guideStep = 'edit-scans';
+    this.guideStep = 'mark-teeth';
     this.toothMarkers = [];
     this.workflow.reset();
     this.productionLifecycle.reset('NOT_CONFIGURED');

@@ -575,9 +575,10 @@ export class ClinicalTrimController {
       beforeFp !== null && afterFp !== null && beforeFp !== afterFp;
     const removedFaces = Math.max(0, beforeFaces - afterFaces);
     const faceDelta = Math.abs(beforeFaces - afterFaces);
-    // Meaningful cut: fingerprint must change AND either faces dropped or substantial remesh delta.
-    const meaningfulDelta =
-      fingerprintChanged && (removedFaces >= 50 || faceDelta >= 100);
+    // A valid local trim may remove only a few triangles, especially on a dense
+    // scan or near an incisor. Fingerprint + real face-count change is enough;
+    // quality validation below remains the safety gate for malformed output.
+    const meaningfulDelta = fingerprintChanged && faceDelta > 0;
     let qualityPassed = false;
     if (after !== undefined) {
       try {

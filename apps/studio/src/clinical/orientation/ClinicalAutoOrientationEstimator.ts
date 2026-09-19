@@ -314,6 +314,10 @@ export const estimateClinicalOrientation = (
   superior = vNormalize(superior);
 
   // --- Anterior / posterior via lateral-variance gradient along AP ---
+  // In dual-arch scans, anteriorSeed comes from the upper/lower relationship
+  // after projecting out the superior axis. That is the stronger clinical cue;
+  // do not let the noisier lateral-variance heuristic flip it posterior.
+  const hasClinicalAnteriorSeed = anteriorSeed !== undefined;
   let anterior = apAxis;
   const binCount = 8;
   const projections = allPoints.map((p) => vDot(vSub(p, c), anterior));
@@ -340,7 +344,7 @@ export const estimateClinicalOrientation = (
   const posteriorVar = binVar[0]! + binVar[1]!;
   const anteriorVar = binVar[binCount - 1]! + binVar[binCount - 2]!;
   // Anterior tip is the lower lateral-variance end of the U (incisor tip).
-  if (anteriorVar > posteriorVar) {
+  if (!hasClinicalAnteriorSeed && anteriorVar > posteriorVar) {
     anterior = vScale(anterior, -1);
   }
   anterior = vNormalize(anterior);

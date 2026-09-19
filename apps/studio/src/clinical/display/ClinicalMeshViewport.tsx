@@ -199,6 +199,39 @@ export const ClinicalMeshViewport = ({
     trimCursor.renderOrder = 11;
     trimOverlay.add(trimCursor);
 
+    const segmentationMarkerRoot = new Group();
+    segmentationMarkerRoot.renderOrder = 12;
+    root.add(segmentationMarkerRoot);
+    const markerMaterial = new MeshStandardMaterial({
+      color: 0xfacc15,
+      emissive: 0x713f12,
+      emissiveIntensity: 0.5,
+      roughness: 0.35,
+      depthTest: false,
+      depthWrite: false
+    });
+    let markerKey = '';
+
+    const syncSegmentationMarkers = (): void => {
+      const segmentation = workspace.segmentation;
+      const state = segmentation.isActive() ? segmentation.session.getState() : undefined;
+      const markers = state?.guideStep === 'mark-teeth' ? state.toothMarkers : [];
+      const nextKey = markers.map((marker) => marker.id).join('|');
+      if (nextKey === markerKey) return;
+      markerKey = nextKey;
+      while (segmentationMarkerRoot.children.length > 0) {
+        const child = segmentationMarkerRoot.children.pop();
+        if (child instanceof Mesh) child.geometry.dispose();
+      }
+      markers.forEach((marker, index) => {
+        const markerMesh = new Mesh(new SphereGeometry(0.9, 16, 12), markerMaterial);
+        markerMesh.position.set(marker.position[0], marker.position[1], marker.position[2]);
+        markerMesh.renderOrder = 12;
+        markerMesh.userData.markerIndex = index + 1;
+        segmentationMarkerRoot.add(markerMesh);
+      });
+    };
+
     const syncTrimSurfacePath = (): void => {
       const trim = workspace.trim;
       if (!trim.isActive()) {
@@ -658,6 +691,7 @@ export const ClinicalMeshViewport = ({
       fill.intensity = light === 'flat' ? 0.15 : 0.35;
 
       syncTrimSurfacePath();
+      syncSegmentationMarkers();
       renderer.render(scene, camera);
     };
 
@@ -692,6 +726,11 @@ export const ClinicalMeshViewport = ({
         entry.material.dispose();
       }
       meshCache.clear();
+      markerMaterial.dispose();
+      while (segmentationMarkerRoot.children.length > 0) {
+        const child = segmentationMarkerRoot.children.pop();
+        if (child instanceof Mesh) child.geometry.dispose();
+      }
       trimPathGeom.dispose();
       trimPathMat.dispose();
       trimCursorGeom.dispose();

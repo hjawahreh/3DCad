@@ -98,6 +98,10 @@ export const ClinicalWorkflowBar = ({
           );
         })}
       </ol>
+      <div className="clinical-workflow-bar__context" data-testid="clinical-workflow-context">
+        <strong>{presentation.currentTitle}</strong>
+        <span>{presentation.nextTitle}</span>
+      </div>
     </nav>
   );
 };

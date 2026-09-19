@@ -70,7 +70,9 @@ export const ClinicalTrimOverlay = ({
     return null;
   }
 
-  const drawingEnabled = isStrokeTrimMode(state.drawMode) || state.drawMode === 'plane';
+  const drawingEnabled =
+    trim.controller.isEditingReady() &&
+    (isStrokeTrimMode(state.drawMode) || state.drawMode === 'plane');
   const interaction = deriveTrimInteractionState({
     state,
     previewReady: trim.controller.isPreviewReady(),

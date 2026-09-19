@@ -412,7 +412,9 @@ export class ClinicalImportCoordinator {
       // Camera presentation must never fail the import itself.
     }
 
-    this.runPostImportCaseValidation(documentAfterImport);
+    if (selection.quiet !== true) {
+      this.runPostImportCaseValidation(documentAfterImport);
+    }
 
     const durationMs = Date.now() - started;
     const verts = documentAfterImport.objects.reduce((n, o) => n + (o.vertexCount ?? 0), 0);
@@ -446,7 +448,15 @@ export class ClinicalImportCoordinator {
     return clinicalSuccess(documentAfterImport);
   }
 
-  private runPostImportCaseValidation(document: ClinicalDocumentSnapshot): void {
+  public validateCurrentCase(): ClinicalCaseValidationReport | undefined {
+    const document = this.session.getPublicState().activeCase;
+    if (document === undefined) return undefined;
+    return this.runPostImportCaseValidation(document);
+  }
+
+  private runPostImportCaseValidation(
+    document: ClinicalDocumentSnapshot
+  ): ClinicalCaseValidationReport | undefined {
     const host = this.session.getHost();
     const registry = host.runtimes.kernel.registry;
     const meshes = new Map<string, TriangleMesh>();
@@ -483,9 +493,11 @@ export class ClinicalImportCoordinator {
             'Case validation reported errors'
         );
       }
+      return report;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Case validation failed';
       this.diagnostics.record('warning', `Case validation skipped: ${message}`);
+      return undefined;
     }
   }
 

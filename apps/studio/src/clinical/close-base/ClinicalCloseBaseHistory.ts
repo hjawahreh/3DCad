@@ -59,6 +59,10 @@ export class ClinicalCloseBaseHistory {
     return this.redoStack.length > 0;
   }
 
+  public hasCommittedObject(objectId: string): boolean {
+    return this.undoStack.some((entry) => entry.objectId === objectId);
+  }
+
   public undo(): ClinicalResult<ClinicalCloseBaseHistoryEntry> {
     const entry = this.undoStack.pop();
     if (entry === undefined) {

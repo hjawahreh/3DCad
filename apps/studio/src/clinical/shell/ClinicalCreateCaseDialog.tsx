@@ -261,7 +261,8 @@ export const ClinicalCreateCaseDialog = ({
     setUpperOk(nextUpperOk);
     setLowerOk(nextLowerOk);
     setStatusMessage('Preparing geometry…');
-    const report = refreshValidation();
+    const report = workspace.importCoordinator.validateCurrentCase() ?? refreshValidation();
+    setValidation(report);
     setStatusMessage('Ready');
     const saved = await workspace.cases.saveActiveCase(workspace);
     if (!saved.ok) {

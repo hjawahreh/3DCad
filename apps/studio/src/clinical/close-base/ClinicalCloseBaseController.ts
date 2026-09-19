@@ -400,6 +400,14 @@ export class ClinicalCloseBaseController {
     return clinicalSuccess(undefined);
   }
 
+  public async autoCreateBase(): Promise<ClinicalResult<void>> {
+    const previewed = await this.autoCloseBase();
+    if (!previewed.ok) {
+      return previewed;
+    }
+    return this.accept();
+  }
+
   /** Switch to manual Close Base parameter editing (fallback / Adjust). */
   public enterManualMode(): ClinicalResult<void> {
     if (!this.isActive()) {
@@ -478,12 +486,19 @@ export class ClinicalCloseBaseController {
     );
     host.runtimes.tools.clearActiveIfTerminal();
     this.operation.dispose();
-    // Unlock Segment after a committed base (canonical: after Trim → Base).
+    // Unlock Segment only after every available arch has a committed base.
     const prepStage = this.preparation.session.getState().currentStage;
+    const committedUpper = this.hasCommittedArch('upper');
+    const committedLower = this.hasCommittedArch('lower');
+    const activeDocAfterCommit = this.clinicalSession.getPublicState().activeCase;
+    const needsUpper = activeDocAfterCommit?.objects.some((obj) => obj.archRole === 'upper') === true;
+    const needsLower = activeDocAfterCommit?.objects.some((obj) => obj.archRole === 'lower') === true;
+    const allArchesBased = (!needsUpper || committedUpper) && (!needsLower || committedLower);
     if (
-      prepStage === 'orientation-complete' ||
-      prepStage === 'ready-for-trim' ||
-      prepStage === 'ready-for-close-base'
+      allArchesBased &&
+      (prepStage === 'orientation-complete' ||
+        prepStage === 'ready-for-trim' ||
+        prepStage === 'ready-for-close-base')
     ) {
       this.preparation.session.setStage('ready-for-segmentation');
     }
@@ -494,8 +509,8 @@ export class ClinicalCloseBaseController {
           activeDoc,
           Object.freeze({
             ...activeDoc.preparationMeta,
-            lastMilestone: 'based',
-            message: 'Prepared model ready for segmentation.'
+            ...(allArchesBased ? { lastMilestone: 'based' as const, message: 'Prepared model ready for segmentation.' } : {}),
+            ...(allArchesBased ? {} : { message: 'Upper base complete — continue with the lower arch.' })
           }),
           Date.now()
         ),
@@ -513,8 +528,10 @@ export class ClinicalCloseBaseController {
             archCount: activeDoc.objects.length,
             preparedAt: Date.now(),
             timingMs: 0,
-            message: 'Prepared model ready for segmentation.',
-            lastMilestone: 'based' as const
+            message: allArchesBased
+              ? 'Prepared model ready for segmentation.'
+              : 'Upper base complete — continue with the lower arch.',
+            ...(allArchesBased ? { lastMilestone: 'based' as const } : {})
           }),
           Date.now()
         ),
@@ -608,6 +625,11 @@ export class ClinicalCloseBaseController {
 
   public isActive(): boolean {
     return this.session.getWorkflow().isActive();
+  }
+
+  public hasCommittedArch(arch: ClinicalArchRole): boolean {
+    const target = this.manager.resolveTargetByArch(this.clinicalSession, arch);
+    return target.ok && this.history.hasCommittedObject(target.value.objectId as string);
   }
 
   public isPreparationReady(): boolean {

@@ -408,11 +408,41 @@ export const selectClinicalBaseBoundary = (
   return { ok: true, analyzed: best, all };
 };
 
-/** Centroid fan in UV — no non-adjacent boundary diagonals. */
+/**
+ * A single-point fan is only a VALID triangulation when the polygon is convex
+ * (every point is visible from any interior point). Dental arch borders are
+ * horseshoe-shaped (concave) — fanning them from a centroid/interior seed
+ * produces triangles that cross outside the boundary, rendering as a broken
+ * lattice with visible gaps instead of a solid cap. Detect convexity via
+ * consistent cross-product sign across all consecutive edge triples.
+ */
+const isConvexPolygonUv = (
+  uv: readonly { readonly x: number; readonly y: number }[]
+): boolean => {
+  if (uv.length < 4) return true;
+  let sign = 0;
+  for (let i = 0; i < uv.length; i += 1) {
+    const a = uv[i]!;
+    const b = uv[(i + 1) % uv.length]!;
+    const c = uv[(i + 2) % uv.length]!;
+    const cross = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+    if (Math.abs(cross) < 1e-12) continue;
+    const s = cross > 0 ? 1 : -1;
+    if (sign === 0) {
+      sign = s;
+    } else if (s !== sign) {
+      return false;
+    }
+  }
+  return true;
+};
+
+/** Centroid fan in UV — valid only for convex boundaries (no non-adjacent diagonals). */
 const centroidFanUv = (
   uv: readonly { readonly x: number; readonly y: number }[]
 ): { readonly tris: number[][]; readonly centroidUv: { x: number; y: number } } | undefined => {
   if (uv.length < 3) return undefined;
+  if (!isConvexPolygonUv(uv)) return undefined;
   let cx = 0;
   let cy = 0;
   for (const p of uv) {
@@ -423,7 +453,7 @@ const centroidFanUv = (
   cy /= uv.length;
   const inside = pointInPolygonUv(uv, cx, cy);
   if (!inside) {
-    // CLN-WORKFLOW-002: lower-arch borders are often non-convex — try an interior seed.
+    // Convex-but-numerically-off centroid — try an interior seed.
     const seed = findInteriorUv(uv);
     if (seed === undefined) return undefined;
     cx = seed.x;
@@ -501,17 +531,54 @@ const findInteriorUv = (
 
 /** Robust ear-clip in UV (concave fallback). */
 const earClipUv = (
-  uv: readonly { readonly x: number; readonly y: number }[]
+  uv: readonly { readonly x: number; readonly y: number }[],
+  meshVertexIds?: readonly number[],
+  existingMeshEdges?: ReadonlySet<string>
 ): number[][] | undefined => {
   if (uv.length < 3) return undefined;
-  const tryClip = (ordered: number[]): number[][] | undefined => {
+  const edgeKey = (a: number, b: number): string => (a < b ? `${a}:${b}` : `${b}:${a}`);
+  // A candidate ear's diagonal (i0,i2) must never silently duplicate an edge
+  // that already exists elsewhere in the source mesh — on a regular/structured
+  // grid this coincidence is real and otherwise produces a hidden non-manifold
+  // seam even though the 2D decomposition itself is perfectly valid.
+  const diagonalCollides = (i0: number, i2: number): boolean => {
+    if (meshVertexIds === undefined || existingMeshEdges === undefined) return false;
+    const a = meshVertexIds[i0]!;
+    const b = meshVertexIds[i2]!;
+    return existingMeshEdges.has(edgeKey(a, b));
+  };
+
+  const localSpanOf = (ring: readonly number[]): number => {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const vi of ring) {
+      const p = uv[vi]!;
+      minX = Math.min(minX, p.x);
+      minY = Math.min(minY, p.y);
+      maxX = Math.max(maxX, p.x);
+      maxY = Math.max(maxY, p.y);
+    }
+    return Math.max(maxX - minX, maxY - minY, 1e-6);
+  };
+
+  const tryClip = (
+    ordered: number[],
+    reflexEps: number,
+    containEps: number
+  ): { readonly tris: number[][]; readonly remainingRing: readonly number[] } | undefined => {
     const tris: number[][] = [];
     const remaining = [...ordered];
     let guard = 0;
+    // Resume scanning near the last cut point instead of restarting at 0 each pass —
+    // turns the common case from O(n^3) into ~O(n^2) for large dental boundary loops.
+    let cursor = 0;
     while (remaining.length > 3 && guard < ordered.length * ordered.length + 64) {
       guard += 1;
       let clipped = false;
-      for (let i = 0; i < remaining.length; i += 1) {
+      for (let step = 0; step < remaining.length; step += 1) {
+        const i = (cursor + step) % remaining.length;
         const i0 = remaining[(i + remaining.length - 1) % remaining.length]!;
         const i1 = remaining[i]!;
         const i2 = remaining[(i + 1) % remaining.length]!;
@@ -519,7 +586,7 @@ const earClipUv = (
         const b = uv[i1]!;
         const c = uv[i2]!;
         const cross = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-        if (cross <= 1e-14) continue;
+        if (cross <= reflexEps) continue;
         let hasPoint = false;
         for (let k = 0; k < remaining.length; k += 1) {
           const rk = remaining[k]!;
@@ -528,40 +595,117 @@ const earClipUv = (
           const d1 = (p.x - b.x) * (a.y - b.y) - (p.y - b.y) * (a.x - b.x);
           const d2 = (p.x - c.x) * (b.y - c.y) - (p.y - c.y) * (b.x - c.x);
           const d3 = (p.x - a.x) * (c.y - a.y) - (p.y - a.y) * (c.x - a.x);
-          const hasNeg = d1 < -1e-14 || d2 < -1e-14 || d3 < -1e-14;
-          const hasPos = d1 > 1e-14 || d2 > 1e-14 || d3 > 1e-14;
+          const hasNeg = d1 < -containEps || d2 < -containEps || d3 < -containEps;
+          const hasPos = d1 > containEps || d2 > containEps || d3 > containEps;
           if (!(hasNeg && hasPos)) {
             hasPoint = true;
             break;
           }
         }
         if (hasPoint) continue;
+        if (diagonalCollides(i0, i2)) continue;
         tris.push([i0, i1, i2]);
         remaining.splice(i, 1);
+        cursor = i > 0 ? i - 1 : 0;
         clipped = true;
         break;
       }
-      if (!clipped) return undefined;
+      if (!clipped) {
+        return remaining.length < ordered.length
+          ? { tris, remainingRing: remaining }
+          : undefined;
+      }
     }
     if (remaining.length === 3) {
       tris.push([remaining[0]!, remaining[1]!, remaining[2]!]);
+      return { tris, remainingRing: [] };
     }
-    return remaining.length <= 3 && tris.length > 0 ? tris : undefined;
+    return remaining.length <= 3 && tris.length > 0 ? { tris, remainingRing: [] } : undefined;
   };
 
-  const idx = uv.map((_, i) => i);
+  // Sweep a progressively relaxed containment epsilon (scaled to the CURRENT
+  // ring's own local extent, not the whole polygon) and return the best
+  // (smallest-residual) attempt across both windings. Real clinical borders
+  // carry near-duplicate/noisy samples; the reflex test never loosens so we
+  // never chord across the arch to force a fit.
+  const sweep = (
+    ring: readonly number[]
+  ): { readonly tris: number[][]; readonly remainingRing: readonly number[] } | undefined => {
+    const ringSpan = localSpanOf(ring);
+    const reflexEps = ringSpan * ringSpan * 1e-9;
+    let best: { readonly tris: number[][]; readonly remainingRing: readonly number[] } | undefined;
+    for (const rel of [1e-9, 1e-7, 1e-5, 1e-4, 1e-3]) {
+      const containEps = ringSpan * ringSpan * rel;
+      const forward = tryClip([...ring], reflexEps, containEps);
+      if (forward !== undefined && forward.remainingRing.length === 0) return forward;
+      if (forward !== undefined && (best === undefined || forward.remainingRing.length < best.remainingRing.length)) {
+        best = forward;
+      }
+      const backward = tryClip([...ring].reverse(), reflexEps, containEps);
+      if (backward !== undefined && backward.remainingRing.length === 0) return backward;
+      if (backward !== undefined && (best === undefined || backward.remainingRing.length < best.remainingRing.length)) {
+        best = backward;
+      }
+    }
+    return best;
+  };
+
+  let ring: readonly number[] = uv.map((_, i) => i);
+  const originalRing = ring;
   let area = 0;
-  for (let i = 0; i < idx.length; i += 1) {
-    const a = uv[idx[i]!]!;
-    const b = uv[idx[(i + 1) % idx.length]!]!;
+  for (let i = 0; i < ring.length; i += 1) {
+    const a = uv[ring[i]!]!;
+    const b = uv[ring[(i + 1) % ring.length]!]!;
     area += a.x * b.y - b.x * a.y;
   }
-  if (area < 0) idx.reverse();
-  const forward = tryClip(idx);
-  if (forward !== undefined) return forward;
-  // Retry opposite winding for noisy dental borders.
-  idx.reverse();
-  return tryClip(idx);
+  if (area < 0) ring = [...ring].reverse();
+
+  // Defensive check: a correct simple-polygon triangulation uses each of the
+  // polygon's own boundary edges exactly once and every internal diagonal
+  // exactly twice, with n-2 triangles total. If a near-degenerate/self-touching
+  // loop (e.g. a repeated vertex) slips a bad ear through, this catches it
+  // before it reaches the mesh as a hidden non-manifold seam.
+  const isValidTriangulation = (tris: readonly number[][]): boolean => {
+    if (tris.length !== originalRing.length - 2) return false;
+    const boundaryKeys = new Set<string>();
+    for (let i = 0; i < originalRing.length; i += 1) {
+      const a = originalRing[i]!;
+      const b = originalRing[(i + 1) % originalRing.length]!;
+      boundaryKeys.add(a < b ? `${a}:${b}` : `${b}:${a}`);
+    }
+    const usage = new Map<string, number>();
+    for (const tri of tris) {
+      const [a, b, c] = tri as [number, number, number];
+      if (a === b || b === c || a === c) return false;
+      for (const [x, y] of [[a, b], [b, c], [c, a]] as const) {
+        const k = x < y ? `${x}:${y}` : `${y}:${x}`;
+        usage.set(k, (usage.get(k) ?? 0) + 1);
+      }
+    }
+    for (const [k, count] of usage) {
+      const expected = boundaryKeys.has(k) ? 1 : 2;
+      if (count !== expected) return false;
+    }
+    return true;
+  };
+
+  const allTris: number[][] = [];
+  // Re-run the sweep on the ever-shrinking residual, rescaling epsilon to its
+  // own (smaller) local extent each time. A residual that resisted a coarse,
+  // whole-polygon-scaled epsilon can still be a perfectly valid simple polygon
+  // once tolerance is recalibrated to its own size — this converges without
+  // ever injecting an unverified bridge triangle.
+  for (let round = 0; round < 12; round += 1) {
+    const result = sweep(ring);
+    if (result === undefined) return undefined;
+    allTris.push(...result.tris);
+    if (result.remainingRing.length === 0) {
+      return isValidTriangulation(allTris) ? allTris : undefined;
+    }
+    if (result.remainingRing.length >= ring.length) return undefined;
+    ring = result.remainingRing;
+  }
+  return undefined;
 };
 
 const countEdgeUses = (indices: Uint32Array): {
@@ -903,7 +1047,20 @@ export const constructClinicalBase = (
 
   t0 = performance.now();
   const fan = centroidFanUv(uv);
-  const ear = fan === undefined ? earClipUv(uv) : undefined;
+  let existingMeshEdges: Set<string> | undefined;
+  if (fan === undefined) {
+    existingMeshEdges = new Set<string>();
+    const triCountForEdges = Math.floor(mesh.indices.length / 3);
+    for (let t = 0; t < triCountForEdges; t += 1) {
+      const i0 = mesh.indices[t * 3]!;
+      const i1 = mesh.indices[t * 3 + 1]!;
+      const i2 = mesh.indices[t * 3 + 2]!;
+      existingMeshEdges.add(i0 < i1 ? `${i0}:${i1}` : `${i1}:${i0}`);
+      existingMeshEdges.add(i1 < i2 ? `${i1}:${i2}` : `${i2}:${i1}`);
+      existingMeshEdges.add(i2 < i0 ? `${i2}:${i0}` : `${i0}:${i2}`);
+    }
+  }
+  const ear = fan === undefined ? earClipUv(uv, topIndices, existingMeshEdges) : undefined;
   if (fan === undefined && (ear === undefined || ear.length === 0)) {
     return {
       ok: false,
@@ -913,6 +1070,11 @@ export const constructClinicalBase = (
       warnings
     };
   }
+  // Ear-clip triangles are, by construction, a non-crossing decomposition of the
+  // boundary polygon — they can legitimately span a wide chord on a horseshoe arch
+  // without being a slab/bridge artifact. Only the naive single-point fan (valid
+  // only for convex loops) needs the diagonal-bridge false-positive guard below.
+  const usedEarClip = fan === undefined;
   mark('triangulation', t0);
 
   t0 = performance.now();
@@ -1151,7 +1313,7 @@ export const constructClinicalBase = (
     clinicalVsAabb > 1.25 &&
     Math.abs(bottomPerim / Math.max(1e-6, planarPerim) - 1) > 0.2;
 
-  const bridgeRejected = bridges.count >= 3 && bridges.ratio > 0.02;
+  const bridgeRejected = !usedEarClip && bridges.count >= 3 && bridges.ratio > 0.02;
   const blocking: string[] = [];
   if (slabDetected) blocking.push('BASE_SLAB_DETECTED');
   if (bridgeRejected) blocking.push('DIAGONAL_BRIDGE');

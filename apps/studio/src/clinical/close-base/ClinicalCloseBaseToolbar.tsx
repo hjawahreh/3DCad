@@ -46,13 +46,7 @@ export const ClinicalCloseBaseToolbar = ({
   const hasLower = doc?.objects.some((o) => o.archRole === 'lower') === true;
 
   const createAndCommit = async (): Promise<void> => {
-    const previewed = await closeBase.autoCloseBase();
-    if (!previewed.ok) {
-      session.getHost().notifications.push('warning', 'Base', previewed.error.message);
-      return;
-    }
-    // CLN-WORKFLOW-002: no separate Accept — commit immediately after successful create.
-    const committed = await closeBase.accept();
+    const committed = await closeBase.autoCreateBase();
     if (!committed.ok) {
       session.getHost().notifications.push('warning', 'Base', committed.error.message);
       return;
@@ -66,6 +60,17 @@ export const ClinicalCloseBaseToolbar = ({
   const finishBaseStage = async (): Promise<void> => {
     // Create Base already commits. Done must NOT re-run accept()/geometry —
     // that blocked the Base→Segment transition for minutes on real scans.
+    if (hasUpper && hasLower && activeArch === 'upper' && !closeBase.hasCommittedArch('lower')) {
+      const switched = closeBase.setActiveArch('lower');
+      if (!switched.ok) {
+        session.getHost().notifications.push('warning', 'Base', switched.error.message);
+        return;
+      }
+      workspace.archContext.setMode('lower');
+      workspace.viewport.presentClinicalAnteriorView({ preferClinicalFrame: true });
+      session.getHost().notifications.push('info', 'Base', 'Lower arch — create the lower base, then Done.');
+      return;
+    }
     closeBase.cancel();
     const entered = workspace.segmentation.enter();
     if (!entered.ok) {
