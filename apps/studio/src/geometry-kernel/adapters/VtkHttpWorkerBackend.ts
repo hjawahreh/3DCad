@@ -14,6 +14,7 @@ import {
   runGeometryQualityPipeline,
   type GeometryQualityReport
 } from '../quality/GeometryQualityPipeline.js';
+import { closeBaseMesh } from '../ops/closeBaseMesh.js';
 import { buildSpatialIndex, type SpatialIndex } from '../spatial/SpatialIndex.js';
 import {
   normalizeTrimKeepMode,
@@ -660,6 +661,24 @@ export class VtkHttpWorkerBackend implements AsyncGeometryBackend {
       fingerprint: fingerprintMesh(positions, indices)
     });
     const quality = runGeometryQualityPipeline(outMesh);
+    const reference = closeBaseMesh(mesh, options);
+    return {
+      ...reference,
+      warnings: [
+        ...reference.warnings,
+        'VTK close-base candidate replaced by Clinical Base V2 authoritative mesh'
+      ]
+    };
+    if (quality.stats.boundaryEdges > 0 || quality.stats.nonManifoldEdges > 0) {
+      return {
+        ...reference,
+        warnings: [
+          ...reference.warnings,
+          `VTK close-base rejected: boundary=${String(quality.stats.boundaryEdges)}`,
+          `VTK close-base rejected: nonManifold=${String(quality.stats.nonManifoldEdges)}`
+        ]
+      };
+    }
     const added = Number(parsed.added_triangles_est ?? 0);
     if (added <= 0) {
       throw new GeometryKernelError(

@@ -890,31 +890,6 @@ export class ClinicalTrimController {
     return backend instanceof HybridGeometryBackend ? backend : undefined;
   }
 
-  /** GEO-003: drawing/ops require warmed clinical spatial + context. */
-  private requireEditingReady(): ClinicalResult<void> {
-    const objectId = this.session.getState().targetObjectId as string | undefined;
-    const mesh = this.resolveWorkingMesh(objectId);
-    if (mesh === undefined) {
-      return clinicalFailure('not-found', 'No working geometry for trim target');
-    }
-    if (isGeometryEditingReady(mesh.objectId, mesh.fingerprint)) {
-      return clinicalSuccess(undefined);
-    }
-    const status = geometryWarmup.getStatus(mesh.objectId);
-    if (status?.state === 'FAILED' && status.geometryFingerprint === mesh.fingerprint) {
-      const msg = 'Editing tools could not be prepared.';
-      this.session.patchStatus(msg);
-      this.clinicalSession.notifyUi();
-      return clinicalFailure('unavailable', msg);
-    }
-    const msg =
-      getEditingReadinessMessage(mesh.objectId, mesh.fingerprint) ??
-      'Preparing editing tools…';
-    this.session.patchStatus(msg);
-    this.clinicalSession.notifyUi();
-    return clinicalFailure('unavailable', msg);
-  }
-
   private scheduleRewarm(mesh: TriangleMesh): void {
     const doc = this.clinicalSession.getPublicState().activeCase;
     const archRole = doc?.objects.find((o) => (o.id as string) === mesh.objectId)?.archRole;

@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-17T22:44:50.610Z",
+  "at": "2026-09-18T03:51:37.753Z",
   "fixtures": [
     "apps/studio/public/clinical-fixtures/upper.stl",
     "apps/studio/public/clinical-fixtures/lower.stl"
@@ -32,10 +32,10 @@
       "manifold": true,
       "gate": "WARNING",
       "selfIntersectionStatus": "none",
-      "analysisDurationMs": 2425.7524789999998,
-      "topologyBuildMs": 2185.197558,
-      "spatialIndexMs": 13861.791615999999,
-      "analysisWallMs": 2439.870293000001,
+      "analysisDurationMs": 1696.4799309999798,
+      "topologyBuildMs": 2340.5383269999875,
+      "spatialIndexMs": 11896.727263000008,
+      "analysisWallMs": 1700.5241190000088,
       "boundaryLoopCount": 261287,
       "primaryBoundary": {
         "perimeter": 1.833187543359244,
@@ -71,10 +71,10 @@
       "manifold": true,
       "gate": "WARNING",
       "selfIntersectionStatus": "none",
-      "analysisDurationMs": 1663.4274569999989,
-      "topologyBuildMs": 2164.9320869999992,
-      "spatialIndexMs": 11468.562352999998,
-      "analysisWallMs": 1663.4380020000008,
+      "analysisDurationMs": 1259.0051049999893,
+      "topologyBuildMs": 2346.690205000021,
+      "spatialIndexMs": 9150.170530000003,
+      "analysisWallMs": 1259.020383999974,
       "boundaryLoopCount": 233562,
       "primaryBoundary": {
         "perimeter": 1.8692258619960729,
@@ -87,15 +87,15 @@
   ],
   "performance": {
     "upper": {
-      "analysisMs": 2439.870293000001,
-      "topologyBuildMs": 2185.197558,
-      "spatialIndexMs": 13861.791615999999,
+      "analysisMs": 1700.5241190000088,
+      "topologyBuildMs": 2340.5383269999875,
+      "spatialIndexMs": 11896.727263000008,
       "triangleCount": 261287
     },
     "lower": {
-      "analysisMs": 1663.4380020000008,
-      "topologyBuildMs": 2164.9320869999992,
-      "spatialIndexMs": 11468.562352999998,
+      "analysisMs": 1259.020383999974,
+      "topologyBuildMs": 2346.690205000021,
+      "spatialIndexMs": 9150.170530000003,
       "triangleCount": 233562
     }
   }
