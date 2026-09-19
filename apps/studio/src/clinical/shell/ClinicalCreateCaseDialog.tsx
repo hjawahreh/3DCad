@@ -286,6 +286,7 @@ export const ClinicalCreateCaseDialog = ({
       'Case',
       `Case created. Upper Arch and Lower Arch imported.${warn}`
     );
+    onClose();
   };
 
   if (phase === 'success') {
@@ -360,7 +361,7 @@ export const ClinicalCreateCaseDialog = ({
   });
 
   return (
-    <div className="clinical-create-case" data-testid="clinical-create-case-dialog">
+    <div className={`clinical-create-case${busy ? ' clinical-create-case--working' : ''}`} data-testid="clinical-create-case-dialog">
       <p className="clinical-import-dialog__intro">
         Create a patient case and import Upper and Lower Arch scans ({FORMAT_HINT}).
       </p>
@@ -517,6 +518,7 @@ export const ClinicalCreateCaseDialog = ({
 
       {busy || (progress.phase !== 'idle' && progress.phase !== 'completed') ? (
         <div className="clinical-import-progress" data-testid="clinical-create-progress">
+          {busy ? <img className="clinical-import-progress__loader" src="/loader.gif" alt="" /> : null}
           <div className="clinical-import-progress__bar">
             <div
               style={{

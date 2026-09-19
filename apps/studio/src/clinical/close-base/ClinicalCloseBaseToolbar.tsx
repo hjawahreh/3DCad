@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from 'react';
+import { useSyncExternalStore } from 'react';
 import { useClinicalUiRevision } from '../shell/useClinicalUi.js';
 import { ClinicalArchSwitcher } from '../shell/ClinicalArchSwitcher.js';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
@@ -15,7 +15,6 @@ export const ClinicalCloseBaseToolbar = ({
   const session = workspace.session;
   useClinicalUiRevision(session);
   const closeBase = workspace.closeBase;
-  const [baseCreated, setBaseCreated] = useState(false);
   const state = useSyncExternalStore(
     (cb) => closeBase.session.subscribe(cb),
     () => closeBase.session.getState(),
@@ -43,6 +42,7 @@ export const ClinicalCloseBaseToolbar = ({
     targetObj?.archRole === 'upper' || targetObj?.archRole === 'lower'
       ? targetObj.archRole
       : undefined;
+  const baseCreated = activeArch !== undefined && closeBase.hasCommittedArch(activeArch);
   const hasUpper = doc?.objects.some((o) => o.archRole === 'upper') === true;
   const hasLower = doc?.objects.some((o) => o.archRole === 'lower') === true;
 
@@ -56,7 +56,6 @@ export const ClinicalCloseBaseToolbar = ({
       );
       return;
     }
-    setBaseCreated(true);
     session.getHost().notifications.push('success', 'Base', 'Base created');
     // Fit active arch after result
     workspace.viewport.fitAll();
@@ -110,7 +109,6 @@ export const ClinicalCloseBaseToolbar = ({
           onSelect={(mode) =>
             run(() => {
               if (mode === 'upper' || mode === 'lower') {
-                setBaseCreated(false);
                 closeBase.setActiveArch(mode);
                 workspace.viewport.fitAll();
                 workspace.viewport.presentClinicalAnteriorView({ preferClinicalFrame: true });

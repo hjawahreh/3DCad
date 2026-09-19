@@ -63,7 +63,7 @@ describe('clinical workflow presentation', () => {
     h.dispose();
   });
 
-  it('moves to orient after a case with a mesh object exists', () => {
+  it('keeps Import active after scans exist until Next opens Orientation', () => {
     const h = host();
     const boot = new ClinicalBootstrap().bootstrap(h);
     expect(boot.session.newCase({ name: 'Demo', patientName: 'Patient' }).ok).toBe(true);
@@ -80,10 +80,10 @@ describe('clinical workflow presentation', () => {
 
     const presentation = buildClinicalWorkflowPresentation(boot.workspace);
     expect(presentation.emptyWorkspace).toBe(false);
-    expect(presentation.currentStepId).toBe('orient');
-    expect(presentation.primaryAction.label).toMatch(/Orient|Auto Orient|Continue to Orientation|Start Orientation|Accept Orientation/);
-    expect(presentation.steps.find((s) => s.id === 'import')?.status).toBe('completed');
-    expect(presentation.steps.find((s) => s.id === 'orient')?.status).toBe('current');
+    expect(presentation.currentStepId).toBe('import');
+    expect(presentation.primaryAction.label).toMatch(/New Case|Import/);
+    expect(presentation.steps.find((s) => s.id === 'import')?.status).toBe('current');
+    expect(presentation.steps.find((s) => s.id === 'orient')?.status).toBe('available');
     expect(presentation.steps.find((s) => s.id === 'analyze')?.status).toBe('locked');
 
     boot.runtime.dispose();

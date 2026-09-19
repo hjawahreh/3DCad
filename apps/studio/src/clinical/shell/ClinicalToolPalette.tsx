@@ -7,11 +7,13 @@ import { useClinicalUiRevision } from './useClinicalUi.js';
 import type { ClinicalWorkspace } from '../workspace/ClinicalWorkspace.js';
 import { buildClinicalWorkflowPresentation } from './ClinicalWorkflowPresentation.js';
 
+type PaletteToolId = 'trim' | 'close-base' | 'segmentation';
+
 export const ClinicalToolPalette = ({
   workspace
 }: {
   readonly workspace: ClinicalWorkspace;
-}): React.JSX.Element => {
+}): React.JSX.Element | null => {
   const session = workspace.session;
   useClinicalUiRevision(session);
   const presentation = buildClinicalWorkflowPresentation(workspace);
@@ -21,6 +23,10 @@ export const ClinicalToolPalette = ({
   const basing = workspace.closeBase.isActive();
   const segmenting = workspace.segmentation.isActive();
   const orienting = workspace.orientation.isActive();
+
+  if (presentation.emptyWorkspace && !orienting && !trimming && !basing && !segmenting) {
+    return null;
+  }
 
   const activeId: PaletteToolId | 'orient' | undefined = trimming
     ? 'trim'
@@ -45,12 +51,22 @@ export const ClinicalToolPalette = ({
 
   const contextual = trimming
     ? [
+      { id: 'upper', label: 'Upper', icon: 'U', onClick: () => workspace.trim.setActiveArch('upper') },
+      { id: 'lower', label: 'Lower', icon: 'L', onClick: () => workspace.trim.setActiveArch('lower') },
         { id: 'lasso', label: 'Lasso', icon: '⌁', onClick: () => workspace.trim.setDrawMode('lasso') },
         { id: 'curve', label: 'Curve', icon: '⌒', onClick: () => workspace.trim.setDrawMode('curve') },
         { id: 'clear', label: 'Clear', icon: '×', onClick: () => workspace.trim.clearBoundary() },
-        { id: 'undo', label: 'Undo', icon: '↶', onClick: () => workspace.trim.undo() }
+        { id: 'undo', label: 'Undo', icon: '↶', onClick: () => workspace.trim.undo() },
+        { id: 'done', label: 'Done', icon: '✓', onClick: () => void host.commands.invoke('clinical.trim.done') }
       ]
-    : basing
+    : orienting
+      ? [
+          { id: 'home', label: 'Home', icon: '⌂', onClick: () => workspace.viewport.presentCanonicalClinicalView('front') },
+          { id: 'auto-orient', label: 'Auto', icon: '✦', onClick: () => workspace.orientation.autoOrient({ force: true }) },
+          { id: 'reset-orient', label: 'Reset', icon: '↺', onClick: () => workspace.orientation.reset() },
+          { id: 'accept-orient', label: 'Done', icon: '✓', onClick: () => void host.commands.invoke('clinical.orientation.accept') }
+        ]
+      : basing
       ? [
           { id: 'upper', label: 'Upper', icon: 'U', onClick: () => workspace.closeBase.setActiveArch('upper') },
           { id: 'lower', label: 'Lower', icon: 'L', onClick: () => workspace.closeBase.setActiveArch('lower') },
@@ -59,7 +75,7 @@ export const ClinicalToolPalette = ({
       : segmenting
         ? [
             { id: 'mark-teeth', label: 'Mark', icon: '•', onClick: () => workspace.segmentation.setGuideStep('mark-teeth') },
-            { id: 'auto-segmentation', label: 'Auto', icon: '✦', onClick: () => { workspace.segmentation.setGuideStep('auto-segmentation'); void workspace.segmentation.segmentTeeth(); } },
+            { id: 'auto-segmentation', label: 'Auto', icon: '✦', onClick: () => workspace.segmentation.setGuideStep('auto-segmentation') },
             { id: 'adjust-boundaries', label: 'Adjust', icon: '⌘', onClick: () => workspace.segmentation.setGuideStep('adjust-boundaries') },
             { id: 'verify-teeth', label: 'Verify', icon: '✓', onClick: () => workspace.segmentation.setGuideStep('verify-teeth') }
           ]

@@ -94,17 +94,7 @@ const SettingsDialogBody = ({ root }: { readonly root: StudioCompositionRoot }):
     <div className="settings-form">
       <label>
         Theme
-        <select
-          value={settings.theme}
-          onChange={(event) => {
-            const theme = event.target.value === 'light' ? 'light' : 'dark';
-            root.settings.update({ theme });
-            root.theme.apply(theme);
-          }}
-        >
-          <option value="dark">Dark</option>
-          <option value="light">Light</option>
-        </select>
+        <span className="settings-form__fixed-value">Dark clinical theme</span>
       </label>
       <label>
         Language

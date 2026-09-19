@@ -28,11 +28,11 @@ export const ClinicalHeader = ({
   return (
     <header className="clinical-header" data-testid="clinical-header">
       <div className="clinical-brand">
-        <span className="clinical-brand__mark" aria-hidden="true" />
-        <div>
-          <div className="clinical-brand__name">CAD Studio</div>
-          <div className="clinical-brand__sub">Clinical</div>
-        </div>
+        <img
+          className="clinical-brand__logo"
+          src="/AS-logo.png"
+          alt="Aligner Studio"
+        />
       </div>
 
       <div className="clinical-header__case" data-testid="clinical-header-case">

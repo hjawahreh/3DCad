@@ -15,6 +15,7 @@ import {
   type SegmentationGuideStepId
 } from './guide/SegmentationGuideSteps.js';
 import { resolveSegmentationClinicalStatus } from './status/SegmentationClinicalStatus.js';
+import { summarizeReview } from './display/ClinicalSegmentationPresentation.js';
 import { isNonClinicalSegmentationProvider } from './ClinicalSegmentationIntegrity.js';
 import {
   productionLifecycleToReviewKind,
@@ -54,6 +55,7 @@ export const ClinicalSegmentationToolbar = (props: {
     providerId: state.prediction?.providerId ?? state.providerId,
     needsClinicalReview: (state.prediction?.confidence.needsReviewCount ?? 0) > 0
   });
+  const reviewSummary = state.prediction !== undefined ? summarizeReview(state.prediction) : undefined;
 
   const go = (step: SegmentationGuideStepId | undefined): void => {
     if (step === undefined) return;
@@ -177,6 +179,20 @@ export const ClinicalSegmentationToolbar = (props: {
       {(guideStep === 'adjust-boundaries' || guideStep === 'verify-teeth') &&
       state.prediction !== undefined ? (
         <>
+          {reviewSummary !== undefined ? (
+            <div className="clinical-segmentation-toolbar__review-summary" data-testid="clinical-seg-review-summary">
+              <span><b>{String(reviewSummary.toothCount)}</b> teeth</span>
+              <span className={reviewSummary.needsReviewCount > 0 ? 'clinical-segmentation-toolbar__review-summary--warn' : ''}>
+                <b>{String(reviewSummary.needsReviewCount)}</b> review
+              </span>
+              <span><b>{String(reviewSummary.missingCount)}</b> missing</span>
+            </div>
+          ) : null}
+          <div className="clinical-segmentation-toolbar__legend" data-testid="clinical-seg-legend">
+            <span><i className="clinical-segmentation-toolbar__swatch clinical-segmentation-toolbar__swatch--tooth" /> Tooth</span>
+            <span><i className="clinical-segmentation-toolbar__swatch clinical-segmentation-toolbar__swatch--gingiva" /> Gingiva</span>
+            <span><i className="clinical-segmentation-toolbar__swatch clinical-segmentation-toolbar__swatch--review" /> Review</span>
+          </div>
           <ClinicalToothNumberingPanel workspace={workspace} />
           {guideStep === 'adjust-boundaries' ? (
             <div className="clinical-segmentation-toolbar__actions">
@@ -191,6 +207,40 @@ export const ClinicalSegmentationToolbar = (props: {
                 }}
               >
                 Mark Unknown
+              </button>
+              <button
+                type="button"
+                className="clinical-btn clinical-btn--tertiary"
+                disabled={state.selectedInstanceId === undefined}
+                data-testid="clinical-segmentation-split"
+                onClick={() => {
+                  const selected = state.prediction?.instances.find(
+                    (instance) => instance.instanceId === state.selectedInstanceId
+                  );
+                  if (selected === undefined || selected.faceIndices.length < 2) return;
+                  const midpoint = Math.ceil(selected.faceIndices.length / 2);
+                  runtime.split(selected.instanceId, selected.faceIndices.slice(0, midpoint));
+                }}
+              >
+                Split
+              </button>
+              <button
+                type="button"
+                className="clinical-btn clinical-btn--tertiary"
+                disabled={state.selectedInstanceId === undefined || (state.prediction?.instances.length ?? 0) < 2}
+                data-testid="clinical-segmentation-merge"
+                onClick={() => {
+                  const instances = state.prediction?.instances ?? [];
+                  const index = instances.findIndex(
+                    (instance) => instance.instanceId === state.selectedInstanceId
+                  );
+                  const next = index >= 0 ? instances[index + 1] : undefined;
+                  if (state.selectedInstanceId !== undefined && next !== undefined) {
+                    runtime.merge(state.selectedInstanceId, next.instanceId);
+                  }
+                }}
+              >
+                Merge Next
               </button>
             </div>
           ) : null}

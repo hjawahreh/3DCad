@@ -311,11 +311,6 @@ export const registerClinicalCommands = (
       const prep = workspace.preparation.autoPrepare();
       if (!prep.ok) {
         host.notifications.push('warning', 'Prepare', prep.error.message);
-        return;
-      }
-      const trim = workspace.trim.enter();
-      if (!trim.ok) {
-        host.notifications.push('warning', 'Trim', trim.error.message);
       }
     })
   });
@@ -732,6 +727,25 @@ export const registerClinicalCommands = (
       if (!result.ok) {
         host.notifications.push('info', 'Redo', result.error.message);
       }
+    })
+  });
+
+  commands.register({
+    id: 'clinical.trim.done',
+    title: 'Done Trimming',
+    category: 'application',
+    enabled: true,
+    run: wrap(() => {
+      if (!workspace.trim.isActive()) return;
+      workspace.trim.cancel();
+      workspace.archContext.setMode('upper');
+      const entered = workspace.closeBase.enter();
+      if (!entered.ok) {
+        host.notifications.push('warning', 'Base', entered.error.message);
+        return;
+      }
+      workspace.closeBase.setActiveArch('upper');
+      host.notifications.push('info', 'Base', 'Upper arch — create the base when ready.');
     })
   });
 

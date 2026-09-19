@@ -3,7 +3,7 @@
  * Ownership: ApplicationSettings store; host provides persistence adapter.
  */
 
-export type ThemeId = 'dark' | 'light';
+export type ThemeId = 'dark';
 export type LanguageId = 'en' | 'future';
 
 export interface ViewportPreferences {
@@ -52,7 +52,7 @@ export const resolveApplicationSettings = (
   partial?: Partial<ApplicationSettings>
 ): ApplicationSettings =>
   Object.freeze({
-    theme: partial?.theme ?? DEFAULT_APPLICATION_SETTINGS.theme,
+    theme: 'dark',
     language: partial?.language ?? DEFAULT_APPLICATION_SETTINGS.language,
     viewport: Object.freeze({
       ...DEFAULT_APPLICATION_SETTINGS.viewport,

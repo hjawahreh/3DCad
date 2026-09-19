@@ -57,6 +57,10 @@ export class ClinicalCloseBaseRuntime {
     return this.controller.setActiveArch(arch);
   }
 
+  public hasCommittedArch(arch: ClinicalArchRole): boolean {
+    return this.controller.hasCommittedArch(arch);
+  }
+
   public setStrategy(strategy: CloseBaseStrategyId): ClinicalResult<void> {
     return this.controller.setStrategy(strategy);
   }

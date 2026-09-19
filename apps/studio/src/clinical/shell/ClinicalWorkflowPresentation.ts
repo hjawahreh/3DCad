@@ -69,12 +69,12 @@ const STEP_META: readonly {
   readonly label: string;
   readonly shortLabel: string;
 }[] = Object.freeze([
-  Object.freeze({ id: 'import', label: 'Import', shortLabel: 'Import' }),
-  Object.freeze({ id: 'orient', label: 'Orient', shortLabel: 'Orient' }),
-  Object.freeze({ id: 'prepare', label: 'Prepare', shortLabel: 'Prepare' }),
-  Object.freeze({ id: 'trim', label: 'Trim', shortLabel: 'Trim' }),
-  Object.freeze({ id: 'close-base', label: 'Base', shortLabel: 'Base' }),
-  Object.freeze({ id: 'segment', label: 'Segment', shortLabel: 'Segment' }),
+  Object.freeze({ id: 'import', label: 'Import Scans', shortLabel: 'Import' }),
+  Object.freeze({ id: 'orient', label: 'Orient Scan', shortLabel: 'Orient' }),
+  Object.freeze({ id: 'prepare', label: 'Prepare Model', shortLabel: 'Prepare' }),
+  Object.freeze({ id: 'trim', label: 'Trim Scans', shortLabel: 'Trim' }),
+  Object.freeze({ id: 'close-base', label: 'Close Base', shortLabel: 'Base' }),
+  Object.freeze({ id: 'segment', label: 'Segmentation', shortLabel: 'Segment' }),
   Object.freeze({ id: 'identify', label: 'Review', shortLabel: 'Review' }),
   Object.freeze({ id: 'analyze', label: 'Analyze', shortLabel: 'Analyze' }),
   Object.freeze({ id: 'movement', label: 'Movement', shortLabel: 'Move' }),
@@ -142,6 +142,9 @@ const resolveCurrentStep = (input: {
   }
   if (input.orienting) return 'orient';
   if (!input.hasModels) return 'import';
+  if (input.prep.orientationValidated !== true && input.prep.currentStage === 'orientation-complete') {
+    return 'import';
+  }
 
   const stage = input.prep.currentStage;
   const phase = input.prep.workflowPhase;
@@ -185,8 +188,8 @@ const buildSteps = (
     let hint = `Complete ${STEP_META[Math.max(0, index - 1)]?.label ?? 'previous step'} first`;
 
     if (meta.id === 'import') {
-      status = models ? 'completed' : current === 'import' ? 'current' : 'available';
-      hint = models ? 'Scan imported' : 'Import a dental scan to begin';
+      status = current === 'import' ? 'current' : models ? 'completed' : 'available';
+      hint = current === 'import' ? 'Scans imported — continue to Orientation' : models ? 'Scan imported' : 'Import a dental scan to begin';
     } else if (meta.id === 'orient') {
       if (oriented || stageReached(prep, 'ready-for-trim')) {
         status = 'completed';

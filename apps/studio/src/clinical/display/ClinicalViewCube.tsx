@@ -13,8 +13,8 @@ import {
 } from './ClinicalViewCubeMath.js';
 
 const FACE_LABELS: Readonly<Record<ClinicalViewCubeFace, string>> = Object.freeze({
-  front: 'ANTERIOR',
-  back: 'POSTERIOR',
+  front: 'FRONT',
+  back: 'BACK',
   left: 'LEFT',
   right: 'RIGHT',
   top: 'UPPER',

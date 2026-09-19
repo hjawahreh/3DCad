@@ -6,7 +6,6 @@ import { ClinicalBottomPanel } from './ClinicalBottomPanel.js';
 import { ClinicalDialogHost } from './ClinicalDialogHost.js';
 import { ClinicalDocumentHost } from './ClinicalDocumentHost.js';
 import { ClinicalHeader } from './ClinicalHeader.js';
-import { ClinicalRightPanel } from './ClinicalRightPanel.js';
 import { ClinicalStatusBar } from './ClinicalStatusBar.js';
 import { ClinicalToolPalette } from './ClinicalToolPalette.js';
 import { ClinicalWorkflowBar } from './ClinicalWorkflowBar.js';
@@ -71,29 +70,6 @@ export const ClinicalShell = ({ workspace }: { readonly workspace: ClinicalWorks
           ) : null}
         </main>
 
-        {!layout.rightCollapsed ? (
-          <aside className="clinical-panel clinical-panel--right" style={{ width: layout.rightWidth }}>
-            <ClinicalRightPanel workspace={workspace} />
-            <button
-              type="button"
-              className="panel-collapse panel-collapse-right"
-              aria-label="Collapse inspector"
-              onClick={() => workspace.layout.update({ rightCollapsed: true })}
-            >
-              ›
-            </button>
-          </aside>
-        ) : (
-          <button
-            type="button"
-            className="panel-expand panel-expand-right"
-            aria-label="Expand inspector"
-            data-testid="clinical-inspector-expand"
-            onClick={() => workspace.layout.update({ rightCollapsed: false })}
-          >
-            ‹
-          </button>
-        )}
       </div>
       <ClinicalStatusBar workspace={workspace} />
       <CommandPalette root={host} open={paletteOpen} onClose={() => setPaletteOpen(false)} />

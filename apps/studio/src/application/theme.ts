@@ -11,12 +11,12 @@ export class ThemeManager {
     return this.theme;
   }
 
-  public apply(theme: ThemeId): void {
-    this.theme = theme;
+  public apply(_theme: ThemeId): void {
+    this.theme = 'dark';
     if (typeof document === 'undefined') {
       return;
     }
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme;
+    document.documentElement.dataset.theme = 'dark';
+    document.documentElement.style.colorScheme = 'dark';
   }
 }

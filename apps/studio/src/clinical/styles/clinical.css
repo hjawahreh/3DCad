@@ -20,7 +20,18 @@
 .clinical-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0;
+  min-width: 0;
+  height: 100%;
+}
+
+.clinical-brand__logo {
+  width: 280px;
+  height: 46px;
+  display: block;
+  object-fit: contain;
+  object-position: left center;
+  filter: drop-shadow(0 0 7px rgba(35, 206, 255, 0.22));
 }
 
 .clinical-brand__mark {
@@ -35,6 +46,11 @@
   font-size: var(--studio-font-title);
   letter-spacing: 0.01em;
   color: var(--studio-text-strong);
+  font-family: "Satoshi", var(--studio-font);
+  background: linear-gradient(100deg, #f6f8fc 0%, #dfe8f4 54%, var(--studio-gold-bright) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .clinical-brand__sub {
@@ -140,6 +156,37 @@
   margin: 0;
   padding: 0;
   min-width: max-content;
+}
+
+.clinical-workflow-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--studio-accent);
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.clinical-workflow-nav:hover:not(:disabled) {
+  color: var(--studio-gold-bright);
+}
+
+.clinical-workflow-nav:disabled {
+  color: var(--studio-muted);
+  opacity: 0.35;
+  cursor: default;
+}
+
+.clinical-workflow-nav--previous {
+  margin-right: 0;
+}
+
+.clinical-workflow-nav--next {
+  margin-left: 0;
 }
 
 .clinical-workflow-bar__item {
@@ -485,16 +532,45 @@
 }
 
 .clinical-import-progress__bar {
-  height: 4px;
-  background: rgba(255, 255, 255, 0.08);
+  height: 6px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 999px;
   overflow: hidden;
-  margin-bottom: 6px;
+  margin: 0;
+  box-shadow: inset 0 0 0 1px rgba(216, 179, 106, 0.12);
+}
+
+.clinical-create-case--working > :not(.clinical-import-progress) {
+  display: none;
+}
+
+.clinical-create-case--working {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+}
+
+.clinical-create-case--working .clinical-import-progress {
+  display: grid;
+  justify-items: center;
+  width: min(420px, 100%);
+  gap: 12px;
+  color: var(--studio-text);
+  font-size: 12px;
+}
+
+.clinical-import-progress__loader {
+  width: 112px;
+  height: 112px;
+  object-fit: contain;
+  border-radius: 50%;
 }
 
 .clinical-import-progress__bar > div {
   height: 100%;
-  background: var(--studio-accent);
+  background: linear-gradient(90deg, var(--studio-accent), var(--studio-gold-bright));
+  transition: width 180ms ease-out;
 }
 
 /* —— CLN-003 display pipeline —— */
@@ -678,9 +754,9 @@
 }
 
 .clinical-view-cube__stage {
-  width: 116px;
-  height: 116px;
-  perspective: 260px;
+  width: 150px;
+  height: 132px;
+  perspective: none;
   perspective-origin: 50% 50%;
 }
 
@@ -691,6 +767,38 @@
   transform-style: preserve-3d;
   transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+/* ArchForm-style compact clinical view navigator. */
+.clinical-view-cube__cube {
+  transform: none !important;
+}
+
+.clinical-view-cube__face {
+  left: 31px !important;
+  width: 88px;
+  height: 24px;
+  transform: none !important;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  border-radius: 2px;
+}
+
+.clinical-view-cube__face--top { top: 4px !important; }
+.clinical-view-cube__face--front { top: 29px !important; }
+.clinical-view-cube__face--back { top: 54px !important; }
+.clinical-view-cube__face--bottom { top: 79px !important; }
+.clinical-view-cube__face--left,
+.clinical-view-cube__face--right {
+  top: 29px !important;
+  width: 28px;
+  height: 49px;
+  writing-mode: vertical-rl;
+  font-size: 7px;
+}
+.clinical-view-cube__face--left { left: 1px !important; }
+.clinical-view-cube__face--right { left: 121px !important; }
+.clinical-view-cube__edge,
+.clinical-view-cube__corner { display: none; }
 
 .clinical-view-cube__face,
 .clinical-view-cube__edge,
@@ -2331,7 +2439,7 @@
 
 @media (max-width: 1100px) {
   .clinical-workflow-step__label {
-    display: none;
+    font-size: 10px;
   }
 
   .clinical-workflow-bar__context {
@@ -2340,6 +2448,14 @@
 }
 
 @media (max-width: 820px) {
+  .clinical-workflow-step__label {
+    display: none;
+  }
+
+  .clinical-shell--workstation .clinical-workflow-bar {
+    padding-left: 76px;
+  }
+
   .clinical-header {
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 8px;
@@ -2388,6 +2504,11 @@
 }
 
 @media (max-width: 560px) {
+  .clinical-shell--workstation .clinical-workflow-bar {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
   .clinical-workflow-bar__context {
     display: none;
   }
@@ -2828,6 +2949,15 @@
   flex-shrink: 0;
 }
 
+.clinical-process-feedback__loader {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  object-fit: contain;
+  border-radius: 50%;
+  filter: drop-shadow(0 0 8px rgba(216, 179, 106, 0.3));
+}
+
 @keyframes clinical-process-spin {
   to { transform: rotate(360deg); }
 }
@@ -2870,6 +3000,14 @@
 }
 
 .clinical-global-arch-bar {
+  display: none;
+}
+
+.clinical-document-host--orienting .clinical-global-arch-bar {
+  display: none;
+}
+
+.clinical-global-arch-bar--legacy {
   position: absolute;
   top: 12px;
   right: 12px;
@@ -2989,24 +3127,11 @@
 }
 
 .clinical-orientation-toolbar--workstation {
-  top: 14px;
-  bottom: auto;
-  left: 50%;
-  right: auto;
-  transform: translateX(-50%);
-  width: max-content;
-  max-width: min(920px, calc(100% - 220px));
-  z-index: 9;
+  display: none;
 }
 
 .clinical-trim-toolbar--workstation {
-  top: auto;
-  bottom: 14px;
-  left: 50%;
-  right: auto;
-  transform: translateX(-50%);
-  width: max-content;
-  max-width: min(640px, calc(100% - 180px));
+  display: none;
 }
 
 .clinical-orientation-toolbar--workstation,
@@ -3317,6 +3442,60 @@
   font-size: 12px;
 }
 
+.clinical-segmentation-toolbar__review-summary {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 5px 8px;
+  border-left: 1px solid rgba(216, 179, 106, 0.5);
+  color: var(--studio-muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.clinical-segmentation-toolbar__review-summary b {
+  color: var(--studio-gold-bright);
+  font-weight: 700;
+}
+
+.clinical-segmentation-toolbar__review-summary--warn {
+  color: #e8c77f;
+}
+
+.clinical-segmentation-toolbar__legend {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--studio-muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.clinical-segmentation-toolbar__legend span {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.clinical-segmentation-toolbar__swatch {
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  border-radius: 2px;
+}
+
+.clinical-segmentation-toolbar__swatch--tooth {
+  background: #e8ddd0;
+}
+
+.clinical-segmentation-toolbar__swatch--gingiva {
+  background: #8f6b5c;
+}
+
+.clinical-segmentation-toolbar__swatch--review {
+  background: var(--studio-gold-bright);
+}
+
 .clinical-preparing-scan {
   position: absolute;
   left: 50%;
@@ -3350,11 +3529,13 @@
 }
 
 .clinical-shell--workstation .clinical-brand__mark {
-  width: 20px;
-  height: 20px;
-  border-radius: 5px;
-  background: linear-gradient(145deg, #d4a574, #7ca9b8);
-  box-shadow: 0 0 0 4px rgba(124, 169, 184, 0.08);
+  display: none !important;
+}
+
+.clinical-shell--workstation .clinical-brand__logo {
+  width: 320px;
+  height: 52px;
+  object-position: left center;
 }
 
 .clinical-shell--workstation .clinical-brand__name {
@@ -3418,15 +3599,32 @@
 
 .clinical-shell--workstation .clinical-workflow-bar {
   height: 46px;
-  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px 0 104px;
   border-bottom-color: var(--workstation-line);
   background: #0c131b;
 }
 
 .clinical-shell--workstation .clinical-workflow-bar__list {
-  width: min(920px, 100%);
-  margin: 0 auto;
+  width: auto;
+  margin: 0;
   justify-content: center;
+  flex: 0 0 auto;
+}
+
+.clinical-shell--workstation .clinical-workflow-nav {
+  margin: 0;
+  padding: 4px 8px;
+  gap: 5px;
+  min-height: 28px;
+  white-space: nowrap;
+}
+
+.clinical-shell--workstation .clinical-workflow-bar__context {
+  display: none;
 }
 
 .clinical-shell--workstation .clinical-workflow-step {

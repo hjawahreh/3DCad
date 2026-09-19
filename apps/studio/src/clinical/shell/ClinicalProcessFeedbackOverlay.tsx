@@ -35,7 +35,12 @@ export const ClinicalProcessFeedbackOverlay = ({
       aria-live="polite"
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <div className="clinical-process-feedback__spinner" aria-hidden="true" />
+      <img
+        className="clinical-process-feedback__loader"
+        src="/loader.gif"
+        alt=""
+        aria-hidden="true"
+      />
       <div className="clinical-process-feedback__body">
         <div className="clinical-process-feedback__title" data-testid="clinical-process-title">
           {state.title}

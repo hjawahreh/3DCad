@@ -208,7 +208,6 @@ export const ClinicalMeshViewport = ({
       emissiveIntensity: 0.5,
       roughness: 0.35,
       depthTest: false,
-      depthWrite: false
     });
     let markerKey = '';
 
@@ -221,14 +220,24 @@ export const ClinicalMeshViewport = ({
       markerKey = nextKey;
       while (segmentationMarkerRoot.children.length > 0) {
         const child = segmentationMarkerRoot.children.pop();
-        if (child instanceof Mesh) child.geometry.dispose();
+        if (child instanceof Mesh) {
+          child.geometry.dispose();
+        } else if (child instanceof Sprite) {
+          const material = child.material as SpriteMaterial;
+          material.map?.dispose();
+          material.dispose();
+        }
       }
       markers.forEach((marker, index) => {
         const markerMesh = new Mesh(new SphereGeometry(0.9, 16, 12), markerMaterial);
         markerMesh.position.set(marker.position[0], marker.position[1], marker.position[2]);
         markerMesh.renderOrder = 12;
-        markerMesh.userData.markerIndex = index + 1;
         segmentationMarkerRoot.add(markerMesh);
+        const label = makeFdiSprite(String(index + 1), false);
+        label.position.set(marker.position[0], marker.position[1] + 1.8, marker.position[2]);
+        label.scale.set(2.4, 1.2, 1);
+        label.renderOrder = 13;
+        segmentationMarkerRoot.add(label);
       });
     };
 
@@ -607,9 +616,9 @@ export const ClinicalMeshViewport = ({
                 const geom = new BufferGeometry();
                 geom.setAttribute('position', new BufferAttribute(positions, 3));
                 const mat = new LineBasicMaterial({
-                  color: 0x5a5048,
+                  color: segState.selectedInstanceId !== undefined ? 0xd8b36a : 0x5a5048,
                   transparent: true,
-                  opacity: 0.55,
+                  opacity: segState.selectedInstanceId !== undefined ? 0.9 : 0.55,
                   depthTest: true
                 });
                 // Runtime LineSegments (types package may omit named export).
@@ -729,7 +738,13 @@ export const ClinicalMeshViewport = ({
       markerMaterial.dispose();
       while (segmentationMarkerRoot.children.length > 0) {
         const child = segmentationMarkerRoot.children.pop();
-        if (child instanceof Mesh) child.geometry.dispose();
+        if (child instanceof Mesh) {
+          child.geometry.dispose();
+        } else if (child instanceof Sprite) {
+          const material = child.material as SpriteMaterial;
+          material.map?.dispose();
+          material.dispose();
+        }
       }
       trimPathGeom.dispose();
       trimPathMat.dispose();

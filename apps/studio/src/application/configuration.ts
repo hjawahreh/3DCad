@@ -17,7 +17,7 @@ export interface ApplicationConfiguration {
 }
 
 export const DEFAULT_APPLICATION_CONFIGURATION: ApplicationConfiguration = Object.freeze({
-  appName: 'CAD Studio',
+  appName: 'Aligner Studio',
   appVersion: '0.1.0',
   minWindowWidth: 1024,
   minWindowHeight: 640,
