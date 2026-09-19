@@ -107,6 +107,7 @@ export class ClinicalTrimController {
   /** GEO-001F: worker-owned preview handle (no mesh re-upload on cancel/accept). */
   private workerPreviewId: string | undefined;
   private workerBaseFingerprint: string | undefined;
+  private readonly completedTrimArches = new Set<ClinicalArchRole>();
   /** Working mesh clone captured before kernel mutation (for undo). */
   private preKernelMesh: TriangleMesh | undefined;
   /** CLN-TRIM-002 — last real preview cut diagnostics (developer mode). */
@@ -164,6 +165,7 @@ export class ClinicalTrimController {
     }
     const now = Date.now();
     this.session.begin({ objectId: target.value.objectId, now });
+    this.completedTrimArches.clear();
     this.previewReady = false;
     this.diagnostics.recordSessionStart();
     this.metrics.recordTrimStart();
@@ -216,6 +218,29 @@ export class ClinicalTrimController {
    */
   public setActiveArch(arch: ClinicalArchRole): ClinicalResult<void> {
     return this.setArchVisibility(arch);
+  }
+
+  public completeArch(): ClinicalResult<'lower' | 'upper' | 'base'> {
+    if (!this.isActive()) {
+      return clinicalFailure('lifecycle', 'Trim not active');
+    }
+    const doc = this.clinicalSession.getPublicState().activeCase;
+    const target = doc?.objects.find((obj) => obj.id === this.session.getState().targetObjectId);
+    const activeArch = target?.archRole;
+    if (activeArch !== 'upper' && activeArch !== 'lower') {
+      return clinicalSuccess('base');
+    }
+    this.completedTrimArches.add(activeArch);
+    const hasUpper = doc?.objects.some((obj) => obj.archRole === 'upper') === true;
+    const hasLower = doc?.objects.some((obj) => obj.archRole === 'lower') === true;
+    if (hasUpper && hasLower) {
+      const next = activeArch === 'upper' ? 'lower' : 'upper';
+      if (!this.completedTrimArches.has(next)) {
+        const switched = this.setArchVisibility(next);
+        return switched.ok ? clinicalSuccess(next) : switched;
+      }
+    }
+    return clinicalSuccess('base');
   }
 
   public setArchVisibility(mode: ClinicalArchVisibilityMode): ClinicalResult<void> {
@@ -1106,6 +1131,7 @@ export class ClinicalTrimController {
     );
     this.restoreTrimIsolation();
     this.session.clear();
+    this.completedTrimArches.clear();
     // Status bar / trim session message covers cancel — avoid toast spam.
     this.clinicalSession.notifyUi();
     return clinicalSuccess(undefined);
@@ -1279,6 +1305,7 @@ export class ClinicalTrimController {
     this.operation.dispose();
     this.restoreTrimIsolation();
     this.session.clear();
+    this.completedTrimArches.clear();
   }
 
   /**

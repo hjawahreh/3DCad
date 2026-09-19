@@ -68,6 +68,10 @@ export class ClinicalTrimRuntime {
     return this.controller.setActiveArch(arch);
   }
 
+  public completeArch() {
+    return this.controller.completeArch();
+  }
+
   public setArchVisibility(mode: ClinicalArchVisibilityMode): ClinicalResult<void> {
     return this.controller.setArchVisibility(mode);
   }

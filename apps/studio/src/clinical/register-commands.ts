@@ -737,6 +737,15 @@ export const registerClinicalCommands = (
     enabled: true,
     run: wrap(() => {
       if (!workspace.trim.isActive()) return;
+      const completed = workspace.trim.completeArch();
+      if (!completed.ok) {
+        host.notifications.push('warning', 'Trim', completed.error.message);
+        return;
+      }
+      if (completed.value === 'lower' || completed.value === 'upper') {
+        host.notifications.push('info', 'Trim', `${completed.value === 'lower' ? 'Lower' : 'Upper'} arch ready — continue trimming.`);
+        return;
+      }
       workspace.trim.cancel();
       workspace.archContext.setMode('upper');
       const entered = workspace.closeBase.enter();
