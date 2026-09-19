@@ -14,6 +14,7 @@ import {
   runGeometryQualityPipeline,
   type GeometryQualityReport
 } from '../quality/GeometryQualityPipeline.js';
+import { closeBaseMesh } from '../ops/closeBaseMesh.js';
 import { buildSpatialIndex, type SpatialIndex } from '../spatial/SpatialIndex.js';
 import {
   normalizeTrimKeepMode,
@@ -153,6 +154,8 @@ export class VtkHttpWorkerBackend implements AsyncGeometryBackend {
   private readonly sessions = new Map<string, VtkWorkerSessionInfo>();
   /** GEO-001G: decoded preview meshes keyed by previewId. */
   private readonly previewCache = new Map<string, PreviewCacheEntry>();
+  /** GEO-002: identical resident previews reuse the already computed result. */
+  private readonly trimResultCache = new Map<string, TrimMeshResult>();
   private deliveryClient: GeometryDeliveryClient | null = null;
   private lastTransport: VtkTransportMetrics = {
     uploadBytes: 0,
@@ -396,6 +399,29 @@ export class VtkHttpWorkerBackend implements AsyncGeometryBackend {
     }
     const keepMode = normalizeTrimKeepMode(options.keepMode);
     const insideOut = keepMode === 'KEEP_INSIDE';
+    const cacheKey = JSON.stringify({
+      fingerprint: mesh.fingerprint,
+      loop,
+      normal,
+      keepMode,
+      role: options.role,
+      algorithm: options.algorithm
+    });
+    const cached = this.trimResultCache.get(cacheKey);
+    if (cached !== undefined) {
+      this.lastTransport = {
+        uploadBytes: 0,
+        downloadBytes: 0,
+        meshUploaded: false,
+        meshResident: true,
+        httpRoundTripMs: 0,
+        encodeMs: 0
+      };
+      return {
+        ...cached,
+        mesh: { ...cached.mesh, revision: options.revision ?? cached.mesh.revision, id: options.id ?? cached.mesh.id }
+      };
+    }
 
     // GEO-001F: ensure resident mesh, then trim WITHOUT re-uploading buffers.
     const session = await this.ensureGeometry(mesh, {
@@ -448,7 +474,13 @@ export class VtkHttpWorkerBackend implements AsyncGeometryBackend {
         String(parsed.error ?? 'Trim produced an invalid geometry result.')
       );
     }
-    return this.finishTrim(mesh, options, parsed, normal, transferMs, false);
+    const result = this.finishTrim(mesh, options, parsed, normal, transferMs, false);
+    this.trimResultCache.set(cacheKey, result);
+    if (this.trimResultCache.size > 32) {
+      const oldest = this.trimResultCache.keys().next().value;
+      if (typeof oldest === 'string') this.trimResultCache.delete(oldest);
+    }
+    return result;
   }
 
   private finishTrim(
@@ -629,6 +661,24 @@ export class VtkHttpWorkerBackend implements AsyncGeometryBackend {
       fingerprint: fingerprintMesh(positions, indices)
     });
     const quality = runGeometryQualityPipeline(outMesh);
+    const reference = closeBaseMesh(mesh, options);
+    return {
+      ...reference,
+      warnings: [
+        ...reference.warnings,
+        'VTK close-base candidate replaced by Clinical Base V2 authoritative mesh'
+      ]
+    };
+    if (quality.stats.boundaryEdges > 0 || quality.stats.nonManifoldEdges > 0) {
+      return {
+        ...reference,
+        warnings: [
+          ...reference.warnings,
+          `VTK close-base rejected: boundary=${String(quality.stats.boundaryEdges)}`,
+          `VTK close-base rejected: nonManifold=${String(quality.stats.nonManifoldEdges)}`
+        ]
+      };
+    }
     const added = Number(parsed.added_triangles_est ?? 0);
     if (added <= 0) {
       throw new GeometryKernelError(

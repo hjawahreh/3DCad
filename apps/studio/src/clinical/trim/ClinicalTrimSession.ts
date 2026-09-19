@@ -60,7 +60,7 @@ export class ClinicalTrimSession {
       phase: 'drawing',
       lifecycle: 'active',
       targetObjectId: input.objectId,
-      drawMode: 'lasso',
+      drawMode: 'idle',
       points: Object.freeze([]),
       closed: false,
       previewActive: true,

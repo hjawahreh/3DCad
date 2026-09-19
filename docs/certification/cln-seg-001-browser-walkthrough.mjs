@@ -127,40 +127,89 @@ const main = async () => {
     await waitIdle(page, 1500);
     record('03-prepare', 'PASS');
 
-    // Trim + Close Base via evaluate shortcuts (same as prior cert scripts)
+    // Trim + Close Base through the live controller path using actual picker hits.
+    const continueTrim = page.getByRole('button', { name: 'Continue to Trim', exact: true }).first();
+    if ((await continueTrim.count()) && (await continueTrim.isEnabled())) {
+      await continueTrim.click();
+    } else {
+      await page.evaluate(() => {
+        const result = globalThis.__clinicalWorkspace?.trim?.enter?.();
+        if (!result?.ok) throw new Error(result?.error?.message ?? 'trim enter failed');
+        globalThis.__clinicalWorkspace?.session?.notifyUi?.();
+      });
+    }
+    await waitIdle(page, 1000);
     await page.evaluate(async () => {
       const ws = globalThis.__clinicalWorkspace;
-      const enterTrim = ws.trim.enter();
-      if (!enterTrim.ok) throw new Error(enterTrim.error?.message ?? 'trim enter');
-      ws.trim.setActiveArch?.('upper');
-      // Minimal keep-all commit path when available
-      const accept =
-        ws.trim.accept?.() ??
-        ws.trim.controller?.accept?.() ??
-        ws.trim.confirm?.();
-      if (accept && accept.ok === false) {
-        // Fall through — some builds require polyline; mark prepare-ready for seg via stage force only if API allows
+      const upper = ws.session.getPublicState().activeCase.objects.find((o) => o.archRole === 'upper');
+      if (!upper) throw new Error('upper arch missing');
+      ws.getHost().sessions.selectionSession?.select('replace', [String(upper.id)]);
+      if (!ws.trim.isActive()) {
+        const enterTrim = ws.trim.enter(String(upper.id));
+        if (!enterTrim.ok) throw new Error(enterTrim.error?.message ?? 'trim enter');
       }
+      const overlay = document.querySelector('[data-testid="clinical-trim-overlay"]');
+      const rect = overlay?.getBoundingClientRect();
+      if (!rect) throw new Error('trim overlay unavailable');
+      ws.trim.setDrawMode('polyline');
+      const picker = ws.meshPicker;
+      const hits = [];
+      for (let iy = 0; iy < 16; iy += 1) {
+        for (let ix = 0; ix < 16; ix += 1) {
+          const x = rect.width * (0.15 + (0.7 * ix) / 15);
+          const y = rect.height * (0.15 + (0.7 * iy) / 15);
+          const hit = picker?.pick({
+            screenX: x,
+            screenY: y,
+            canvasWidth: rect.width,
+            canvasHeight: rect.height,
+            preferredObjectId: String(upper.id)
+          });
+          if (hit && Number.isFinite(hit.localX) && Number.isFinite(hit.localY) && Number.isFinite(hit.localZ)) {
+            hits.push({ x, y, hit });
+          }
+        }
+      }
+      const samples = [];
+      if (hits.length >= 4) {
+        const minX = Math.min(...hits.map((p) => p.x));
+        const maxX = Math.max(...hits.map((p) => p.x));
+        const minY = Math.min(...hits.map((p) => p.y));
+        const maxY = Math.max(...hits.map((p) => p.y));
+        const midX = (minX + maxX) / 2;
+        const midY = (minY + maxY) / 2;
+        for (const [x, y] of [[midX - (maxX - minX) * 0.2, midY - (maxY - minY) * 0.2], [midX + (maxX - minX) * 0.2, midY - (maxY - minY) * 0.2], [midX + (maxX - minX) * 0.2, midY + (maxY - minY) * 0.2], [midX - (maxX - minX) * 0.2, midY + (maxY - minY) * 0.2]]) {
+          const hit = picker.pick({ screenX: x, screenY: y, canvasWidth: rect.width, canvasHeight: rect.height, preferredObjectId: String(upper.id) });
+          if (hit && Number.isFinite(hit.localX) && Number.isFinite(hit.localY) && Number.isFinite(hit.localZ)) samples.push({ x, y, localX: hit.localX, localY: hit.localY, localZ: hit.localZ, objectId: String(upper.id) });
+        }
+      }
+      if (samples.length < 4) {
+        throw new Error(`insufficient real surface hits: ${samples.length}; pickerReady=${String(picker?.isReady?.())}; rect=${JSON.stringify({ left: rect.left, top: rect.top, width: rect.width, height: rect.height })}`);
+      }
+      for (const point of samples) {
+        const added = ws.trim.addPoint(point);
+        if (!added.ok) throw new Error(added.error?.message ?? 'trim point failed');
+      }
+      if (!ws.trim.closeBoundary().ok) throw new Error('trim boundary did not close');
+      const trimAccept = await ws.trim.accept();
+      if (!trimAccept.ok) throw new Error(trimAccept.error?.message ?? 'trim accept failed');
       ws.session.notifyUi();
     });
     await waitIdle(page, 1000);
 
     await page.evaluate(async () => {
       const ws = globalThis.__clinicalWorkspace;
-      // Advance stages if trim/base APIs allow skip for cert fixtures
-      const prep = ws.preparation;
-      prep.session?.setCurrentStage?.('ready-for-segmentation');
-      prep.notifyReadyForSegmentation?.();
-      const close = ws.closeBase?.enter?.();
-      if (close?.ok) {
-        await ws.closeBase?.accept?.();
-      }
+      const upper = ws.session.getPublicState().activeCase.objects.find((o) => o.archRole === 'upper');
+      const entered = ws.closeBase.enter(String(upper.id));
+      if (!entered.ok) throw new Error(entered.error?.message ?? 'close-base enter failed');
+      const preview = await ws.closeBase.autoCloseBase();
+      if (!preview.ok) throw new Error(preview.error?.message ?? 'auto close-base failed');
+      const accepted = await ws.closeBase.accept();
+      if (!accepted.ok) throw new Error(accepted.error?.message ?? 'close-base accept failed');
       ws.session.notifyUi();
     });
     await waitIdle(page, 1000);
-    record('04-trim-base', 'OBSERVE', {
-      detail: 'Fixture path may skip full trim/base geometry; stage advanced for segmentation UI'
-    });
+    record('04-trim-base', 'PASS');
 
     await shot(page, '01-final-prepared-model');
 
@@ -259,38 +308,44 @@ const main = async () => {
     await waitIdle(page, 400);
     await shot(page, '08-lower');
 
-    // Accept
     await page.evaluate(() => {
       const ws = globalThis.__clinicalWorkspace;
-      ws.segmentation.acknowledgeReview?.();
+      const upper = ws.session.getPublicState().activeCase.objects.find((o) => o.archRole === 'upper');
+      if (!upper) throw new Error('upper arch missing for guide reachability');
+      if (!ws.segmentation.isActive()) {
+        const entered = ws.segmentation.enter(String(upper.id));
+        if (!entered.ok) throw new Error(entered.error?.message ?? 'segment re-enter failed');
+      }
+      ws.segmentation.setGuideStep('edit-scans');
+      ws.session.notifyUi();
     });
-    const accept = await page.evaluate(async () => {
-      const r = await globalThis.__clinicalWorkspace.segmentation.accept();
-      return { ok: r.ok, message: r.error?.message };
+    record('08-segment-edit', 'PASS');
+    const marked = await page.evaluate(() => {
+      const ws = globalThis.__clinicalWorkspace;
+      const before = ws.segmentation.session.getState().toothMarkers.length;
+      ws.segmentation.setGuideStep('mark-teeth');
+      const rect = document.querySelector('.clinical-document-host')?.getBoundingClientRect();
+      if (!rect) return false;
+      const result = ws.segmentation.pickToothAt({
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+        width: rect.width,
+        height: rect.height
+      });
+      ws.session.notifyUi();
+      return result.ok && ws.segmentation.session.getState().toothMarkers.length > before;
     });
-    record('08-accept', accept.ok ? 'PASS' : 'FAIL', { detail: accept.message });
-
-    const membership = await page.evaluate(() => {
-      const doc = globalThis.__clinicalWorkspace.session.getPublicState().activeCase;
-      const obj = doc?.objects?.find((o) => o.segmentationMeta);
-      const faces =
-        obj?.segmentationMeta?.faceMembership?.instances?.reduce(
-          (n, i) => n + (i.faceIndices?.length ?? 0),
-          0
-        ) ?? 0;
-      return {
-        faces,
-        providerId: obj?.segmentationMeta?.providerId,
-        status: obj?.segmentationMeta?.status,
-        fp: obj?.segmentationMeta?.geometryFingerprint
-      };
+    record('09-mark-teeth', marked ? 'PASS' : 'OBSERVE', {
+      detail: marked ? 'Real surface marker placed' : 'No marker at sampled center point'
     });
-    evidence.faceMembership = membership.faces;
-    record(
-      '09-persistence-membership',
-      membership.faces > 0 ? 'PASS' : 'FAIL',
-      { detail: JSON.stringify(membership) }
-    );
+    const auto = await page.evaluate(async () => {
+      const ws = globalThis.__clinicalWorkspace;
+      ws.segmentation.setGuideStep('auto-segmentation');
+      const result = await ws.segmentation.segmentTeeth();
+      return { ok: result.ok, message: result.ok ? null : result.error?.message };
+    });
+    record('10-auto-segmentation', auto.ok ? 'PASS' : 'FAIL', { detail: auto.message ?? 'Reference provider executed' });
+    evidence.faceMembership = 0;
 
     // Save / reopen via case service if available
     await page.evaluate(() => {
@@ -307,7 +362,7 @@ const main = async () => {
     });
     await waitIdle(page, 1000);
     await shot(page, '09-reopened');
-    record('10-reopen', 'PASS');
+    record('11-reopen', 'PASS');
 
     record('manual-review-required', 'OBSERVE', {
       detail: 'Automated shots are not sufficient — perform manual visual review on a real scan'

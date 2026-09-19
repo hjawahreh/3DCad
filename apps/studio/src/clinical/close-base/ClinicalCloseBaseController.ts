@@ -809,6 +809,7 @@ export class ClinicalCloseBaseController {
         readonly codes: readonly string[];
         readonly warnings: readonly string[];
         readonly boundaryEdges: number;
+        readonly nonManifoldEdges: number;
         readonly degenerateCount: number;
       }
     | undefined {
@@ -830,6 +831,7 @@ export class ClinicalCloseBaseController {
         codes: report.codes,
         warnings: report.warnings,
         boundaryEdges: report.stats.boundaryEdges,
+        nonManifoldEdges: report.stats.nonManifoldEdges,
         degenerateCount: report.stats.degenerateCount
       };
     } catch {

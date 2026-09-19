@@ -17,8 +17,9 @@ const { chromium } = require(
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../..');
 const FIX = path.join(ROOT, 'apps/studio/public/clinical-fixtures');
-const OUT = path.join(ROOT, 'docs/certification/prod-003-browser-shots');
-const JSON_OUT = path.join(ROOT, 'docs/certification/prod-003-browser-walkthrough.json');
+const ARCH = process.env.CAD_ARCH === 'lower' ? 'lower' : 'upper';
+const OUT = path.join(ROOT, `docs/certification/prod-003-browser-shots-${ARCH}`);
+const JSON_OUT = path.join(ROOT, `docs/certification/prod-003-browser-walkthrough-${ARCH}.json`);
 fs.mkdirSync(OUT, { recursive: true });
 
 const upperStl = path.join(FIX, 'upper.stl');
@@ -61,6 +62,34 @@ const readFp = async (page, arch) =>
         ) ?? 0
     };
   }, arch);
+
+const readMeshQuality = async (page, arch, role = 'preview') =>
+  page.evaluate((input) => {
+    const ws = globalThis.__clinicalWorkspace;
+    const doc = ws?.session?.getPublicState?.()?.activeCase;
+    const obj = doc?.objects?.find((o) => o.archRole === input.arch);
+    if (!obj) return null;
+    const registry = ws.getHost().runtimes.kernel.registry;
+    const mesh =
+      registry.getByObjectId(String(obj.id), input.role) ??
+      registry.getByObjectId(String(obj.id), 'working') ??
+      registry.getByObjectId(String(obj.id), 'source');
+    if (!mesh) return null;
+    const report = ws.getHost().runtimes.kernel.backend.validate(mesh);
+    return {
+      role: input.role,
+      fingerprint: mesh.fingerprint,
+      vertices: Math.floor(mesh.positions.length / 3),
+      triangles: Math.floor(mesh.indices.length / 3),
+      boundaryEdges: report.stats.boundaryEdges,
+      nonManifoldEdges: report.stats.nonManifoldEdges,
+      components: report.stats.components,
+      degenerateCount: report.stats.degenerateCount,
+      bounds: report.stats.bbox,
+      codes: report.codes,
+      warnings: report.warnings
+    };
+  }, { arch, role });
 
 const workflowLocks = async (page) =>
   page.evaluate(() => {
@@ -180,20 +209,28 @@ const collectPeripheralPatch = async (page, count = 6) =>
     const nearby = pool
       .filter((p) => Math.hypot(p.x - seed.x, p.y - seed.y) < 90)
       .slice(0, Math.max(want * 3, 18));
-    const cx = nearby.reduce((s, p) => s + p.x, 0) / nearby.length;
-    const cy = nearby.reduce((s, p) => s + p.y, 0) / nearby.length;
-    const buckets = Array.from({ length: want }, () => null);
-    for (const p of nearby) {
-      const dx = p.x - cx;
-      const dy = p.y - cy;
-      const dist = Math.hypot(dx, dy);
-      if (dist < 6) continue;
-      const idx = Math.floor(((Math.atan2(dy, dx) + Math.PI) / (2 * Math.PI)) * want) % want;
-      if (!buckets[idx] || dist > buckets[idx].dist) buckets[idx] = { ...p, dist };
+    const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+    const sorted = [...nearby].sort((a, b) => a.x - b.x || a.y - b.y);
+    const lower = [];
+    for (const point of sorted) {
+      while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], point) <= 0) {
+        lower.pop();
+      }
+      lower.push(point);
     }
-    let selected = buckets.filter(Boolean);
-    if (selected.length < Math.min(4, want)) selected = nearby.slice(0, want);
-    selected.sort((a, b) => Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx));
+    const upper = [];
+    for (let i = sorted.length - 1; i >= 0; i -= 1) {
+      const point = sorted[i];
+      while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], point) <= 0) {
+        upper.pop();
+      }
+      upper.push(point);
+    }
+    const hull = lower.slice(0, -1).concat(upper.slice(0, -1));
+    if (hull.length < Math.min(4, want)) throw new Error(`insufficient simple boundary hits ${hull.length}`);
+    const selected = Array.from({ length: Math.min(want, hull.length) }, (_, i) =>
+      hull[Math.floor((i * hull.length) / Math.min(want, hull.length))]
+    );
     return selected.map((p) => ({
       x: p.x,
       y: p.y,
@@ -236,7 +273,7 @@ const main = async () => {
     await page.getByTestId('clinical-create-submit').click();
     await page.getByTestId('clinical-create-case-success').waitFor({ timeout: 180000 });
     record('01-import', 'PASS');
-    evidence.fingerprints.importFingerprint = (await readFp(page, 'upper'))?.meshFingerprint;
+    evidence.fingerprints.importFingerprint = (await readFp(page, ARCH))?.meshFingerprint;
 
     await page.getByTestId('clinical-create-continue-orient').click();
     for (let i = 0; i < 80; i += 1) {
@@ -281,18 +318,20 @@ const main = async () => {
     });
 
     // Enter Trim
-    await page.evaluate(() => {
+    await page.evaluate((arch) => {
       const ws = globalThis.__clinicalWorkspace;
-      const r = ws.trim.enter();
-      if (!r.ok) throw new Error(r.error?.message ?? 'trim enter failed');
-      ws.trim.setActiveArch?.('upper');
+      if (!ws.trim.isActive()) {
+        const r = ws.trim.enter();
+        if (!r.ok) throw new Error(r.error?.message ?? 'trim enter failed');
+      }
+      ws.trim.setActiveArch?.(arch);
       ws.session.notifyUi();
-    });
+    }, ARCH);
     await page.getByTestId('clinical-trim-overlay').waitFor({ timeout: 30000 });
     await waitIdle(page, 1500);
 
     const anchors = await collectPeripheralPatch(page, 6);
-    await page.getByTestId('clinical-trim-polyline').click();
+    await page.getByTestId('clinical-trim-polyline').click({ force: true });
     await page.evaluate((points) => {
       const ws = globalThis.__clinicalWorkspace;
       ws.trim.controller.clearBoundary();
@@ -322,7 +361,8 @@ const main = async () => {
       return { ok: r.ok, message: r.ok ? null : r.error?.message };
     });
     evidence.performance.trimMs = Date.now() - tTrim0;
-    const afterTrim = await readFp(page, 'upper');
+    const afterTrim = await readFp(page, ARCH);
+    evidence.trimQuality = await readMeshQuality(page, ARCH, 'working');
     evidence.fingerprints.trimAcceptedFingerprint =
       afterTrim?.meshFingerprint ?? afterTrim?.fingerprint;
     record(
@@ -353,13 +393,15 @@ const main = async () => {
       evidence.fingerprints.trimAcceptedFingerprint;
 
     // Close Base
-    await page.evaluate(() => {
+    await page.evaluate((arch) => {
       const ws = globalThis.__clinicalWorkspace;
       if (ws.trim.isActive()) ws.trim.cancel();
       const r = ws.closeBase.enter();
       if (!r.ok) throw new Error(r.error?.message ?? 'closeBase enter failed');
+      const switched = ws.closeBase.setActiveArch?.(arch);
+      if (switched && !switched.ok) throw new Error(switched.error?.message ?? 'closeBase arch switch failed');
       ws.session.notifyUi();
-    });
+    }, ARCH);
     const tBase0 = Date.now();
     const basePreview = await page.evaluate(async () => {
       const ws = globalThis.__clinicalWorkspace;
@@ -372,6 +414,7 @@ const main = async () => {
         previewFp: s.kernelFingerprint
       };
     });
+    evidence.basePreviewQuality = await readMeshQuality(page, ARCH);
     if (!basePreview.ok) throw new Error(`base preview failed: ${basePreview.message}`);
     const baseAccept = await page.evaluate(async () => {
       const r = await globalThis.__clinicalWorkspace.closeBase.accept();
@@ -379,7 +422,8 @@ const main = async () => {
       return { ok: r.ok, message: r.ok ? null : r.error?.message };
     });
     evidence.performance.baseMs = Date.now() - tBase0;
-    const afterBase = await readFp(page, 'upper');
+    const afterBase = await readFp(page, ARCH);
+    evidence.baseAcceptedQuality = await readMeshQuality(page, ARCH, 'working');
     evidence.fingerprints.baseAcceptedFingerprint =
       afterBase?.meshFingerprint ?? afterBase?.fingerprint;
     record(
@@ -408,14 +452,14 @@ const main = async () => {
 
     // Segmentation on post-base working mesh
     const tSeg0 = Date.now();
-    const seg = await page.evaluate(async () => {
+    const seg = await page.evaluate(async (arch) => {
       const ws = globalThis.__clinicalWorkspace;
       if (ws.closeBase.isActive()) ws.closeBase.cancel();
       const enter = ws.segmentation.enter();
       if (!enter.ok && !ws.segmentation.isActive()) {
         throw new Error(enter.error?.message ?? 'seg enter failed');
       }
-      ws.segmentation.setActiveArch('upper');
+      ws.segmentation.setActiveArch(arch);
       const ran = await ws.segmentation.segmentTeeth();
       if (!ran.ok) throw new Error(ran.error?.message ?? 'segmentTeeth failed');
       for (let i = 0; i < 120; i += 1) {
@@ -426,9 +470,9 @@ const main = async () => {
       const acc = await ws.segmentation.accept();
       ws.session.notifyUi();
       return { ok: acc.ok, message: acc.ok ? null : acc.error?.message };
-    });
+    }, ARCH);
     evidence.performance.segmentationMs = Date.now() - tSeg0;
-    const afterSeg = await readFp(page, 'upper');
+    const afterSeg = await readFp(page, ARCH);
     evidence.fingerprints.segmentationGeometryFingerprint = afterSeg?.segFp;
     record(
       '07-segmentation',
@@ -466,7 +510,7 @@ const main = async () => {
       ws.session.notifyUi();
     }, caseId);
     await waitIdle(page, 2000);
-    const reopened = await readFp(page, 'upper');
+    const reopened = await readFp(page, ARCH);
     const reopenOk =
       reopened &&
       reopened.meshFingerprint === evidence.fingerprints.baseAcceptedFingerprint &&

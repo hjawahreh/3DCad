@@ -1,7 +1,7 @@
 # CLN-SEG-002 Production Segmentation Bring-Up & Review Gate
 
-**Date:** 2026-09-17  
-**Scope:** Engineering lifecycle honesty for production segmentation (no clinical validation claim).  
+**Date:** 2026-09-17
+**Scope:** Engineering lifecycle honesty for production segmentation (no clinical validation claim).
 **Architecture:** `docs/architecture/CLN-SEG-002-production-lifecycle.md`
 
 ## Objectives closed
@@ -31,12 +31,16 @@
 
 ## Certification
 
-**PASS WITH OBSERVATIONS**
+**PASS WITH OBSERVATIONS — CLN-SEG-002 baseline only**
 
 Observations:
 
 - Full production INFERENCING→COMPLETED still requires configured checkpoint + worker (`CAD_SEG_CHECKPOINT`, worker `:8766`). Without it, lifecycle correctly reports **NOT_CONFIGURED**.
 - No clinical accuracy claim. Biomechanics remains locked for reference results.
+
+CLN-SEG-002B close-validation evidence is tracked separately in
+`docs/certification/CLN-SEG-002B.md`. It does not upgrade this record to a full
+browser or regression certification.
 
 ## Failed attempts
 

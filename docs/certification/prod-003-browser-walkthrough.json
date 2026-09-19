@@ -2,18 +2,18 @@
   "evidence": {
     "fingerprints": {
       "importFingerprint": "geo:c828c055",
-      "trimPreviewFingerprint": "geo:1a0f6368",
-      "trimAcceptedFingerprint": "geo:1a0f6368",
-      "baseInputFingerprint": "geo:1a0f6368",
-      "baseAcceptedFingerprint": "geo:ebd20b3f",
-      "segmentationGeometryFingerprint": "geo:ebd20b3f"
+      "trimPreviewFingerprint": "geo:43f166b1",
+      "trimAcceptedFingerprint": "geo:43f166b1",
+      "baseInputFingerprint": "geo:43f166b1",
+      "baseAcceptedFingerprint": "geo:a98dcff3",
+      "segmentationGeometryFingerprint": "geo:a98dcff3"
     },
     "performance": {
-      "warmupMs": 849,
-      "trimMs": 14849,
-      "baseMs": 26533,
-      "segmentationMs": 89447,
-      "totalWorkflowMs": 345451
+      "warmupMs": 709,
+      "trimMs": 11716,
+      "baseMs": 19150,
+      "segmentationMs": 44537,
+      "totalWorkflowMs": 204522
     },
     "locks": {
       "afterPrepare": {
@@ -34,28 +34,73 @@
         "baseUnlocked": true,
         "segmentUnlocked": true
       }
+    },
+    "trimQuality": {
+      "role": "working",
+      "fingerprint": "geo:43f166b1",
+      "vertices": 130250,
+      "triangles": 257854,
+      "boundaryEdges": 2650,
+      "nonManifoldEdges": 0,
+      "components": 1,
+      "degenerateCount": 0,
+      "codes": [],
+      "warnings": [
+        "Normals missing (diagnostics only)",
+        "meta:qualityLevel=2"
+      ]
+    },
+    "basePreviewQuality": {
+      "role": "preview",
+      "fingerprint": "geo:a98dcff3",
+      "vertices": 135177,
+      "triangles": 270350,
+      "boundaryEdges": 0,
+      "nonManifoldEdges": 0,
+      "components": 1,
+      "degenerateCount": 0,
+      "codes": [],
+      "warnings": [
+        "Normals missing (diagnostics only)",
+        "meta:qualityLevel=2"
+      ]
+    },
+    "baseAcceptedQuality": {
+      "role": "working",
+      "fingerprint": "geo:a98dcff3",
+      "vertices": 135177,
+      "triangles": 270350,
+      "boundaryEdges": 0,
+      "nonManifoldEdges": 0,
+      "components": 1,
+      "degenerateCount": 0,
+      "codes": [],
+      "warnings": [
+        "Normals missing (diagnostics only)",
+        "meta:qualityLevel=2"
+      ]
     }
   },
   "steps": [
     {
       "id": "01-import",
       "status": "PASS",
-      "at": "2026-09-15T14:12:02.103Z"
+      "at": "2026-09-18T01:52:47.674Z"
     },
     {
       "id": "02-orientation",
       "status": "PASS",
-      "at": "2026-09-15T14:12:41.723Z"
+      "at": "2026-09-18T01:52:56.220Z"
     },
     {
       "id": "03-prepare",
       "status": "PASS",
-      "at": "2026-09-15T14:12:51.359Z"
+      "at": "2026-09-18T01:53:11.328Z"
     },
     {
       "id": "03b-negative-segment-locked",
       "status": "PASS",
-      "at": "2026-09-15T14:12:51.940Z",
+      "at": "2026-09-18T01:53:12.431Z",
       "locksAfterPrep": {
         "stage": "ready-for-trim",
         "trimUnlocked": true,
@@ -66,27 +111,27 @@
     {
       "id": "04-warmup",
       "status": "PASS",
-      "at": "2026-09-15T14:12:52.790Z",
-      "detail": "warmupMs=849"
+      "at": "2026-09-18T01:53:13.149Z",
+      "detail": "warmupMs=709"
     },
     {
       "id": "05-trim",
       "status": "PASS",
-      "at": "2026-09-15T14:13:55.049Z",
+      "at": "2026-09-18T01:53:48.824Z",
       "preview": {
         "ok": true,
         "message": null,
-        "previewFp": "geo:1a0f6368"
+        "previewFp": "geo:43f166b1"
       },
       "accept": {
         "ok": true,
         "message": null
       },
       "afterTrim": {
-        "id": "case-1789481477426:upper-arch",
-        "fingerprint": "geo:1a0f6368",
-        "meshFingerprint": "geo:1a0f6368",
-        "revision": 12,
+        "id": "case-1789696339825:upper-arch",
+        "fingerprint": "geo:43f166b1",
+        "meshFingerprint": "geo:43f166b1",
+        "revision": 11,
         "stage": "ready-for-close-base",
         "milestone": "trimmed",
         "segFp": null,
@@ -94,12 +139,12 @@
         "providerId": null,
         "faces": 0
       },
-      "detail": "trimMs=14849"
+      "detail": "trimMs=11716"
     },
     {
       "id": "05b-negative-segment-still-locked",
       "status": "PASS",
-      "at": "2026-09-15T14:13:55.618Z",
+      "at": "2026-09-18T01:53:49.250Z",
       "locksAfterTrim": {
         "stage": "ready-for-close-base",
         "trimUnlocked": true,
@@ -110,7 +155,7 @@
     {
       "id": "05c-base-unlocked",
       "status": "PASS",
-      "at": "2026-09-15T14:13:55.619Z",
+      "at": "2026-09-18T01:53:49.250Z",
       "locksAfterTrim": {
         "stage": "ready-for-close-base",
         "trimUnlocked": true,
@@ -121,21 +166,21 @@
     {
       "id": "06-close-base",
       "status": "PASS",
-      "at": "2026-09-15T14:14:23.276Z",
+      "at": "2026-09-18T01:54:11.198Z",
       "basePreview": {
         "ok": true,
         "message": null,
-        "previewFp": "geo:ebd20b3f"
+        "previewFp": "geo:a98dcff3"
       },
       "baseAccept": {
         "ok": true,
         "message": null
       },
       "afterBase": {
-        "id": "case-1789481477426:upper-arch",
-        "fingerprint": "geo:ebd20b3f",
-        "meshFingerprint": "geo:ebd20b3f",
-        "revision": 16,
+        "id": "case-1789696339825:upper-arch",
+        "fingerprint": "geo:a98dcff3",
+        "meshFingerprint": "geo:a98dcff3",
+        "revision": 15,
         "stage": "ready-for-segmentation",
         "milestone": "based",
         "segFp": null,
@@ -143,12 +188,12 @@
         "providerId": null,
         "faces": 0
       },
-      "detail": "baseMs=26533"
+      "detail": "baseMs=19150"
     },
     {
       "id": "06b-segment-unlocked",
       "status": "PASS",
-      "at": "2026-09-15T14:14:23.482Z",
+      "at": "2026-09-18T01:54:11.960Z",
       "locksAfterBase": {
         "stage": "ready-for-segmentation",
         "trimUnlocked": true,
@@ -159,61 +204,61 @@
     {
       "id": "07-segmentation",
       "status": "PASS",
-      "at": "2026-09-15T14:15:53.514Z",
+      "at": "2026-09-18T01:54:56.979Z",
       "seg": {
         "ok": true,
         "message": null
       },
       "afterSeg": {
-        "id": "case-1789481477426:upper-arch",
-        "fingerprint": "geo:ebd20b3f",
-        "meshFingerprint": "geo:ebd20b3f",
-        "revision": 16,
+        "id": "case-1789696339825:upper-arch",
+        "fingerprint": "geo:a98dcff3",
+        "meshFingerprint": "geo:a98dcff3",
+        "revision": 15,
         "stage": "ready-for-segmentation",
         "milestone": "based",
-        "segFp": "geo:ebd20b3f",
+        "segFp": "geo:a98dcff3",
         "segStatus": "CURRENT",
         "providerId": "reference-heuristic",
-        "faces": 212356
+        "faces": 214401
       },
-      "detail": "segMs=89447"
+      "detail": "segMs=44537"
     },
     {
       "id": "08-fingerprint-chain",
       "status": "PASS",
-      "at": "2026-09-15T14:15:53.515Z",
+      "at": "2026-09-18T01:54:56.980Z",
       "chain": {
         "importFingerprint": "geo:c828c055",
-        "trimPreviewFingerprint": "geo:1a0f6368",
-        "trimAcceptedFingerprint": "geo:1a0f6368",
-        "baseInputFingerprint": "geo:1a0f6368",
-        "baseAcceptedFingerprint": "geo:ebd20b3f",
-        "segmentationGeometryFingerprint": "geo:ebd20b3f"
+        "trimPreviewFingerprint": "geo:43f166b1",
+        "trimAcceptedFingerprint": "geo:43f166b1",
+        "baseInputFingerprint": "geo:43f166b1",
+        "baseAcceptedFingerprint": "geo:a98dcff3",
+        "segmentationGeometryFingerprint": "geo:a98dcff3"
       }
     },
     {
       "id": "09-persistence",
       "status": "PASS",
-      "at": "2026-09-15T14:16:49.745Z",
-      "caseId": "case-1789481477426",
+      "at": "2026-09-18T01:55:32.715Z",
+      "caseId": "case-1789696339825",
       "reopened": {
-        "id": "case-1789481477426:upper-arch",
-        "fingerprint": "geo:ebd20b3f",
-        "meshFingerprint": "geo:ebd20b3f",
-        "revision": 16,
+        "id": "case-1789696339825:upper-arch",
+        "fingerprint": "geo:a98dcff3",
+        "meshFingerprint": "geo:a98dcff3",
+        "revision": 15,
         "stage": "ready-for-segmentation",
         "milestone": "based",
-        "segFp": "geo:ebd20b3f",
+        "segFp": "geo:a98dcff3",
         "segStatus": "CURRENT",
         "providerId": "reference-heuristic",
-        "faces": 212356
+        "faces": 214401
       }
     },
     {
       "id": "10-complete",
       "status": "PASS",
-      "at": "2026-09-15T14:16:58.255Z",
-      "detail": "totalMs=345451"
+      "at": "2026-09-18T01:55:40.744Z",
+      "detail": "totalMs=204522"
     }
   ],
   "pass": 14,

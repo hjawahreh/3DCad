@@ -884,6 +884,7 @@ def vtk_close_base(
     """
     from vtkmodules.vtkCommonCore import vtkPoints, vtkIdList
     from vtkmodules.vtkCommonDataModel import vtkPolyData, vtkCellArray
+    from vtkmodules.vtkFiltersCore import vtkCleanPolyData
     from vtkmodules.vtkFiltersCore import (
         vtkCleanPolyData,
         vtkAppendPolyData,
@@ -892,6 +893,7 @@ def vtk_close_base(
         vtkPolyDataNormals,
     )
     from vtkmodules.vtkFiltersGeneral import vtkContourTriangulator
+    from vtkmodules.vtkFiltersModeling import vtkFillHolesFilter
     from vtkmodules.vtkFiltersModeling import vtkLinearExtrusionFilter
     from vtkmodules.util.numpy_support import vtk_to_numpy, numpy_to_vtk
 
@@ -902,6 +904,17 @@ def vtk_close_base(
         return {"ok": False, "error": "Base generation could not produce a safe result.", "reason": "invalid direction"}
 
     direction = direction / np.linalg.norm(direction)
+
+    # Trimmed STL meshes can carry coincident boundary points from separate
+    # source triangles. Weld them before feature extraction so the clinical rim
+    # is treated as one topological loop.
+    input_clean = vtkCleanPolyData()
+    input_clean.SetInputData(poly)
+    input_clean.PointMergingOn()
+    input_clean.ToleranceIsAbsoluteOn()
+    input_clean.SetAbsoluteTolerance(1e-5)
+    input_clean.Update()
+    poly = input_clean.GetOutput()
 
     b = list(poly.GetBounds())
     before_diag = math.sqrt((b[1] - b[0]) ** 2 + (b[3] - b[2]) ** 2 + (b[5] - b[4]) ** 2)
@@ -1007,9 +1020,16 @@ def vtk_close_base(
     append.Update()
     clean = vtkCleanPolyData()
     clean.SetInputData(append.GetOutput())
+    clean.PointMergingOn()
+    clean.ToleranceIsAbsoluteOn()
+    clean.SetAbsoluteTolerance(1e-5)
     clean.Update()
+    fill = vtkFillHolesFilter()
+    fill.SetInputData(clean.GetOutput())
+    fill.SetHoleSize(float(max(before_diag * 100.0, height * 100.0)))
+    fill.Update()
     nrm = vtkPolyDataNormals()
-    nrm.SetInputData(clean.GetOutput())
+    nrm.SetInputData(fill.GetOutput())
     nrm.ConsistencyOn()
     nrm.AutoOrientNormalsOn()
     nrm.Update()

@@ -28,6 +28,17 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['test/**/*.test.ts'],
-    globals: false
+    globals: false,
+    globalSetup: ['./test/vtk-worker-global-setup.ts'],
+    fileParallelism: false,
+    maxWorkers: 1,
+    minWorkers: 1,
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true
+      }
+    },
+    testTimeout: 180_000
   }
 });

@@ -51,6 +51,9 @@ export const ClinicalHeader = ({
             </span>
           </div>
         </div>
+        <span className="clinical-header__stage" data-testid="clinical-header-stage">
+          {presentation.currentTitle}
+        </span>
       </div>
 
       <nav className="clinical-header__actions" aria-label="Application actions">
